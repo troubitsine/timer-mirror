@@ -1,10 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import {
-  initializeScreenCapture,
-  captureScreenshot,
-  captureWebcam,
-  cleanupScreenCapture,
-} from "@/lib/capture";
+import { initializeMediaCapture, scheduleCaptures } from "@/lib/mediaCapture";
 import { Card } from "./ui/card";
 import CameraFeed from "./CameraFeed";
 import TimerControls from "./TimerControls";
@@ -24,6 +19,7 @@ const TimerCard = ({
 }: TimerCardProps) => {
   const [isRunning, setIsRunning] = useState(false);
   const [remainingTime, setRemainingTime] = useState(0);
+  const [sessionDuration, setSessionDuration] = useState(0);
   const [taskName, setTaskName] = useState("Focus Session");
   const [sessionData, setSessionData] = useState<{
     screenshots: string[];
@@ -31,7 +27,7 @@ const TimerCard = ({
   }>({ screenshots: [], webcamPhotos: [] });
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const timerRef = useRef<NodeJS.Timeout>();
-  const captureCountRef = useRef({ screenshots: 0, webcam: 0 });
+  const captureCleanupRef = useRef<(() => void) | undefined>();
 
   // Countdown timer effect
   useEffect(() => {
@@ -55,67 +51,46 @@ const TimerCard = ({
     return () => clearInterval(timer);
   }, [isRunning, remainingTime, sessionData, onSessionEnd]);
 
-  // Capture interval effect
+  // Capture scheduling effect
   useEffect(() => {
-    if (isRunning) {
-      const captureInterval = setInterval(async () => {
-        if (
-          captureCountRef.current.screenshots >= 10 &&
-          captureCountRef.current.webcam >= 4
-        ) {
-          clearInterval(captureInterval);
-          return;
-        }
-
-        try {
-          if (captureCountRef.current.screenshots < 10) {
-            const screenshot = await captureScreenshot();
-            if (screenshot) {
-              setSessionData((prev) => ({
-                ...prev,
-                screenshots: [...prev.screenshots, screenshot],
-              }));
-              captureCountRef.current.screenshots++;
-            }
-          }
-
-          if (captureCountRef.current.webcam < 4 && videoRef.current) {
-            const webcamPhoto = await captureWebcam(videoRef.current);
-            if (webcamPhoto) {
-              setSessionData((prev) => ({
-                ...prev,
-                webcamPhotos: [...prev.webcamPhotos, webcamPhoto],
-              }));
-              captureCountRef.current.webcam++;
-            }
-          }
-        } catch (error) {
-          console.error("Error during capture:", error);
-        }
-      }, 30000); // Capture every 30 seconds
-
-      timerRef.current = captureInterval;
+    if (isRunning && sessionDuration > 0) {
+      captureCleanupRef.current = scheduleCaptures(
+        sessionDuration,
+        (screenshot, webcamPhoto) => {
+          setSessionData((prev) => ({
+            screenshots: [...prev.screenshots, screenshot],
+            webcamPhotos: [...prev.webcamPhotos, webcamPhoto],
+          }));
+        },
+      );
     }
 
     return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
+      if (captureCleanupRef.current) {
+        captureCleanupRef.current();
+        captureCleanupRef.current = undefined;
       }
     };
-  }, [isRunning]);
+  }, [isRunning, sessionDuration]);
 
   const handleStart = async (duration: number) => {
-    const stream = await initializeScreenCapture();
-    if (!stream) {
+    if (!videoRef.current) {
+      console.error("Video element not initialized");
+      return;
+    }
+
+    const { screenStream } = await initializeMediaCapture(videoRef.current);
+    if (!screenStream) {
       console.error("Failed to initialize screen capture");
       return;
     }
 
-    setIsRunning(true);
-    setRemainingTime(duration * 60);
+    const totalDurationSec = duration * 60;
+    setSessionDuration(totalDurationSec);
+    setRemainingTime(totalDurationSec);
     setSessionData({ screenshots: [], webcamPhotos: [] });
-    captureCountRef.current = { screenshots: 0, webcam: 0 };
     onSessionStart();
+    setIsRunning(true);
   };
 
   const handlePause = () => {
@@ -124,7 +99,10 @@ const TimerCard = ({
 
   const handleReset = () => {
     setIsRunning(false);
-    cleanupScreenCapture();
+    if (captureCleanupRef.current) {
+      captureCleanupRef.current();
+      captureCleanupRef.current = undefined;
+    }
     onSessionEnd(sessionData);
   };
 
