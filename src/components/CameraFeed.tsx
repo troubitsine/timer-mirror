@@ -331,19 +331,46 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
               className="w-full h-full object-cover"
               style={{ width, height }}
             />
-            {isRunning && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
-                <div className="bg-background/80 backdrop-blur-sm px-4 py-2 rounded-lg">
-                  <span className="text-lg font-medium">{taskName}</span>
-                </div>
-                <div className="bg-background/80 backdrop-blur-sm rounded-full w-32 h-32 flex items-center justify-center">
-                  <span className="text-4xl font-bold">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-8 bg-black/30 backdrop-blur-[2px]">
+              <div className="w-full max-w-lg px-6">
+                <input
+                  type="text"
+                  value={taskName}
+                  placeholder="Write down what you want to work on"
+                  className="w-full bg-black/60 backdrop-blur-sm text-white px-6 py-4 rounded-full text-lg text-center placeholder:text-white/70 border-0 focus:ring-0 focus:outline-none"
+                  readOnly={isRunning}
+                />
+              </div>
+              {isRunning ? (
+                <div className="bg-black/60 backdrop-blur-sm rounded-full w-32 h-32 flex items-center justify-center">
+                  <span className="text-4xl font-bold text-white">
                     {Math.floor(remainingTime / 60)}:
                     {String(Math.floor(remainingTime % 60)).padStart(2, "0")}
                   </span>
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="space-y-4 text-center">
+                  <div className="text-white/90 text-lg font-medium mb-4">
+                    Set your timer
+                  </div>
+                  <div className="flex gap-4 justify-center">
+                    {[15, 30, 45, 60].map((mins) => (
+                      <button
+                        key={mins}
+                        className="bg-black/60 backdrop-blur-sm text-white px-4 py-2 rounded-lg hover:bg-black/70 transition-colors"
+                      >
+                        {mins === 60 ? "1 hr" : `${mins} min`}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mt-8">
+                    <button className="bg-black/60 backdrop-blur-sm text-white px-8 py-3 rounded-full text-lg hover:bg-black/70 transition-colors">
+                      Start focus session
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
             <div className="absolute bottom-4 right-4 flex gap-2">
               <Button
                 variant="secondary"
@@ -353,13 +380,6 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                 title="Open in floating window"
               >
                 <Maximize2 className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="secondary"
-                size="icon"
-                className="bg-background/80 backdrop-blur-sm"
-              >
-                <Camera className="h-4 w-4" />
               </Button>
             </div>
           </div>
