@@ -118,9 +118,8 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
             color: white;
           }
         `;
-
-        // Add the video and timer to the PiP window
         newPipWindow.document.head.appendChild(style);
+
         const container = document.createElement("div");
         container.className = "pip-container";
 
@@ -132,10 +131,9 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
         if (videoRef.current?.srcObject) {
           video.srcObject = videoRef.current.srcObject;
         }
-
         container.appendChild(video);
 
-        // Create and add timer div if running
+        // Timer container
         const timerDiv = document.createElement("div");
         timerDiv.className = "pip-timer";
         const timerText = document.createElement("span");
@@ -143,41 +141,10 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
         timerDiv.appendChild(timerText);
         container.appendChild(timerDiv);
 
-        // Function to update timer display
-        const updateTimer = () => {
-          if (!isRunning) {
-            timerDiv.style.display = "none";
-            return;
-          }
-          timerDiv.style.display = "flex";
-          const minutes = Math.floor(remainingTime / 60);
-          const seconds = Math.floor(remainingTime % 60);
-          timerText.textContent = `${minutes}:${String(seconds).padStart(2, "0")}`;
-        };
-
-        // Initial update
-        updateTimer();
-
-        // Create a message channel for timer updates
-        const channel = new MessageChannel();
-        channel.port1.onmessage = () => updateTimer();
-
-        // Set up timer update interval in main window
-        const timerInterval = setInterval(() => {
-          if (newPipWindow && !newPipWindow.closed) {
-            channel.port2.postMessage("update");
-          }
-        }, 1000);
-
         newPipWindow.document.body.appendChild(container);
 
         // Handle window closing
         const handleUnload = () => {
-          if (timerInterval) {
-            clearInterval(timerInterval);
-          }
-          channel.port1.close();
-          channel.port2.close();
           setPipWindow(null);
         };
 
@@ -210,6 +177,24 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
         setPipWindow(null);
       }
     };
+
+    // Effect to update the PiP window timer
+    useEffect(() => {
+      if (pipWindow) {
+        const timerText = pipWindow.document.querySelector(".pip-timer-text");
+        const timerDiv = pipWindow.document.querySelector(".pip-timer");
+        if (timerText && timerDiv) {
+          if (!isRunning) {
+            (timerDiv as HTMLElement).style.display = "none";
+          } else {
+            (timerDiv as HTMLElement).style.display = "flex";
+            const minutes = Math.floor(remainingTime / 60);
+            const seconds = Math.floor(remainingTime % 60);
+            timerText.textContent = `${minutes}:${String(seconds).padStart(2, "0")}`;
+          }
+        }
+      }
+    }, [remainingTime, isRunning, pipWindow]);
 
     useEffect(() => {
       // Check if browser supports getUserMedia
