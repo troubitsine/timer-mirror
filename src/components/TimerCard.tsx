@@ -20,7 +20,7 @@ const TimerCard = ({
   const [isRunning, setIsRunning] = useState(false);
   const [remainingTime, setRemainingTime] = useState(0);
   const [sessionDuration, setSessionDuration] = useState(0);
-  const [taskName, setTaskName] = useState("Focus Session");
+  const [taskName, setTaskName] = useState("");
   const [sessionData, setSessionData] = useState<{
     screenshots: string[];
     webcamPhotos: string[];
@@ -113,6 +113,7 @@ const TimerCard = ({
           ref={videoRef}
           onPermissionGranted={onCameraPermissionGranted}
           onPermissionDenied={onCameraPermissionDenied}
+          onTaskNameChange={setTaskName}
           width={800}
           height={400}
           isRunning={isRunning}

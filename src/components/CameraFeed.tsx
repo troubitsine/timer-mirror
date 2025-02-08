@@ -20,6 +20,8 @@ interface CameraFeedProps {
   isRunning?: boolean;
   remainingTime?: number;
   taskName?: string;
+  onStart?: (duration: number) => void;
+  onTaskNameChange?: (name: string) => void;
 }
 
 const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
@@ -31,7 +33,9 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
       height = 400,
       isRunning = false,
       remainingTime = 0,
-      taskName = "Focus Session",
+      taskName = "",
+      onStart = () => {},
+      onTaskNameChange = () => {},
     },
     ref,
   ) => {
@@ -41,6 +45,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
     const [hasPermission, setHasPermission] = useState<boolean | null>(null);
     const [showPermissionDialog, setShowPermissionDialog] = useState(true);
     const [pipWindow, setPipWindow] = useState<Window | null>(null);
+    const [selectedTime, setSelectedTime] = useState(20);
 
     const startCamera = async () => {
       try {
@@ -255,38 +260,6 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
       }
     };
 
-    // Effect to update the PiP window timer and task name
-    const [sessionEnded, setSessionEnded] = useState(false);
-
-    useEffect(() => {
-      if (remainingTime <= 0 && isRunning) {
-        setSessionEnded(true);
-      }
-    }, [remainingTime, isRunning]);
-
-    useEffect(() => {
-      if (pipWindow) {
-        const timerText = pipWindow.document.querySelector(".pip-timer-text");
-        const taskNameDiv = pipWindow.document.querySelector(".pip-task-name");
-        const timerDiv = pipWindow.document.querySelector(".pip-timer");
-
-        if (timerText && timerDiv && taskNameDiv) {
-          timerDiv.style.display = "flex";
-
-          if (sessionEnded) {
-            showEndMessage();
-          } else if (isRunning) {
-            taskNameDiv.textContent = taskName;
-            const minutes = Math.floor(remainingTime / 60);
-            const seconds = Math.floor(remainingTime % 60);
-            timerText.textContent = `${minutes}:${String(seconds).padStart(2, "0")}`;
-          } else {
-            timerDiv.style.display = "none";
-          }
-        }
-      }
-    }, [remainingTime, isRunning, taskName, pipWindow, sessionEnded]);
-
     useEffect(() => {
       // Check if browser supports getUserMedia
       if (!navigator.mediaDevices?.getUserMedia) {
@@ -339,6 +312,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                   placeholder="Write down what you want to work on"
                   className="w-full bg-black/60 backdrop-blur-sm text-white px-6 py-4 rounded-full text-lg text-center placeholder:text-white/70 border-0 focus:ring-0 focus:outline-none"
                   readOnly={isRunning}
+                  onChange={(e) => onTaskNameChange(e.target.value)}
                 />
               </div>
               {isRunning ? (
@@ -349,22 +323,43 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                   </span>
                 </div>
               ) : (
-                <div className="space-y-4 text-center">
-                  <div className="text-white/90 text-lg font-medium mb-4">
+                <div className="space-y-4 text-center w-full max-w-lg px-6">
+                  <div className="text-white/90 text-lg font-medium">
                     Set your timer
                   </div>
                   <div className="flex gap-4 justify-center">
                     {[15, 30, 45, 60].map((mins) => (
                       <button
                         key={mins}
+                        onClick={() => setSelectedTime(mins * 60)}
                         className="bg-black/60 backdrop-blur-sm text-white px-4 py-2 rounded-lg hover:bg-black/70 transition-colors"
                       >
                         {mins === 60 ? "1 hr" : `${mins} min`}
                       </button>
                     ))}
                   </div>
+                  <div className="w-full space-y-2">
+                    <input
+                      type="range"
+                      min="1"
+                      max="3600"
+                      value={selectedTime}
+                      onChange={(e) => setSelectedTime(Number(e.target.value))}
+                      className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
+                    />
+                    <div className="text-white/90 text-sm">
+                      {selectedTime < 60
+                        ? `${selectedTime} seconds`
+                        : selectedTime < 3600
+                          ? `${Math.floor(selectedTime / 60)} minutes`
+                          : `${Math.floor(selectedTime / 3600)} hours ${Math.floor((selectedTime % 3600) / 60)} minutes`}
+                    </div>
+                  </div>
                   <div className="mt-8">
-                    <button className="bg-black/60 backdrop-blur-sm text-white px-8 py-3 rounded-full text-lg hover:bg-black/70 transition-colors">
+                    <button
+                      onClick={() => onStart(selectedTime)}
+                      className="bg-black/60 backdrop-blur-sm text-white px-8 py-3 rounded-full text-lg hover:bg-black/70 transition-colors"
+                    >
                       Start focus session
                     </button>
                   </div>
