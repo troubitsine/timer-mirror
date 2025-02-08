@@ -57,7 +57,7 @@ const TimerControls = ({
               value={[duration]}
               onValueChange={handleDurationChange}
               max={120}
-              min={0.33}
+              min={0.33333333}
               step={1}
               className="w-full"
             />

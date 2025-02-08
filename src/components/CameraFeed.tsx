@@ -281,6 +281,15 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
       };
     }, []);
 
+    // Handle timer completion
+    useEffect(() => {
+      if (remainingTime === 0 && isRunning) {
+        setIsRunning(false);
+        showEndMessage();
+        onSessionComplete();
+      }
+    }, [remainingTime, isRunning]);
+
     useEffect(() => {
       // Check if browser supports getUserMedia
       if (!navigator.mediaDevices?.getUserMedia) {
@@ -365,7 +374,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                     </div>
                     <input
                       type="range"
-                      min="1"
+                      min="0.33333333"
                       max="120"
                       value={duration}
                       onChange={(e) => setDuration(Number(e.target.value))}
@@ -373,8 +382,8 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                     />
                     <div className="text-white/90 text-sm">
                       {duration < 1
-                        ? `${duration * 60} seconds`
-                        : `${duration} minutes`}
+                        ? `${Math.round(duration * 60)} seconds`
+                        : `${Math.round(duration)} minutes`}
                     </div>
                   </div>
                   <div className="mt-8">
@@ -390,9 +399,6 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                           setRemainingTime((prev) => {
                             if (prev <= 1) {
                               clearInterval(timerRef.current);
-                              setIsRunning(false);
-                              showEndMessage();
-                              onSessionComplete();
                               return 0;
                             }
                             return prev - 1;
