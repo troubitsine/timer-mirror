@@ -19,6 +19,7 @@ const TimerCard = ({
 }: TimerCardProps) => {
   const [isRunning, setIsRunning] = useState(false);
   const [remainingTime, setRemainingTime] = useState(0);
+  const [taskName, setTaskName] = useState("Focus Session");
   const [sessionData, setSessionData] = useState<{
     screenshots: string[];
     webcamPhotos: string[];
@@ -118,6 +119,7 @@ const TimerCard = ({
           height={400}
           isRunning={isRunning}
           remainingTime={remainingTime}
+          taskName={taskName}
         />
       </div>
 
@@ -127,7 +129,7 @@ const TimerCard = ({
           onPause={handlePause}
           onReset={handleReset}
           isRunning={isRunning}
-          onTaskNameChange={(name) => console.log("Task name changed:", name)}
+          onTaskNameChange={setTaskName}
           onDurationChange={(duration) =>
             console.log("Duration changed:", duration)
           }

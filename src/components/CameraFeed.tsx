@@ -19,6 +19,7 @@ interface CameraFeedProps {
   height?: number;
   isRunning?: boolean;
   remainingTime?: number;
+  taskName?: string;
 }
 
 const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
@@ -30,6 +31,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
       height = 400,
       isRunning = false,
       remainingTime = 0,
+      taskName = "Focus Session",
     },
     ref,
   ) => {
@@ -107,10 +109,19 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
             position: absolute;
             inset: 0;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
+            gap: 8px;
             background: rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(4px);
+          }
+          .pip-task-name {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            color: white;
           }
           .pip-timer-text {
             font-size: 2rem;
@@ -136,6 +147,12 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
         // Timer container
         const timerDiv = document.createElement("div");
         timerDiv.className = "pip-timer";
+
+        const taskNameDiv = document.createElement("div");
+        taskNameDiv.className = "pip-task-name";
+        taskNameDiv.textContent = taskName;
+        timerDiv.appendChild(taskNameDiv);
+
         const timerText = document.createElement("span");
         timerText.className = "pip-timer-text";
         timerDiv.appendChild(timerText);
@@ -178,23 +195,26 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
       }
     };
 
-    // Effect to update the PiP window timer
+    // Effect to update the PiP window timer and task name
     useEffect(() => {
       if (pipWindow) {
         const timerText = pipWindow.document.querySelector(".pip-timer-text");
+        const taskNameDiv = pipWindow.document.querySelector(".pip-task-name");
         const timerDiv = pipWindow.document.querySelector(".pip-timer");
-        if (timerText && timerDiv) {
+
+        if (timerText && timerDiv && taskNameDiv) {
           if (!isRunning) {
-            (timerDiv as HTMLElement).style.display = "none";
+            timerDiv.style.display = "none";
           } else {
-            (timerDiv as HTMLElement).style.display = "flex";
+            timerDiv.style.display = "flex";
+            taskNameDiv.textContent = taskName;
             const minutes = Math.floor(remainingTime / 60);
             const seconds = Math.floor(remainingTime % 60);
             timerText.textContent = `${minutes}:${String(seconds).padStart(2, "0")}`;
           }
         }
       }
-    }, [remainingTime, isRunning, pipWindow]);
+    }, [remainingTime, isRunning, taskName, pipWindow]);
 
     useEffect(() => {
       // Check if browser supports getUserMedia
@@ -241,7 +261,10 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
               style={{ width, height }}
             />
             {isRunning && (
-              <div className="absolute inset-0 flex items-center justify-center">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
+                <div className="bg-background/80 backdrop-blur-sm px-4 py-2 rounded-lg">
+                  <span className="text-lg font-medium">{taskName}</span>
+                </div>
                 <div className="bg-background/80 backdrop-blur-sm rounded-full w-32 h-32 flex items-center justify-center">
                   <span className="text-4xl font-bold">
                     {Math.floor(remainingTime / 60)}:
