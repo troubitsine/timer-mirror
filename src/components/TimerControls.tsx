@@ -57,13 +57,15 @@ const TimerControls = ({
               value={[duration]}
               onValueChange={handleDurationChange}
               max={120}
-              min={1}
+              min={0.33}
               step={1}
               className="w-full"
             />
           </div>
           <div className="text-center text-sm text-gray-600">
-            {duration} minutes
+            {duration < 1
+              ? `${Math.round(duration * 60)} seconds`
+              : `${duration} minutes`}
           </div>
         </div>
 

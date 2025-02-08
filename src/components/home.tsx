@@ -18,22 +18,11 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
     setShowMontage(false);
   };
 
-  const handleSessionEnd = () => {
-    // In a real implementation, this would receive actual session data
-    setSessionData({
-      screenshots: [
-        "https://images.unsplash.com/photo-1611224923853-80b023f02d71",
-        "https://images.unsplash.com/photo-1611224923853-80b023f02d72",
-        "https://images.unsplash.com/photo-1611224923853-80b023f02d73",
-        "https://images.unsplash.com/photo-1611224923853-80b023f02d74",
-      ],
-      webcamPhotos: [
-        "https://images.unsplash.com/photo-1611224923853-80b023f02d75",
-        "https://images.unsplash.com/photo-1611224923853-80b023f02d76",
-        "https://images.unsplash.com/photo-1611224923853-80b023f02d77",
-        "https://images.unsplash.com/photo-1611224923853-80b023f02d78",
-      ],
-    });
+  const handleSessionEnd = (data: {
+    screenshots: string[];
+    webcamPhotos: string[];
+  }) => {
+    setSessionData(data);
     setShowMontage(true);
     onSessionComplete();
   };
