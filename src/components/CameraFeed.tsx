@@ -10,7 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "./ui/alert-dialog";
-import { Camera, CameraOff } from "lucide-react";
+import { Camera, CameraOff, Maximize2 } from "lucide-react";
 
 interface CameraFeedProps {
   onPermissionGranted?: () => void;
@@ -38,6 +38,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
       (ref as React.RefObject<HTMLVideoElement>) || localVideoRef;
     const [hasPermission, setHasPermission] = useState<boolean | null>(null);
     const [showPermissionDialog, setShowPermissionDialog] = useState(true);
+    const [pipWindow, setPipWindow] = useState<Window | null>(null);
 
     const startCamera = async () => {
       try {
@@ -53,6 +54,160 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
         console.error("Error accessing camera:", err);
         setHasPermission(false);
         onPermissionDenied();
+      }
+    };
+
+    const enterPiP = async () => {
+      if (!("documentPictureInPicture" in window)) {
+        console.error("Picture-in-Picture API not supported");
+        return;
+      }
+
+      try {
+        // Close existing PiP window if it exists
+        if (pipWindow) {
+          pipWindow.close();
+        }
+
+        // @ts-ignore - TypeScript doesn't know about Document Picture-in-Picture API yet
+        const newPipWindow =
+          await window.documentPictureInPicture.requestWindow({
+            width: 400,
+            height: 300,
+          });
+
+        setPipWindow(newPipWindow);
+
+        // Create styles for the PiP window
+        const style = document.createElement("style");
+        style.textContent = `
+          body { 
+            margin: 0;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-family: system-ui;
+          }
+          .pip-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 8px;
+            overflow: hidden;
+          }
+          .pip-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+          .pip-timer {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(4px);
+          }
+          .pip-timer-text {
+            font-size: 2rem;
+            font-weight: bold;
+            color: white;
+          }
+        `;
+
+        // Add the video and timer to the PiP window
+        newPipWindow.document.head.appendChild(style);
+        const container = document.createElement("div");
+        container.className = "pip-container";
+
+        const video = document.createElement("video");
+        video.className = "pip-video";
+        video.autoplay = true;
+        video.playsInline = true;
+        video.muted = true;
+        if (videoRef.current?.srcObject) {
+          video.srcObject = videoRef.current.srcObject;
+        }
+
+        container.appendChild(video);
+
+        // Create and add timer div if running
+        const timerDiv = document.createElement("div");
+        timerDiv.className = "pip-timer";
+        const timerText = document.createElement("span");
+        timerText.className = "pip-timer-text";
+        timerDiv.appendChild(timerText);
+        container.appendChild(timerDiv);
+
+        // Function to update timer display
+        const updateTimer = () => {
+          if (!isRunning) {
+            timerDiv.style.display = "none";
+            return;
+          }
+          timerDiv.style.display = "flex";
+          const minutes = Math.floor(remainingTime / 60);
+          const seconds = Math.floor(remainingTime % 60);
+          timerText.textContent = `${minutes}:${String(seconds).padStart(2, "0")}`;
+        };
+
+        // Initial update
+        updateTimer();
+
+        // Create a message channel for timer updates
+        const channel = new MessageChannel();
+        channel.port1.onmessage = () => updateTimer();
+
+        // Set up timer update interval in main window
+        const timerInterval = setInterval(() => {
+          if (newPipWindow && !newPipWindow.closed) {
+            channel.port2.postMessage("update");
+          }
+        }, 1000);
+
+        newPipWindow.document.body.appendChild(container);
+
+        // Handle window closing
+        const handleUnload = () => {
+          if (timerInterval) {
+            clearInterval(timerInterval);
+          }
+          channel.port1.close();
+          channel.port2.close();
+          setPipWindow(null);
+        };
+
+        newPipWindow.addEventListener("unload", handleUnload);
+        newPipWindow.addEventListener("beforeunload", handleUnload);
+
+        // Handle page visibility changes
+        const handleVisibilityChange = () => {
+          if (document.hidden && newPipWindow) {
+            video.srcObject = videoRef.current?.srcObject || null;
+          }
+        };
+
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+
+        // Cleanup when component unmounts
+        return () => {
+          document.removeEventListener(
+            "visibilitychange",
+            handleVisibilityChange,
+          );
+          if (newPipWindow) {
+            newPipWindow.removeEventListener("unload", handleUnload);
+            newPipWindow.removeEventListener("beforeunload", handleUnload);
+            newPipWindow.close();
+          }
+        };
+      } catch (err) {
+        console.error("Error opening Picture-in-Picture window:", err);
+        setPipWindow(null);
       }
     };
 
@@ -82,6 +237,9 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
           ).getTracks();
           tracks.forEach((track) => track.stop());
         }
+        if (pipWindow) {
+          pipWindow.close();
+        }
       };
     }, []);
 
@@ -107,7 +265,16 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                 </div>
               </div>
             )}
-            <div className="absolute bottom-4 right-4">
+            <div className="absolute bottom-4 right-4 flex gap-2">
+              <Button
+                variant="secondary"
+                size="icon"
+                className="bg-background/80 backdrop-blur-sm"
+                onClick={enterPiP}
+                title="Open in floating window"
+              >
+                <Maximize2 className="h-4 w-4" />
+              </Button>
               <Button
                 variant="secondary"
                 size="icon"
