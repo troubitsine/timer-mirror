@@ -7,7 +7,7 @@ import { Label } from "./ui/label";
 import { Play, Pause, RefreshCw } from "lucide-react";
 
 interface TimerControlsProps {
-  onStart?: () => void;
+  onStart?: (duration: number) => void;
   onPause?: () => void;
   onReset?: () => void;
   onTaskNameChange?: (name: string) => void;
@@ -71,7 +71,11 @@ const TimerControls = ({
 
         <div className="flex justify-center space-x-4">
           {!isRunning ? (
-            <Button onClick={onStart} className="w-32" variant="default">
+            <Button
+              onClick={() => onStart(duration)}
+              className="w-32"
+              variant="default"
+            >
               <Play className="mr-2 h-4 w-4" />
               Start
             </Button>

@@ -17,6 +17,8 @@ interface CameraFeedProps {
   onPermissionDenied?: () => void;
   width?: number;
   height?: number;
+  isRunning?: boolean;
+  remainingTime?: number;
 }
 
 const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
@@ -26,6 +28,8 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
       onPermissionDenied = () => {},
       width = 800,
       height = 400,
+      isRunning = false,
+      remainingTime = 0,
     },
     ref,
   ) => {
@@ -93,6 +97,16 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
               className="w-full h-full object-cover"
               style={{ width, height }}
             />
+            {isRunning && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="bg-background/80 backdrop-blur-sm rounded-full w-32 h-32 flex items-center justify-center">
+                  <span className="text-4xl font-bold">
+                    {Math.floor(remainingTime / 60)}:
+                    {String(Math.floor(remainingTime % 60)).padStart(2, "0")}
+                  </span>
+                </div>
+              </div>
+            )}
             <div className="absolute bottom-4 right-4">
               <Button
                 variant="secondary"
