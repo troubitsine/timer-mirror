@@ -1,5 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
-import { captureScreenshot, captureWebcam } from "@/lib/capture";
+import {
+  initializeScreenCapture,
+  captureScreenshot,
+  captureWebcam,
+  cleanupScreenCapture,
+} from "@/lib/capture";
 import { Card } from "./ui/card";
 import CameraFeed from "./CameraFeed";
 import TimerControls from "./TimerControls";
@@ -62,26 +67,30 @@ const TimerCard = ({
           return;
         }
 
-        if (captureCountRef.current.screenshots < 10) {
-          const screenshot = await captureScreenshot();
-          if (screenshot) {
-            setSessionData((prev) => ({
-              ...prev,
-              screenshots: [...prev.screenshots, screenshot],
-            }));
-            captureCountRef.current.screenshots++;
+        try {
+          if (captureCountRef.current.screenshots < 10) {
+            const screenshot = await captureScreenshot();
+            if (screenshot) {
+              setSessionData((prev) => ({
+                ...prev,
+                screenshots: [...prev.screenshots, screenshot],
+              }));
+              captureCountRef.current.screenshots++;
+            }
           }
-        }
 
-        if (captureCountRef.current.webcam < 4 && videoRef.current) {
-          const webcamPhoto = await captureWebcam(videoRef.current);
-          if (webcamPhoto) {
-            setSessionData((prev) => ({
-              ...prev,
-              webcamPhotos: [...prev.webcamPhotos, webcamPhoto],
-            }));
-            captureCountRef.current.webcam++;
+          if (captureCountRef.current.webcam < 4 && videoRef.current) {
+            const webcamPhoto = await captureWebcam(videoRef.current);
+            if (webcamPhoto) {
+              setSessionData((prev) => ({
+                ...prev,
+                webcamPhotos: [...prev.webcamPhotos, webcamPhoto],
+              }));
+              captureCountRef.current.webcam++;
+            }
           }
+        } catch (error) {
+          console.error("Error during capture:", error);
         }
       }, 30000); // Capture every 30 seconds
 
@@ -95,7 +104,13 @@ const TimerCard = ({
     };
   }, [isRunning]);
 
-  const handleStart = (duration: number) => {
+  const handleStart = async (duration: number) => {
+    const stream = await initializeScreenCapture();
+    if (!stream) {
+      console.error("Failed to initialize screen capture");
+      return;
+    }
+
     setIsRunning(true);
     setRemainingTime(duration * 60);
     setSessionData({ screenshots: [], webcamPhotos: [] });
@@ -109,6 +124,7 @@ const TimerCard = ({
 
   const handleReset = () => {
     setIsRunning(false);
+    cleanupScreenCapture();
     onSessionEnd(sessionData);
   };
 

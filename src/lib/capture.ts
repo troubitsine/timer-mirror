@@ -1,27 +1,56 @@
-export async function captureScreenshot(): Promise<string> {
+let screenVideo: HTMLVideoElement | null = null;
+
+export async function initializeScreenCapture(): Promise<MediaStream | null> {
   try {
     const stream = await navigator.mediaDevices.getDisplayMedia({
-      preferCurrentTab: true,
+      video: {
+        displaySurface: "monitor",
+        logicalSurface: true,
+      },
     });
-    const video = document.createElement("video");
-    video.srcObject = stream;
 
-    return new Promise((resolve, reject) => {
-      video.onloadedmetadata = () => {
-        video.play();
-        const canvas = document.createElement("canvas");
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const ctx = canvas.getContext("2d");
-        ctx?.drawImage(video, 0, 0);
-        stream.getTracks().forEach((track) => track.stop());
-        resolve(canvas.toDataURL("image/jpeg"));
-      };
-      video.onerror = reject;
-    });
+    screenVideo = document.createElement("video");
+    screenVideo.style.display = "none";
+    screenVideo.srcObject = stream;
+    document.body.appendChild(screenVideo);
+
+    await screenVideo.play();
+    return stream;
   } catch (error) {
-    console.error("Error capturing screenshot:", error);
-    return "";
+    console.error("Error initializing screen capture:", error);
+    return null;
+  }
+}
+
+export function captureScreenshot(): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (!screenVideo) {
+      reject("Screen capture not initialized");
+      return;
+    }
+
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = screenVideo.videoWidth;
+      canvas.height = screenVideo.videoHeight;
+      const ctx = canvas.getContext("2d");
+      ctx?.drawImage(screenVideo, 0, 0);
+      resolve(canvas.toDataURL("image/jpeg"));
+    } catch (error) {
+      console.error("Error capturing screenshot:", error);
+      reject(error);
+    }
+  });
+}
+
+export function cleanupScreenCapture() {
+  if (screenVideo) {
+    const stream = screenVideo.srcObject as MediaStream;
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+    }
+    screenVideo.remove();
+    screenVideo = null;
   }
 }
 
