@@ -36,7 +36,11 @@ const TimerCard = ({
         setRemainingTime((prev) => {
           if (prev <= 1) {
             clearInterval(timer);
-            handleReset();
+            const finalData = sessionData;
+            setTimeout(() => {
+              setIsRunning(false);
+              onSessionEnd(finalData);
+            }, 3000); // Give time for the end message to show
             return 0;
           }
           return prev - 1;
@@ -44,7 +48,7 @@ const TimerCard = ({
       }, 1000);
     }
     return () => clearInterval(timer);
-  }, [isRunning, remainingTime]);
+  }, [isRunning, remainingTime, sessionData, onSessionEnd]);
 
   // Capture interval effect
   useEffect(() => {
