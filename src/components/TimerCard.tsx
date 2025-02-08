@@ -2,11 +2,13 @@ import React, { useState, useRef, useEffect } from "react";
 import { initializeMediaCapture, scheduleCaptures } from "@/lib/mediaCapture";
 import { Card } from "./ui/card";
 import CameraFeed from "./CameraFeed";
-import TimerControls from "./TimerControls";
 
 interface TimerCardProps {
   onSessionStart?: () => void;
-  onSessionEnd?: () => void;
+  onSessionEnd?: (data: {
+    screenshots: string[];
+    webcamPhotos: string[];
+  }) => void;
   onCameraPermissionGranted?: () => void;
   onCameraPermissionDenied?: () => void;
 }
@@ -26,30 +28,7 @@ const TimerCard = ({
     webcamPhotos: string[];
   }>({ screenshots: [], webcamPhotos: [] });
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const timerRef = useRef<NodeJS.Timeout>();
   const captureCleanupRef = useRef<(() => void) | undefined>();
-
-  // Countdown timer effect
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (isRunning && remainingTime > 0) {
-      timer = setInterval(() => {
-        setRemainingTime((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            const finalData = sessionData;
-            setTimeout(() => {
-              setIsRunning(false);
-              onSessionEnd(finalData);
-            }, 3000); // Give time for the end message to show
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(timer);
-  }, [isRunning, remainingTime, sessionData, onSessionEnd]);
 
   // Capture scheduling effect
   useEffect(() => {
@@ -89,21 +68,21 @@ const TimerCard = ({
     setSessionDuration(totalDurationSec);
     setRemainingTime(totalDurationSec);
     setSessionData({ screenshots: [], webcamPhotos: [] });
+    setIsRunning(true); // Set this first
     onSessionStart();
-    setIsRunning(true);
   };
 
-  const handlePause = () => {
-    setIsRunning(false);
-  };
-
-  const handleReset = () => {
-    setIsRunning(false);
+  const handleSessionComplete = () => {
     if (captureCleanupRef.current) {
       captureCleanupRef.current();
       captureCleanupRef.current = undefined;
     }
-    onSessionEnd(sessionData);
+    setIsRunning(false);
+    // Use the callback form to ensure we have the latest state
+    setSessionData((currentData) => {
+      onSessionEnd(currentData);
+      return currentData;
+    });
   };
 
   return (
@@ -116,22 +95,8 @@ const TimerCard = ({
           onTaskNameChange={setTaskName}
           width={800}
           height={400}
-          isRunning={isRunning}
-          remainingTime={remainingTime}
-          taskName={taskName}
-        />
-      </div>
-
-      <div className="w-full">
-        <TimerControls
           onStart={handleStart}
-          onPause={handlePause}
-          onReset={handleReset}
-          isRunning={isRunning}
-          onTaskNameChange={setTaskName}
-          onDurationChange={(duration) =>
-            console.log("Duration changed:", duration)
-          }
+          onSessionComplete={handleSessionComplete}
         />
       </div>
     </Card>
