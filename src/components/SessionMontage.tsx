@@ -141,29 +141,31 @@ const SessionMontage = ({
             }}
             key="collage"
           >
-            <div className="bg-white rounded-[14px] overflow-hidden shadow-[rgba(21,_22,_31,_0.06)_0px_0.662406px_1.45729px_-0.583333px,_rgba(21,_22,_31,_0.063)_0px_2.51739px_5.53825px_-1.16667px,_rgba(21,_22,_31,_0.098)_0px_11px_24.2px_-1.75px]">
-              <div
-                className="grid w-full"
-                style={{
-                  gridTemplateColumns: `repeat(${Math.ceil(
-                    Math.sqrt(allPhotos.length),
-                  )}, 1fr)`,
-                }}
-              >
-                {allPhotos.map((photo, index) => (
-                  <div key={index} className="relative aspect-square">
-                    <img
-                      src={photo}
-                      alt={`Collage photo ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
+            <div className="bg-white rounded-[14px] p-2 overflow-hidden shadow-[rgba(21,_22,_31,_0.06)_0px_0.662406px_1.45729px_-0.583333px,_rgba(21,_22,_31,_0.063)_0px_2.51739px_5.53825px_-1.16667px,_rgba(21,_22,_31,_0.098)_0px_11px_24.2px_-1.75px]">
+              <div className="relative">
+                <div
+                  className="grid w-full ring-1 ring-inset ring-black/10 rounded-lg overflow-hidden"
+                  style={{
+                    gridTemplateColumns: `repeat(${Math.ceil(
+                      Math.sqrt(allPhotos.length),
+                    )}, 1fr)`,
+                  }}
+                >
+                  {allPhotos.map((photo, index) => (
+                    <div key={index} className="relative aspect-square">
+                      <img
+                        src={photo}
+                        alt={`Collage photo ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="bg-black/75 backdrop-blur-sm text-white px-4 py-2 rounded-lg text-sm font-medium shadow-md">
+                    {taskName} • {duration}{" "}
+                    {duration === 1 ? "minute" : "minutes"}
                   </div>
-                ))}
-              </div>
-              <div className="relative mt-4 mb-2 flex items-center justify-center">
-                <div className="bg-black/75 backdrop-blur-sm text-white px-6 py-2 rounded-full text-sm font-medium">
-                  {taskName} • {duration}{" "}
-                  {duration === 1 ? "minute" : "minutes"}
                 </div>
               </div>
             </div>
