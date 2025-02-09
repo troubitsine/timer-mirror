@@ -334,13 +334,13 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
               className="w-full h-full object-cover"
               style={{ width, height }}
             />
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-8 bg-black/30 backdrop-blur-[2px]">
-              <div className="w-full max-w-lg px-6">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/30 backdrop-blur-[2px]">
+              <div className="w-full max-w-lg">
                 <input
                   type="text"
                   value={taskName}
                   placeholder="Write down what you want to work on"
-                  className="w-full bg-black/50 backdrop-blur-lg text-white px-8 py-4 rounded-2xl text-lg text-left placeholder:text-white/55 border-2 border-white/5 focus:border-2 focus:border-white/80 focus:ring-0 focus:outline-none shadow-sm transition-colors duration-200 ease-in-out"
+                  className="w-full bg-black/50 backdrop-blur-lg text-white px-6 py-3 rounded-xl text-lg text-center placeholder:text-white/55 border-2 border-white/5 focus:border-2 focus:border-white/80 focus:ring-0 focus:outline-none shadow-sm transition-colors duration-200 ease-in-out"
                   readOnly={isRunning}
                   autoFocus
                   onChange={(e) => {
@@ -350,44 +350,46 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                 />
               </div>
               {isRunning ? (
-                <div className="bg-black/60 backdrop-blur-sm rounded-full w-32 h-32 flex items-center justify-center">
-                  <span className="text-4xl font-bold text-white">
+                <div className="bg-black/60 backdrop-blur-sm rounded-full w-28 h-28 flex items-center justify-center">
+                  <span className="text-3xl font-bold text-white">
                     {Math.floor(remainingTime / 60)}:
                     {String(Math.floor(remainingTime % 60)).padStart(2, "0")}
                   </span>
                 </div>
               ) : (
-                <div className="space-y-4 text-center w-full max-w-lg px-6">
-                  <div className="text-white/90 text-lg font-medium">
-                    Set your timer
-                  </div>
-                  <div className="w-full space-y-2">
-                    <div className="flex gap-4 justify-center">
-                      {[15, 30, 45, 60].map((mins) => (
-                        <button
-                          key={mins}
-                          onClick={() => setDuration(mins)}
-                          className="bg-black/60 backdrop-blur-sm text-white px-4 py-2 rounded-lg hover:bg-black/70 transition-colors"
-                        >
-                          {mins === 60 ? "1 hr" : `${mins} min`}
-                        </button>
-                      ))}
+                <div className="space-y-3 text-center w-full max-w-lg">
+                  <div className="bg-black/50 backdrop-blur-lg rounded-xl p-4 space-y-3">
+                    <div className="text-white/80 text-lg font-medium">
+                      Set your timer
                     </div>
-                    <input
-                      type="range"
-                      min="0.33333333"
-                      max="120"
-                      value={duration}
-                      onChange={(e) => setDuration(Number(e.target.value))}
-                      className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
-                    />
-                    <div className="text-white/90 text-sm">
-                      {duration < 1
-                        ? `${Math.round(duration * 60)} seconds`
-                        : `${Math.round(duration)} minutes`}
+                    <div className="w-full space-y-3">
+                      <div className="flex gap-2 justify-center">
+                        {[15, 30, 45, 60].map((mins) => (
+                          <button
+                            key={mins}
+                            onClick={() => setDuration(mins)}
+                            className="bg-black/20 backdrop-blur-sm text-white px-4 py-1.5 rounded-lg hover:bg-black/70 transition-colors text-sm font-medium"
+                          >
+                            {mins === 60 ? "1 hr" : `${mins} min`}
+                          </button>
+                        ))}
+                      </div>
+                      <input
+                        type="range"
+                        min="0.33333333"
+                        max="120"
+                        value={duration}
+                        onChange={(e) => setDuration(Number(e.target.value))}
+                        className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
+                      />
+                      <div className="text-white/90 text-xs">
+                        {duration < 1
+                          ? `${Math.round(duration * 60)} seconds`
+                          : `${Math.round(duration)} minutes`}
+                      </div>
                     </div>
                   </div>
-                  <div className="mt-8">
+                  <div className="mt-2">
                     <button
                       onClick={() => {
                         const durationInSeconds = duration * 60;
@@ -406,7 +408,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                           });
                         }, 1000);
                       }}
-                      className="bg-black/60 backdrop-blur-sm text-white px-8 py-3 rounded-full text-lg hover:bg-black/70 transition-colors"
+                      className="bg-black/60 backdrop-blur-sm text-white px-6 py-2 rounded-full text-base font-medium hover:bg-black/70 transition-colors"
                     >
                       Start focus session
                     </button>
