@@ -425,12 +425,11 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
             <div className="absolute bottom-4 right-4 flex gap-2">
               <Button
                 variant="secondary"
-                size="icon"
-                className="bg-background/80 backdrop-blur-sm"
+                className="bg-background/80 backdrop-blur-sm flex items-center gap-2 rounded-full"
                 onClick={enterPiP}
-                title="Open in floating window"
               >
                 <Maximize2 className="h-4 w-4" />
+                Open floating window
               </Button>
             </div>
           </div>
