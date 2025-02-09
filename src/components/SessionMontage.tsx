@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Card } from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Button } from "./ui/button";
-import { Grid, Play, Download, Image } from "lucide-react";
+import { Grid, Play, Download, Image, Layers } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface SessionMontageProps {
@@ -10,6 +10,69 @@ interface SessionMontageProps {
   webcamPhotos?: string[];
   onSave?: () => void;
 }
+
+interface AnimatedStackProps {
+  photos: string[];
+}
+
+const AnimatedStack = ({ photos }: AnimatedStackProps) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const startAnimation = () => {
+    setIsPlaying(true);
+    setCurrentIndex(0);
+  };
+
+  React.useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isPlaying && currentIndex < photos.length) {
+      timer = setTimeout(() => {
+        setCurrentIndex((prev) => prev + 1);
+      }, 300); // Add a slight delay between images
+    } else if (currentIndex >= photos.length) {
+      setIsPlaying(false);
+    }
+    return () => clearTimeout(timer);
+  }, [isPlaying, currentIndex, photos.length]);
+
+  return (
+    <div className="relative h-full flex items-center justify-center">
+      <div className="relative w-[250px] h-[180px]">
+        {photos.slice(0, currentIndex).map((photo, index) => (
+          <motion.div
+            key={index}
+            className="absolute inset-0"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{
+              opacity: 1,
+              y: 0,
+              rotate: Math.random() * 4 - 2,
+              scale: 1,
+            }}
+            transition={{ duration: 0.3 }}
+          >
+            <img
+              src={photo}
+              alt={`Stack photo ${index + 1}`}
+              className="w-full h-full object-cover rounded-lg shadow-[rgba(21,_22,_31,_0.06)_0px_0.662406px_1.45729px_-0.583333px,_rgba(21,_22,_31,_0.063)_0px_2.51739px_5.53825px_-1.16667px,_rgba(21,_22,_31,_0.098)_0px_11px_24.2px_-1.75px]"
+            />
+          </motion.div>
+        ))}
+      </div>
+      <Button
+        variant="default"
+        size="lg"
+        className="absolute bottom-8"
+        onClick={startAnimation}
+        disabled={isPlaying}
+      >
+        <Play className="h-4 w-4 mr-2" />
+        Play Animation
+      </Button>
+    </div>
+  );
+};
 
 const SessionMontage = ({
   screenshots = [
@@ -26,7 +89,9 @@ const SessionMontage = ({
   ],
   onSave = () => {},
 }: SessionMontageProps) => {
-  const [viewMode, setViewMode] = useState<"grid" | "slideshow">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "slideshow" | "animation">(
+    "grid",
+  );
   const [currentSlide, setCurrentSlide] = useState(0);
   const allPhotos = [...screenshots, ...webcamPhotos];
 
@@ -58,6 +123,13 @@ const SessionMontage = ({
             >
               <Play className="h-4 w-4" />
             </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setViewMode("animation")}
+            >
+              <Layers className="h-4 w-4" />
+            </Button>
             <Button variant="default" onClick={onSave}>
               <Download className="h-4 w-4 mr-2" />
               Save Montage
@@ -86,12 +158,12 @@ const SessionMontage = ({
                     <img
                       src={photo}
                       alt={`Capture ${index + 1}`}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover shadow-[rgba(21,_22,_31,_0.06)_0px_0.662406px_1.45729px_-0.583333px,_rgba(21,_22,_31,_0.063)_0px_2.51739px_5.53825px_-1.16667px,_rgba(21,_22,_31,_0.098)_0px_11px_24.2px_-1.75px]"
                     />
                   </motion.div>
                 ))}
               </div>
-            ) : (
+            ) : viewMode === "slideshow" ? (
               <div className="relative h-full flex items-center justify-center">
                 <Button
                   variant="ghost"
@@ -109,7 +181,7 @@ const SessionMontage = ({
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -100 }}
                   transition={{ duration: 0.3 }}
-                  className="max-h-[600px] rounded-lg shadow-lg"
+                  className="max-h-[250px] rounded-lg shadow-[rgba(21,_22,_31,_0.06)_0px_0.662406px_1.45729px_-0.583333px,_rgba(21,_22,_31,_0.063)_0px_2.51739px_5.53825px_-1.16667px,_rgba(21,_22,_31,_0.098)_0px_11px_24.2px_-1.75px]"
                 />
                 <Button
                   variant="ghost"
@@ -120,6 +192,8 @@ const SessionMontage = ({
                   <Image className="h-4 w-4" />
                 </Button>
               </div>
+            ) : (
+              <AnimatedStack photos={allPhotos} />
             )}
           </TabsContent>
 
@@ -136,7 +210,7 @@ const SessionMontage = ({
                   <img
                     src={screenshot}
                     alt={`Screenshot ${index + 1}`}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover shadow-[rgba(21,_22,_31,_0.06)_0px_0.662406px_1.45729px_-0.583333px,_rgba(21,_22,_31,_0.063)_0px_2.51739px_5.53825px_-1.16667px,_rgba(21,_22,_31,_0.098)_0px_11px_24.2px_-1.75px]"
                   />
                 </motion.div>
               ))}
@@ -156,7 +230,7 @@ const SessionMontage = ({
                   <img
                     src={photo}
                     alt={`Webcam photo ${index + 1}`}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover shadow-[rgba(21,_22,_31,_0.06)_0px_0.662406px_1.45729px_-0.583333px,_rgba(21,_22,_31,_0.063)_0px_2.51739px_5.53825px_-1.16667px,_rgba(21,_22,_31,_0.098)_0px_11px_24.2px_-1.75px]"
                   />
                 </motion.div>
               ))}
