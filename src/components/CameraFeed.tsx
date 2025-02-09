@@ -44,7 +44,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
     const [isRunning, setIsRunning] = useState(false);
     const [remainingTime, setRemainingTime] = useState(0);
     const [taskName, setTaskName] = useState("");
-    const [duration, setDuration] = useState(25);
+    const [duration, setDuration] = useState(25 * 60); // Store duration in seconds
     const timerRef = useRef<NodeJS.Timeout>();
 
     const startCamera = async () => {
@@ -367,7 +367,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                         {[15, 30, 45, 60].map((mins) => (
                           <button
                             key={mins}
-                            onClick={() => setDuration(mins)}
+                            onClick={() => setDuration(mins * 60)}
                             className="bg-black/20 backdrop-blur-sm text-white px-4 py-1.5 rounded-lg hover:bg-black/70 transition-colors text-sm font-medium"
                           >
                             {mins === 60 ? "1 hr" : `${mins} min`}
@@ -376,26 +376,26 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                       </div>
                       <input
                         type="range"
-                        min="0.33333333"
-                        max="120"
+                        min="20"
+                        max="7200"
+                        step="1"
                         value={duration}
                         onChange={(e) => setDuration(Number(e.target.value))}
                         className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
                       />
                       <div className="text-white/90 text-xs">
-                        {duration < 1
-                          ? `${Math.round(duration * 60)} seconds`
-                          : `${Math.round(duration)} minutes`}
+                        {duration < 60
+                          ? `${duration} seconds`
+                          : `${Math.floor(duration / 60)} minutes`}
                       </div>
                     </div>
                   </div>
                   <div className="mt-2">
                     <button
                       onClick={() => {
-                        const durationInSeconds = Math.floor(duration * 60);
                         setIsRunning(true);
-                        setRemainingTime(durationInSeconds);
-                        onStart(duration);
+                        setRemainingTime(duration);
+                        onStart(duration / 60); // Convert to minutes for the callback
 
                         // Start the countdown
                         const startTime = Date.now();
@@ -405,7 +405,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                           );
                           const newRemainingTime = Math.max(
                             0,
-                            durationInSeconds - elapsedSeconds,
+                            duration - elapsedSeconds,
                           );
 
                           setRemainingTime(newRemainingTime);
