@@ -43,20 +43,21 @@ const AnimatedStack = ({ photos }: AnimatedStackProps) => {
           <motion.div
             key={index}
             className="absolute inset-0"
-            initial={{ opacity: 0, y: -20 }}
+            style={{ rotate: `${Math.random() * 6 - 3}deg` }}
+            initial={{ opacity: 0, scale: 0.5 }}
             animate={{
               opacity: 1,
-              y: 0,
-              rotate: Math.random() * 4 - 2,
               scale: 1,
             }}
             transition={{ duration: 0.3 }}
           >
-            <img
-              src={photo}
-              alt={`Stack photo ${index + 1}`}
-              className="w-full h-full object-cover rounded-lg shadow-[rgba(21,_22,_31,_0.06)_0px_0.662406px_1.45729px_-0.583333px,_rgba(21,_22,_31,_0.063)_0px_2.51739px_5.53825px_-1.16667px,_rgba(21,_22,_31,_0.098)_0px_11px_24.2px_-1.75px]"
-            />
+            <div className="w-full h-full bg-white rounded-[14px] p-1 shadow-[rgba(21,_22,_31,_0.06)_0px_0.662406px_1.45729px_-0.583333px,_rgba(21,_22,_31,_0.063)_0px_2.51739px_5.53825px_-1.16667px,_rgba(21,_22,_31,_0.098)_0px_11px_24.2px_-1.75px]">
+              <img
+                src={photo}
+                alt={`Stack photo ${index + 1}`}
+                className="w-full h-full object-cover rounded-[12px] ring-[0.5px] ring-black/10"
+              />
+            </div>
           </motion.div>
         ))}
       </div>
