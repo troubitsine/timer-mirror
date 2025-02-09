@@ -88,7 +88,7 @@ const TimerCard = ({
   };
 
   return (
-    <Card className="w-[800px] bg-background p-6 space-y-6 shadow-xl rounded-xl">
+    <Card className="w-[800px] bg-background p-2 space-y-6 shadow-xl rounded-xl">
       <div className="w-full h-[400px]">
         <CameraFeed
           ref={videoRef}

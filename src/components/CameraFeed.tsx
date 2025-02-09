@@ -322,7 +322,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
     }, []);
 
     return (
-      <Card className="w-full h-full bg-background p-4 relative overflow-hidden">
+      <Card className="w-full h-full bg-background 0 relative  border-1 border-white/8 overflow-hidden shadow-sm rounded-lg">
         {hasPermission ? (
           <div className="relative w-full h-full rounded-lg overflow-hidden bg-muted">
             <video

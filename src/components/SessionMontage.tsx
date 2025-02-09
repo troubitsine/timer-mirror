@@ -19,6 +19,16 @@ interface AnimatedStackProps {
   duration?: number;
 }
 
+// Memoized button component to prevent re-renders
+const MemoizedButton = React.memo(
+  ({ onClick, showCollage }: { onClick: () => void; showCollage: boolean }) => (
+    <Button variant="default" size="lg" onClick={onClick}>
+      <Play className="h-4 w-4 mr-2" />
+      {showCollage ? "Replay Animation" : "Play Animation"}
+    </Button>
+  ),
+);
+
 const AnimatedStack = ({
   photos,
   taskName = "Focus Session",
@@ -29,30 +39,77 @@ const AnimatedStack = ({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isStackExiting, setIsStackExiting] = useState(false);
 
-  const startAnimation = () => {
-    setIsPlaying(true);
-    setCurrentIndex(0);
+  const outerTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+  const innerTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+  const playTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  const clearTimers = () => {
+    if (outerTimerRef.current) {
+      clearTimeout(outerTimerRef.current);
+      outerTimerRef.current = null;
+    }
+    if (innerTimerRef.current) {
+      clearTimeout(innerTimerRef.current);
+      innerTimerRef.current = null;
+    }
+    if (playTimerRef.current) {
+      clearTimeout(playTimerRef.current);
+      playTimerRef.current = null;
+    }
   };
 
+  const startAnimation = React.useCallback(() => {
+    // First, clear any existing timers
+    clearTimers();
+
+    // Reset to initial state immediately
+    setShowCollage(false);
+    setIsStackExiting(false);
+    setCurrentIndex(0);
+    setIsPlaying(false);
+
+    // Use requestAnimationFrame to ensure DOM has updated
+    requestAnimationFrame(() => {
+      // Then use setTimeout to ensure state updates have propagated
+      setTimeout(() => {
+        setIsPlaying(true);
+      }, 50);
+    });
+  }, []);
+
+  // Effect for handling animation timeouts
   React.useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (isPlaying && currentIndex < photos.length) {
-      timer = setTimeout(() => {
+    if (!isPlaying) return;
+
+    if (currentIndex < photos.length) {
+      // Handle stack animation
+      const timer = setTimeout(() => {
         setCurrentIndex((prev) => prev + 1);
       }, 300);
-    } else if (currentIndex >= photos.length) {
-      timer = setTimeout(() => {
+      outerTimerRef.current = timer;
+    } else {
+      // Handle transition to collage
+      const exitTimer = setTimeout(() => {
         setIsStackExiting(true);
-        setTimeout(() => {
+        const collageTimer = setTimeout(() => {
           setShowCollage(true);
+          setIsPlaying(false);
         }, 500);
+        innerTimerRef.current = collageTimer;
       }, 800);
+      outerTimerRef.current = exitTimer;
     }
-    return () => clearTimeout(timer);
   }, [isPlaying, currentIndex, photos.length]);
 
+  // Separate cleanup effect that only runs on unmount
+  React.useEffect(() => {
+    return () => {
+      clearTimers();
+    };
+  }, []);
+
   return (
-    <div className="relative h-full flex items-center justify-center overflow-hidden">
+    <div className="relative h-full flex flex-col items-center justify-center gap-8 overflow-hidden">
       {!showCollage ? (
         <motion.div
           className="relative w-[250px] h-[180px]"
@@ -121,18 +178,7 @@ const AnimatedStack = ({
           </div>
         </motion.div>
       )}
-      {!showCollage && (
-        <Button
-          variant="default"
-          size="lg"
-          className="absolute bottom-8"
-          onClick={startAnimation}
-          disabled={isPlaying}
-        >
-          <Play className="h-4 w-4 mr-2" />
-          Play Animation
-        </Button>
-      )}
+      <MemoizedButton onClick={startAnimation} showCollage={showCollage} />
     </div>
   );
 };
