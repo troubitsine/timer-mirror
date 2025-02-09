@@ -74,8 +74,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
               <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
               <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
             </svg>
-            <div class="pip-task-name">Session Complete!</div>
-            <div class="pip-timer-text">Great work! 🎉</div>
+            <div class="pip-task-name">Session Complete 🎉</div>
           </div>
         `;
         }
@@ -137,7 +136,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
             justify-content: center;
             gap: 8px;
             background: rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(4px);
+            backdrop-filter: blur(2px);
           }
           .pip-task-name {
             background: rgba(0, 0, 0, 0.6);
