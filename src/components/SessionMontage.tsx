@@ -1,47 +1,31 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card } from "./ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Button } from "./ui/button";
-import { Grid, Play, Download, Image, Layers } from "lucide-react";
+import { Play, Timer } from "lucide-react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 interface SessionMontageProps {
   screenshots?: string[];
   webcamPhotos?: string[];
-  onSave?: () => void;
   taskName?: string;
   duration?: number;
 }
 
-interface AnimatedStackProps {
-  photos: string[];
-  taskName?: string;
-  duration?: number;
-}
-
-// Memoized button component to prevent re-renders
-const MemoizedButton = React.memo(
-  ({ onClick, showCollage }: { onClick: () => void; showCollage: boolean }) => (
-    <Button variant="default" size="lg" onClick={onClick}>
-      <Play className="h-4 w-4 mr-2" />
-      {showCollage ? "Replay Animation" : "Play Animation"}
-    </Button>
-  ),
-);
-
-const AnimatedStack = ({
-  photos,
+const SessionMontage = ({
+  screenshots = [],
+  webcamPhotos = [],
   taskName = "Focus Session",
   duration = 25,
-}: AnimatedStackProps) => {
-  const [isPlaying, setIsPlaying] = useState(false);
+}: SessionMontageProps) => {
+  const [isPlaying, setIsPlaying] = useState(true);
   const [showCollage, setShowCollage] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isStackExiting, setIsStackExiting] = useState(false);
+  const allPhotos = [...screenshots, ...webcamPhotos];
 
   const outerTimerRef = React.useRef<NodeJS.Timeout | null>(null);
   const innerTimerRef = React.useRef<NodeJS.Timeout | null>(null);
-  const playTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
   const clearTimers = () => {
     if (outerTimerRef.current) {
@@ -52,17 +36,13 @@ const AnimatedStack = ({
       clearTimeout(innerTimerRef.current);
       innerTimerRef.current = null;
     }
-    if (playTimerRef.current) {
-      clearTimeout(playTimerRef.current);
-      playTimerRef.current = null;
-    }
   };
 
   const startAnimation = React.useCallback(() => {
-    // First, clear any existing timers
+    // First clear any existing timers
     clearTimers();
 
-    // Reset to initial state immediately
+    // Reset to initial state
     setShowCollage(false);
     setIsStackExiting(false);
     setCurrentIndex(0);
@@ -78,17 +58,15 @@ const AnimatedStack = ({
   }, []);
 
   // Effect for handling animation timeouts
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isPlaying) return;
 
-    if (currentIndex < photos.length) {
-      // Handle stack animation
+    if (currentIndex < allPhotos.length) {
       const timer = setTimeout(() => {
         setCurrentIndex((prev) => prev + 1);
       }, 300);
       outerTimerRef.current = timer;
     } else {
-      // Handle transition to collage
       const exitTimer = setTimeout(() => {
         setIsStackExiting(true);
         const collageTimer = setTimeout(() => {
@@ -99,262 +77,102 @@ const AnimatedStack = ({
       }, 800);
       outerTimerRef.current = exitTimer;
     }
-  }, [isPlaying, currentIndex, photos.length]);
+  }, [isPlaying, currentIndex, allPhotos.length]);
 
-  // Separate cleanup effect that only runs on unmount
-  React.useEffect(() => {
-    return () => {
-      clearTimers();
-    };
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => clearTimers();
   }, []);
 
   return (
-    <div className="relative h-full flex flex-col items-center justify-center gap-8 overflow-hidden">
-      {!showCollage ? (
-        <motion.div
-          className="relative w-[250px] h-[180px]"
-          animate={isStackExiting ? { scale: 0.8, y: 100, opacity: 0 } : {}}
-          transition={{ type: "spring", stiffness: 100, damping: 20, mass: 1 }}
+    <Card className="w-full min-h-[400px] bg-background p-6 relative">
+      <div className="absolute top-6 right-6">
+        <Button
+          variant="outline"
+          onClick={() => window.location.reload()}
+          className="flex items-center gap-2"
         >
-          {photos.slice(0, currentIndex).map((photo, index) => (
-            <motion.div
-              key={index}
-              className="absolute inset-0"
-              style={{ rotate: `${Math.random() * 6 - 3}deg` }}
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{
-                opacity: 1,
-                scale: 1,
-              }}
-              transition={{ duration: 0.2 }}
-            >
-              <div className="w-full h-full bg-white rounded-[14px] p-1 shadow-[rgba(21,_22,_31,_0.06)_0px_0.662406px_1.45729px_-0.583333px,_rgba(21,_22,_31,_0.063)_0px_2.51739px_5.53825px_-1.16667px,_rgba(21,_22,_31,_0.098)_0px_11px_24.2px_-1.75px]">
-                <img
-                  src={photo}
-                  alt={`Stack photo ${index + 1}`}
-                  className="w-full h-full object-cover rounded-[12px] ring-[0.5px] ring-black/10"
-                />
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
-      ) : (
-        <motion.div
-          className="w-full max-w-[400px]"
-          initial={{ scale: 0.8, opacity: 0, y: 50 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          transition={{
-            type: "spring",
-            stiffness: 100,
-            damping: 20,
-            mass: 0.8,
-            bounce: 0.25,
-          }}
-          key="collage"
-        >
-          <div className="bg-white rounded-[14px] overflow-hidden shadow-[rgba(21,_22,_31,_0.06)_0px_0.662406px_1.45729px_-0.583333px,_rgba(21,_22,_31,_0.063)_0px_2.51739px_5.53825px_-1.16667px,_rgba(21,_22,_31,_0.098)_0px_11px_24.2px_-1.75px]">
-            <div
-              className="grid w-full"
-              style={{
-                gridTemplateColumns: `repeat(${Math.ceil(Math.sqrt(photos.length))}, 1fr)`,
-              }}
-            >
-              {photos.map((photo, index) => (
-                <div key={index} className="relative aspect-square">
+          <Timer className="h-4 w-4" />
+          Start New Timer
+        </Button>
+      </div>
+      <div className="flex flex-col h-full items-center justify-center gap-8">
+        {!showCollage ? (
+          <motion.div
+            className="relative w-[250px] h-[180px]"
+            animate={isStackExiting ? { scale: 0.8, y: 100, opacity: 0 } : {}}
+            transition={{
+              type: "spring",
+              stiffness: 100,
+              damping: 20,
+              mass: 1,
+            }}
+          >
+            {allPhotos.slice(0, currentIndex).map((photo, index) => (
+              <motion.div
+                key={index}
+                className="absolute inset-0"
+                style={{ rotate: `${Math.random() * 6 - 3}deg` }}
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="w-full h-full bg-white rounded-[14px] p-1 shadow-[rgba(21,_22,_31,_0.06)_0px_0.662406px_1.45729px_-0.583333px,_rgba(21,_22,_31,_0.063)_0px_2.51739px_5.53825px_-1.16667px,_rgba(21,_22,_31,_0.098)_0px_11px_24.2px_-1.75px]">
                   <img
                     src={photo}
-                    alt={`Collage photo ${index + 1}`}
-                    className="w-full h-full object-cover"
+                    alt={`Stack photo ${index + 1}`}
+                    className="w-full h-full object-cover rounded-[12px] ring-[0.5px] ring-black/10"
                   />
                 </div>
-              ))}
-              <div className="absolute inset-0 flex items-center justify-center">
+              </motion.div>
+            ))}
+          </motion.div>
+        ) : (
+          <motion.div
+            className="w-full max-w-[400px]"
+            initial={{ scale: 0.8, opacity: 0, y: 50 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            transition={{
+              type: "spring",
+              stiffness: 100,
+              damping: 20,
+              mass: 0.8,
+              bounce: 0.25,
+            }}
+            key="collage"
+          >
+            <div className="bg-white rounded-[14px] overflow-hidden shadow-[rgba(21,_22,_31,_0.06)_0px_0.662406px_1.45729px_-0.583333px,_rgba(21,_22,_31,_0.063)_0px_2.51739px_5.53825px_-1.16667px,_rgba(21,_22,_31,_0.098)_0px_11px_24.2px_-1.75px]">
+              <div
+                className="grid w-full"
+                style={{
+                  gridTemplateColumns: `repeat(${Math.ceil(
+                    Math.sqrt(allPhotos.length),
+                  )}, 1fr)`,
+                }}
+              >
+                {allPhotos.map((photo, index) => (
+                  <div key={index} className="relative aspect-square">
+                    <img
+                      src={photo}
+                      alt={`Collage photo ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="relative mt-4 mb-2 flex items-center justify-center">
                 <div className="bg-black/75 backdrop-blur-sm text-white px-6 py-2 rounded-full text-sm font-medium">
                   {taskName} • {duration}{" "}
                   {duration === 1 ? "minute" : "minutes"}
                 </div>
               </div>
             </div>
-          </div>
-        </motion.div>
-      )}
-      <MemoizedButton onClick={startAnimation} showCollage={showCollage} />
-    </div>
-  );
-};
-
-const SessionMontage = ({
-  screenshots = [
-    "https://images.unsplash.com/photo-1611224923853-80b023f02d71",
-    "https://images.unsplash.com/photo-1611224923853-80b023f02d72",
-    "https://images.unsplash.com/photo-1611224923853-80b023f02d73",
-    "https://images.unsplash.com/photo-1611224923853-80b023f02d74",
-  ],
-  webcamPhotos = [
-    "https://images.unsplash.com/photo-1611224923853-80b023f02d75",
-    "https://images.unsplash.com/photo-1611224923853-80b023f02d76",
-    "https://images.unsplash.com/photo-1611224923853-80b023f02d77",
-    "https://images.unsplash.com/photo-1611224923853-80b023f02d78",
-  ],
-  onSave = () => {},
-  taskName = "Focus Session",
-  duration = 25,
-}: SessionMontageProps) => {
-  const [viewMode, setViewMode] = useState<"grid" | "slideshow" | "animation">(
-    "grid",
-  );
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const allPhotos = [...screenshots, ...webcamPhotos];
-
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % allPhotos.length);
-  };
-
-  const previousSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + allPhotos.length) % allPhotos.length);
-  };
-
-  return (
-    <Card className="w-full min-h-[400px] h-screen bg-background p-6">
-      <div className="flex flex-col h-full space-y-4">
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-semibold">Session Montage</h2>
-          <div className="flex space-x-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setViewMode("grid")}
-            >
-              <Grid className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setViewMode("slideshow")}
-            >
-              <Play className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setViewMode("animation")}
-            >
-              <Layers className="h-4 w-4" />
-            </Button>
-            <Button variant="default" onClick={onSave}>
-              <Download className="h-4 w-4 mr-2" />
-              Save Montage
-            </Button>
-          </div>
-        </div>
-
-        <Tabs defaultValue="all" className="flex-1">
-          <TabsList>
-            <TabsTrigger value="all">All Captures</TabsTrigger>
-            <TabsTrigger value="screenshots">Screenshots</TabsTrigger>
-            <TabsTrigger value="webcam">Webcam Photos</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="all" className="flex-1 overflow-y-auto p-4">
-            {viewMode === "grid" ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {allPhotos.map((photo, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.3, delay: index * 0.1 }}
-                    className="relative aspect-video p-3"
-                  >
-                    <img
-                      src={photo}
-                      alt={`Capture ${index + 1}`}
-                      className="w-full h-full object-cover rounded-lg shadow-[rgba(21,_22,_31,_0.06)_0px_0.662406px_1.45729px_-0.583333px,_rgba(21,_22,_31,_0.063)_0px_2.51739px_5.53825px_-1.16667px,_rgba(21,_22,_31,_0.098)_0px_11px_24.2px_-1.75px]"
-                    />
-                  </motion.div>
-                ))}
-              </div>
-            ) : viewMode === "slideshow" ? (
-              <div className="relative h-full flex items-center justify-center p-6">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute left-4 z-10"
-                  onClick={previousSlide}
-                >
-                  <Image className="h-4 w-4 rotate-180" />
-                </Button>
-                <motion.img
-                  key={currentSlide}
-                  src={allPhotos[currentSlide]}
-                  alt={`Slide ${currentSlide + 1}`}
-                  initial={{ opacity: 0, x: 100 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -100 }}
-                  transition={{ duration: 0.3 }}
-                  className="max-h-[250px] rounded-lg shadow-[rgba(21,_22,_31,_0.06)_0px_0.662406px_1.45729px_-0.583333px,_rgba(21,_22,_31,_0.063)_0px_2.51739px_5.53825px_-1.16667px,_rgba(21,_22,_31,_0.098)_0px_11px_24.2px_-1.75px]"
-                />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-4 z-10"
-                  onClick={nextSlide}
-                >
-                  <Image className="h-4 w-4" />
-                </Button>
-              </div>
-            ) : (
-              <AnimatedStack
-                photos={allPhotos}
-                taskName={taskName}
-                duration={duration}
-              />
-            )}
-          </TabsContent>
-
-          <TabsContent
-            value="screenshots"
-            className="h-full overflow-y-auto p-4"
-          >
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {screenshots.map((screenshot, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.3, delay: index * 0.1 }}
-                  className="relative aspect-video p-3"
-                >
-                  <img
-                    src={screenshot}
-                    alt={`Screenshot ${index + 1}`}
-                    className="w-full h-full object-cover rounded-lg shadow-[rgba(21,_22,_31,_0.06)_0px_0.662406px_1.45729px_-0.583333px,_rgba(21,_22,_31,_0.063)_0px_2.51739px_5.53825px_-1.16667px,_rgba(21,_22,_31,_0.098)_0px_11px_24.2px_-1.75px]"
-                  />
-                </motion.div>
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="webcam" className="h-full overflow-y-auto p-4">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {webcamPhotos.map((photo, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.3, delay: index * 0.1 }}
-                  className="relative aspect-video p-3"
-                >
-                  <img
-                    src={photo}
-                    alt={`Webcam photo ${index + 1}`}
-                    className="w-full h-full object-cover rounded-lg shadow-[rgba(21,_22,_31,_0.06)_0px_0.662406px_1.45729px_-0.583333px,_rgba(21,_22,_31,_0.063)_0px_2.51739px_5.53825px_-1.16667px,_rgba(21,_22,_31,_0.098)_0px_11px_24.2px_-1.75px]"
-                  />
-                </motion.div>
-              ))}
-            </div>
-          </TabsContent>
-        </Tabs>
+          </motion.div>
+        )}
+        <Button variant="default" size="lg" onClick={startAnimation}>
+          <Play className="h-4 w-4 mr-2" />
+          {showCollage ? "Replay Animation" : "Play Animation"}
+        </Button>
       </div>
     </Card>
   );
