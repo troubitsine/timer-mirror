@@ -9,13 +9,21 @@ interface SessionMontageProps {
   screenshots?: string[];
   webcamPhotos?: string[];
   onSave?: () => void;
+  taskName?: string;
+  duration?: number;
 }
 
 interface AnimatedStackProps {
   photos: string[];
+  taskName?: string;
+  duration?: number;
 }
 
-const AnimatedStack = ({ photos }: AnimatedStackProps) => {
+const AnimatedStack = ({
+  photos,
+  taskName = "Focus Session",
+  duration = 25,
+}: AnimatedStackProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showCollage, setShowCollage] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -105,7 +113,8 @@ const AnimatedStack = ({ photos }: AnimatedStackProps) => {
               ))}
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="bg-black/75 backdrop-blur-sm text-white px-6 py-2 rounded-full text-sm font-medium">
-                  Focus Session • 25 minutes
+                  {taskName} • {duration}{" "}
+                  {duration === 1 ? "minute" : "minutes"}
                 </div>
               </div>
             </div>
@@ -142,6 +151,8 @@ const SessionMontage = ({
     "https://images.unsplash.com/photo-1611224923853-80b023f02d78",
   ],
   onSave = () => {},
+  taskName = "Focus Session",
+  duration = 25,
 }: SessionMontageProps) => {
   const [viewMode, setViewMode] = useState<"grid" | "slideshow" | "animation">(
     "grid",
@@ -158,7 +169,7 @@ const SessionMontage = ({
   };
 
   return (
-    <Card className="w-full h-full bg-background p-6 overflow-hidden">
+    <Card className="w-full min-h-[400px] h-screen bg-background p-6">
       <div className="flex flex-col h-full space-y-4">
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-semibold">Session Montage</h2>
@@ -198,27 +209,27 @@ const SessionMontage = ({
             <TabsTrigger value="webcam">Webcam Photos</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="all" className="flex-1">
+          <TabsContent value="all" className="flex-1 overflow-y-auto p-4">
             {viewMode === "grid" ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {allPhotos.map((photo, index) => (
                   <motion.div
                     key={index}
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.3, delay: index * 0.1 }}
-                    className="relative aspect-video rounded-lg overflow-hidden"
+                    className="relative aspect-video p-3"
                   >
                     <img
                       src={photo}
                       alt={`Capture ${index + 1}`}
-                      className="w-full h-full object-cover shadow-[rgba(21,_22,_31,_0.06)_0px_0.662406px_1.45729px_-0.583333px,_rgba(21,_22,_31,_0.063)_0px_2.51739px_5.53825px_-1.16667px,_rgba(21,_22,_31,_0.098)_0px_11px_24.2px_-1.75px]"
+                      className="w-full h-full object-cover rounded-lg shadow-[rgba(21,_22,_31,_0.06)_0px_0.662406px_1.45729px_-0.583333px,_rgba(21,_22,_31,_0.063)_0px_2.51739px_5.53825px_-1.16667px,_rgba(21,_22,_31,_0.098)_0px_11px_24.2px_-1.75px]"
                     />
                   </motion.div>
                 ))}
               </div>
             ) : viewMode === "slideshow" ? (
-              <div className="relative h-full flex items-center justify-center">
+              <div className="relative h-full flex items-center justify-center p-6">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -247,44 +258,51 @@ const SessionMontage = ({
                 </Button>
               </div>
             ) : (
-              <AnimatedStack photos={allPhotos} />
+              <AnimatedStack
+                photos={allPhotos}
+                taskName={taskName}
+                duration={duration}
+              />
             )}
           </TabsContent>
 
-          <TabsContent value="screenshots" className="h-full">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
+          <TabsContent
+            value="screenshots"
+            className="h-full overflow-y-auto p-4"
+          >
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {screenshots.map((screenshot, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
-                  className="relative aspect-video rounded-lg overflow-hidden"
+                  className="relative aspect-video p-3"
                 >
                   <img
                     src={screenshot}
                     alt={`Screenshot ${index + 1}`}
-                    className="w-full h-full object-cover shadow-[rgba(21,_22,_31,_0.06)_0px_0.662406px_1.45729px_-0.583333px,_rgba(21,_22,_31,_0.063)_0px_2.51739px_5.53825px_-1.16667px,_rgba(21,_22,_31,_0.098)_0px_11px_24.2px_-1.75px]"
+                    className="w-full h-full object-cover rounded-lg shadow-[rgba(21,_22,_31,_0.06)_0px_0.662406px_1.45729px_-0.583333px,_rgba(21,_22,_31,_0.063)_0px_2.51739px_5.53825px_-1.16667px,_rgba(21,_22,_31,_0.098)_0px_11px_24.2px_-1.75px]"
                   />
                 </motion.div>
               ))}
             </div>
           </TabsContent>
 
-          <TabsContent value="webcam" className="h-full">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
+          <TabsContent value="webcam" className="h-full overflow-y-auto p-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {webcamPhotos.map((photo, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
-                  className="relative aspect-video rounded-lg overflow-hidden"
+                  className="relative aspect-video p-3"
                 >
                   <img
                     src={photo}
                     alt={`Webcam photo ${index + 1}`}
-                    className="w-full h-full object-cover shadow-[rgba(21,_22,_31,_0.06)_0px_0.662406px_1.45729px_-0.583333px,_rgba(21,_22,_31,_0.063)_0px_2.51739px_5.53825px_-1.16667px,_rgba(21,_22,_31,_0.098)_0px_11px_24.2px_-1.75px]"
+                    className="w-full h-full object-cover rounded-lg shadow-[rgba(21,_22,_31,_0.06)_0px_0.662406px_1.45729px_-0.583333px,_rgba(21,_22,_31,_0.063)_0px_2.51739px_5.53825px_-1.16667px,_rgba(21,_22,_31,_0.098)_0px_11px_24.2px_-1.75px]"
                   />
                 </motion.div>
               ))}

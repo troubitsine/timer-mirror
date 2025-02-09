@@ -392,20 +392,27 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                   <div className="mt-2">
                     <button
                       onClick={() => {
-                        const durationInSeconds = duration * 60;
+                        const durationInSeconds = Math.floor(duration * 60);
                         setIsRunning(true);
                         setRemainingTime(durationInSeconds);
                         onStart(duration);
 
                         // Start the countdown
+                        const startTime = Date.now();
                         timerRef.current = setInterval(() => {
-                          setRemainingTime((prev) => {
-                            if (prev <= 1) {
-                              clearInterval(timerRef.current);
-                              return 0;
-                            }
-                            return prev - 1;
-                          });
+                          const elapsedSeconds = Math.floor(
+                            (Date.now() - startTime) / 1000,
+                          );
+                          const newRemainingTime = Math.max(
+                            0,
+                            durationInSeconds - elapsedSeconds,
+                          );
+
+                          setRemainingTime(newRemainingTime);
+
+                          if (newRemainingTime <= 0) {
+                            clearInterval(timerRef.current);
+                          }
                         }, 1000);
                       }}
                       className="bg-black/60 backdrop-blur-sm text-white px-6 py-2 rounded-full text-base font-medium hover:bg-black/70 transition-colors"

@@ -12,6 +12,8 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
   const [sessionData, setSessionData] = useState({
     screenshots: [],
     webcamPhotos: [],
+    taskName: "",
+    duration: 0,
   });
 
   const handleSessionStart = () => {
@@ -21,6 +23,8 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
   const handleSessionEnd = (data: {
     screenshots: string[];
     webcamPhotos: string[];
+    taskName: string;
+    duration: number;
   }) => {
     setSessionData(data);
     setShowMontage(true);
@@ -70,6 +74,8 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
               <SessionMontage
                 screenshots={sessionData.screenshots}
                 webcamPhotos={sessionData.webcamPhotos}
+                taskName={sessionData.taskName}
+                duration={sessionData.duration}
                 onSave={() => console.log("Saving session montage...")}
               />
             </motion.div>

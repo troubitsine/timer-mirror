@@ -8,6 +8,8 @@ interface TimerCardProps {
   onSessionEnd?: (data: {
     screenshots: string[];
     webcamPhotos: string[];
+    taskName: string;
+    duration: number;
   }) => void;
   onCameraPermissionGranted?: () => void;
   onCameraPermissionDenied?: () => void;
@@ -68,7 +70,7 @@ const TimerCard = ({
     setSessionDuration(totalDurationSec);
     setRemainingTime(totalDurationSec);
     setSessionData({ screenshots: [], webcamPhotos: [] });
-    setIsRunning(true); // Set this first
+    setIsRunning(true);
     onSessionStart();
   };
 
@@ -78,10 +80,10 @@ const TimerCard = ({
       captureCleanupRef.current = undefined;
     }
     setIsRunning(false);
-    // Use the callback form to ensure we have the latest state
-    setSessionData((currentData) => {
-      onSessionEnd(currentData);
-      return currentData;
+    onSessionEnd({
+      ...sessionData,
+      taskName,
+      duration: Math.round(sessionDuration / 60),
     });
   };
 
