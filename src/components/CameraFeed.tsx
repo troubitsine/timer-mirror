@@ -414,7 +414,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                           }
                         }, 1000);
                       }}
-                      className="bg-black/60 backdrop-blur-sm text-white px-6 py-2 rounded-full text-base font-medium hover:bg-black/70 transition-colors"
+                      className="bg-black/60 backdrop-blur-sm text-white px-4 py-2 shadow-md rounded-xl text-base font-medium hover:bg-black/70 transition-colors"
                     >
                       Start focus session
                     </button>
