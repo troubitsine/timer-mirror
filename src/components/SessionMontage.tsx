@@ -19,6 +19,7 @@ const AnimatedStack = ({ photos }: AnimatedStackProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showCollage, setShowCollage] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isStackExiting, setIsStackExiting] = useState(false);
 
   const startAnimation = () => {
     setIsPlaying(true);
@@ -33,8 +34,11 @@ const AnimatedStack = ({ photos }: AnimatedStackProps) => {
       }, 300);
     } else if (currentIndex >= photos.length) {
       timer = setTimeout(() => {
-        setShowCollage(true);
-      }, 500);
+        setIsStackExiting(true);
+        setTimeout(() => {
+          setShowCollage(true);
+        }, 500);
+      }, 800);
     }
     return () => clearTimeout(timer);
   }, [isPlaying, currentIndex, photos.length]);
@@ -44,14 +48,8 @@ const AnimatedStack = ({ photos }: AnimatedStackProps) => {
       {!showCollage ? (
         <motion.div
           className="relative w-[250px] h-[180px]"
-          animate={
-            showCollage
-              ? {
-                  scale: 0,
-                  opacity: 0,
-                }
-              : {}
-          }
+          animate={isStackExiting ? { scale: 0.8, y: 100, opacity: 0 } : {}}
+          transition={{ type: "spring", stiffness: 100, damping: 20, mass: 1 }}
         >
           {photos.slice(0, currentIndex).map((photo, index) => (
             <motion.div
@@ -63,7 +61,7 @@ const AnimatedStack = ({ photos }: AnimatedStackProps) => {
                 opacity: 1,
                 scale: 1,
               }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.2 }}
             >
               <div className="w-full h-full bg-white rounded-[14px] p-1 shadow-[rgba(21,_22,_31,_0.06)_0px_0.662406px_1.45729px_-0.583333px,_rgba(21,_22,_31,_0.063)_0px_2.51739px_5.53825px_-1.16667px,_rgba(21,_22,_31,_0.098)_0px_11px_24.2px_-1.75px]">
                 <img
@@ -77,44 +75,39 @@ const AnimatedStack = ({ photos }: AnimatedStackProps) => {
         </motion.div>
       ) : (
         <motion.div
-          className="w-full max-w-[400px] bg-white rounded-[14px] overflow-hidden shadow-[rgba(21,_22,_31,_0.06)_0px_0.662406px_1.45729px_-0.583333px,_rgba(21,_22,_31,_0.063)_0px_2.51739px_5.53825px_-1.16667px,_rgba(21,_22,_31,_0.098)_0px_11px_24.2px_-1.75px]"
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="w-full max-w-[400px]"
+          initial={{ scale: 0.8, opacity: 0, y: 50 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          transition={{
+            type: "spring",
+            stiffness: 100,
+            damping: 20,
+            mass: 0.8,
+            bounce: 0.25,
+          }}
+          key="collage"
         >
-          <div className="relative w-full h-full">
+          <div className="bg-white rounded-[14px] overflow-hidden shadow-[rgba(21,_22,_31,_0.06)_0px_0.662406px_1.45729px_-0.583333px,_rgba(21,_22,_31,_0.063)_0px_2.51739px_5.53825px_-1.16667px,_rgba(21,_22,_31,_0.098)_0px_11px_24.2px_-1.75px]">
             <div
               className="grid w-full"
               style={{
                 gridTemplateColumns: `repeat(${Math.ceil(Math.sqrt(photos.length))}, 1fr)`,
-                gridTemplateRows: `repeat(${Math.ceil(Math.sqrt(photos.length))}, 1fr)`,
               }}
             >
               {photos.map((photo, index) => (
-                <motion.div
-                  key={index}
-                  className="relative overflow-hidden aspect-square"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.1, duration: 0.3 }}
-                >
+                <div key={index} className="relative aspect-square">
                   <img
                     src={photo}
                     alt={`Collage photo ${index + 1}`}
                     className="w-full h-full object-cover"
                   />
-                </motion.div>
+                </div>
               ))}
-            </div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <motion.div
-                className="bg-black/75 backdrop-blur-sm text-white px-6 py-2 rounded-full text-sm font-medium"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8, duration: 0.3 }}
-              >
-                Focus Session • 25 minutes
-              </motion.div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="bg-black/75 backdrop-blur-sm text-white px-6 py-2 rounded-full text-sm font-medium">
+                  Focus Session • 25 minutes
+                </div>
+              </div>
             </div>
           </div>
         </motion.div>
