@@ -340,8 +340,9 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                   type="text"
                   value={taskName}
                   placeholder="Write down what you want to work on"
-                  className="w-full bg-black/60 backdrop-blur-sm text-white px-6 py-4 rounded-full text-lg text-center placeholder:text-white/70 border-0 focus:ring-0 focus:outline-none"
+                  className="w-full bg-black/50 backdrop-blur-lg text-white px-8 py-4 rounded-2xl text-lg text-left placeholder:text-white/55 border-2 border-white/5 focus:border-2 focus:border-white/80 focus:ring-0 focus:outline-none shadow-sm transition-colors duration-200 ease-in-out"
                   readOnly={isRunning}
+                  autoFocus
                   onChange={(e) => {
                     setTaskName(e.target.value);
                     onTaskNameChange(e.target.value);
