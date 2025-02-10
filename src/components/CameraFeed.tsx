@@ -352,7 +352,10 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
       shadow-lg transition-all duration-200 ease-in-out z-10 ${isRunning ? "w-auto min-w-[200px]" : "w-full"}`}
                       readOnly={isRunning}
                       autoFocus
-                      onChange={(e) => setTaskName(e.target.value)}
+                      onChange={(e) => {
+                        setTaskName(e.target.value);
+                        onTaskNameChange(e.target.value);
+                      }}
                     />
 
                     {/* Gradient overlay for border effect */}
@@ -362,7 +365,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
               </div>
               {isRunning ? (
                 <div className="absolute inset-0 flex items-center justify-center w-full">
-                  <div className="relative w-fit max-w-[200px] isolate">
+                  <div className="relative w-fit max-w-[90%] h-auto max-h-60 isolate">
                     <div className="relative">
                       {/* Background layer to force blur isolation */}
                       <div className="absolute inset-0 bg-black/15 backdrop-blur-lg rounded-xl" />
