@@ -333,35 +333,55 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
               className="w-full h-full object-cover"
               style={{ width, height }}
             />
-            <div className="absolute inset-0 flex flex-col items-center pt-6 bg-black/30 backdrop-blur-[2px] gap-2">
-              <div className="w-full max-w-lg relative isolate">
-                <div className="relative">
-                  {/* Background layer to force blur isolation */}
-                  <div className="absolute inset-0 bg-black/15 backdrop-blur-lg rounded-xl" />
+            <div className="absolute inset-0 flex flex-col items-center bg-black/30 backdrop-blur-[2px]">
+              <div className="w-full flex flex-col items-center pt-6 mb-4">
+                <div className="w-full max-w-lg relative isolate">
+                  <div className="relative">
+                    {/* Background layer to force blur isolation */}
+                    <div className="absolute inset-0 bg-black/15 backdrop-blur-lg rounded-xl" />
 
-                  <input
-                    type="text"
-                    value={taskName}
-                    placeholder="Write down what you want to work on"
-                    className="relative w-full bg-gray-700/30 backdrop-blur-lg text-white px-6 py-3 rounded-xl text-lg text-center 
+                    <input
+                      type="text"
+                      value={taskName}
+                      placeholder="Write down what you want to work on"
+                      className="relative w-full bg-gray-700/30 backdrop-blur-lg text-white px-6 py-3 rounded-xl text-lg text-center 
       placeholder:text-white/55 border-2 border-white/10 hover:border-white/20
       focus:border-2 focus:border-white/80 focus:ring-0 focus:outline-none 
       shadow-lg transition-all duration-200 ease-in-out z-10"
-                    readOnly={isRunning}
-                    autoFocus
-                    onChange={(e) => setTaskName(e.target.value)}
-                  />
+                      readOnly={isRunning}
+                      autoFocus
+                      onChange={(e) => setTaskName(e.target.value)}
+                    />
 
-                  {/* Gradient overlay for border effect */}
-                  <div className="absolute inset-0 -z-10 bg-gradient-to-br from-white/30 via-transparent to-white/10 rounded-xl blur-sm" />
+                    {/* Gradient overlay for border effect */}
+                    <div className="absolute inset-0 -z-10 bg-gradient-to-br from-white/30 via-transparent to-white/10 rounded-xl blur-sm" />
+                  </div>
                 </div>
               </div>
               {isRunning ? (
-                <div className="bg-black/60 backdrop-blur-sm rounded-full w-28 h-28 flex items-center justify-center">
-                  <span className="text-3xl font-bold text-white">
-                    {Math.floor(remainingTime / 60)}:
-                    {String(Math.floor(remainingTime % 60)).padStart(2, "0")}
-                  </span>
+                <div className="absolute inset-0 flex items-center justify-center w-full">
+                  <div className="relative w-fit max-w-[200px] isolate">
+                    <div className="relative">
+                      {/* Background layer to force blur isolation */}
+                      <div className="absolute inset-0 bg-black/15 backdrop-blur-lg rounded-xl" />
+
+                      <div
+                        className="relative w-fit bg-gray-700/30 backdrop-blur-lg text-white px-6 py-4 rounded-xl text-lg
+                      border-1 border-white/10 z-10 space-y-3"
+                      >
+                        <div className="text-3xl font-bold text-white text-center">
+                          {Math.floor(remainingTime / 60)}:
+                          {String(Math.floor(remainingTime % 60)).padStart(
+                            2,
+                            "0",
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Gradient overlay for border effect */}
+                      <div className="absolute inset-0 -z-10 bg-gradient-to-br from-white/30 via-transparent to-white/10 rounded-xl blur-sm" />
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-3 text-center w-full max-w-lg">
