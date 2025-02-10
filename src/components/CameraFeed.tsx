@@ -335,7 +335,9 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
             />
             <div className="absolute inset-0 flex flex-col items-center bg-black/30 backdrop-blur-[2px]">
               <div className="w-full flex flex-col items-center pt-6 mb-4">
-                <div className="w-full max-w-lg relative isolate">
+                <div
+                  className={`relative isolate ${isRunning ? "w-auto" : "w-full max-w-lg"}`}
+                >
                   <div className="relative">
                     {/* Background layer to force blur isolation */}
                     <div className="absolute inset-0 bg-black/15 backdrop-blur-lg rounded-xl" />
@@ -344,10 +346,10 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                       type="text"
                       value={taskName}
                       placeholder="Write down what you want to work on"
-                      className="relative w-full bg-gray-700/30 backdrop-blur-lg text-white px-6 py-3 rounded-xl text-lg text-center 
+                      className={`relative bg-gray-700/30 backdrop-blur-lg text-white px-6 py-3 rounded-xl text-lg text-center 
       placeholder:text-white/55 border-2 border-white/10 hover:border-white/20
       focus:border-2 focus:border-white/80 focus:ring-0 focus:outline-none 
-      shadow-lg transition-all duration-200 ease-in-out z-10"
+      shadow-lg transition-all duration-200 ease-in-out z-10 ${isRunning ? "w-auto min-w-[200px]" : "w-full"}`}
                       readOnly={isRunning}
                       autoFocus
                       onChange={(e) => setTaskName(e.target.value)}
