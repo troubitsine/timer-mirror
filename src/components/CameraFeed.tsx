@@ -333,96 +333,172 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
               className="w-full h-full object-cover"
               style={{ width, height }}
             />
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/30 backdrop-blur-[2px]">
-              <div className="w-full max-w-lg">
-                <input
-                  type="text"
-                  value={taskName}
-                  placeholder="Write down what you want to work on"
-                  className="w-full bg-black/50 backdrop-blur-lg text-white px-6 py-3 rounded-xl text-lg text-center placeholder:text-white/55 border-2 border-white/5 focus:border-2 focus:border-white/80 focus:ring-0 focus:outline-none shadow-sm transition-colors duration-200 ease-in-out"
-                  readOnly={isRunning}
-                  autoFocus
-                  onChange={(e) => {
-                    setTaskName(e.target.value);
-                    onTaskNameChange(e.target.value);
-                  }}
-                />
+            <div className="absolute inset-0 flex flex-col items-center bg-black/30 backdrop-blur-[2px]">
+              <div className="w-full flex flex-col items-center pt-6 mb-4">
+                <div
+                  className={`relative isolate ${isRunning ? "w-auto" : "w-full max-w-lg"}`}
+                >
+                  <div className="relative">
+                    {/* Background layer to force blur isolation */}
+                    <div className="absolute inset-0 bg-black/15 backdrop-blur-lg rounded-xl" />
+
+                    <input
+                      type="text"
+                      value={taskName}
+                      placeholder="Write down what you want to work on"
+                      className={`relative bg-gray-700/30 backdrop-blur-lg text-white/90 px-6 py-3 rounded-xl text-lg text-center 
+      placeholder:text-white/55 border-2 border-white/10 hover:border-white/20
+      focus:border-2 focus:border-white/80 focus:ring-0 focus:outline-none 
+      shadow-lg transition-all duration-200 ease-in-out z-10 ${isRunning ? "w-auto min-w-[200px]" : "w-full"}`}
+                      readOnly={isRunning}
+                      autoFocus
+                      onChange={(e) => {
+                        setTaskName(e.target.value);
+                        onTaskNameChange(e.target.value);
+                      }}
+                    />
+
+                    {/* Gradient overlay for border effect */}
+                    <div className="absolute inset-0 -z-10 bg-gradient-to-br from-white/30 via-transparent to-white/10 rounded-xl blur-sm" />
+                  </div>
+                </div>
               </div>
               {isRunning ? (
-                <div className="bg-black/60 backdrop-blur-sm rounded-full w-28 h-28 flex items-center justify-center">
-                  <span className="text-3xl font-bold text-white">
-                    {Math.floor(remainingTime / 60)}:
-                    {String(Math.floor(remainingTime % 60)).padStart(2, "0")}
-                  </span>
+                <div className="absolute inset-0 flex items-center justify-center w-full">
+                  <div className="relative w-fit max-w-[90%] h-auto max-h-60 isolate">
+                    <div className="relative">
+                      {/* Background layer to force blur isolation */}
+                      <div className="absolute inset-0 bg-black/15 backdrop-blur-lg rounded-xl" />
+
+                      <div
+                        className="relative w-fit bg-gray-700/30 backdrop-blur-lg text-white/90 px-6 py-4 rounded-xl text-lg
+                      border-1 border-white/10 z-10 space-y-3"
+                      >
+                        <div className="text-3xl font-bold text-white/90 text-center">
+                          {Math.floor(remainingTime / 60)}:
+                          {String(Math.floor(remainingTime % 60)).padStart(
+                            2,
+                            "0",
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Gradient overlay for border effect */}
+                      <div className="absolute inset-0 -z-10 bg-gradient-to-br from-white/30 via-transparent to-white/10 rounded-xl blur-sm" />
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-3 text-center w-full max-w-lg">
-                  <div className="bg-black/50 backdrop-blur-lg rounded-xl p-4 space-y-3">
-                    <div className="text-white/80 text-lg font-medium">
-                      Set your timer
-                    </div>
-                    <div className="w-full space-y-3">
-                      <div className="flex gap-2 justify-center">
-                        {[15, 30, 45, 60].map((mins) => (
-                          <button
-                            key={mins}
-                            onClick={() => setDuration(mins * 60)}
-                            className="bg-black/20 backdrop-blur-sm text-white px-4 py-1.5 rounded-lg hover:bg-black/70 transition-colors text-sm font-medium"
-                          >
-                            {mins === 60 ? "1 hr" : `${mins} min`}
-                          </button>
-                        ))}
+                  <div className="relative isolate">
+                    <div className="relative">
+                      {/* Background layer to force blur isolation */}
+                      <div className="absolute inset-0 bg-black/15 backdrop-blur-lg rounded-xl" />
+
+                      <div
+                        className="relative w-full bg-gray-700/30 backdrop-blur-lg text-white/90 px-6 py-4 rounded-xl text-lg
+                        border-1 border-white/10 z-10 space-y-3"
+                      >
+                        <div className="text-white/80 text-lg font-medium text-center">
+                          Set your timer
+                        </div>
+                        <div className="w-full space-y-3">
+                          <div className="flex gap-2 justify-center">
+                            {[15, 30, 45, 60].map((mins) => (
+                              <button
+                                key={mins}
+                                onClick={() => setDuration(mins * 60)}
+                                className="group relative px-4 py-1.5 rounded-lg text-sm font-medium text-white/90 transition-all duration-100 ease-in-out"
+                              >
+                                {/* Base layer with multiple gradients - made lighter */}
+                                <div className="absolute inset-0 rounded-lg bg-gradient-to-t from-gray-400/15 to-transparent opacity-80" />
+                                <div className="absolute inset-0 rounded-lg bg-gradient-to-b from-white/10 to-transparent" />
+                                <div className="absolute inset-0 rounded-lg bg-white/10" />
+
+                                {/* Hover state overlay - made darker */}
+                                <div className="absolute inset-0 rounded-lg bg-black/0 group-hover:bg-black/40 transition-colors duration-75" />
+
+                                {/* Content */}
+                                <span className="relative z-10">
+                                  {mins === 60 ? "1 hr" : `${mins} min`}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                          <input
+                            type="range"
+                            min="20"
+                            max="7200"
+                            step="1"
+                            value={duration}
+                            onChange={(e) =>
+                              setDuration(Number(e.target.value))
+                            }
+                            className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
+                          />
+                          <div className="text-white/90 text-xs text-center">
+                            {duration < 60
+                              ? `${duration} seconds`
+                              : `${Math.floor(duration / 60)} minutes`}
+                          </div>
+                        </div>
                       </div>
-                      <input
-                        type="range"
-                        min="20"
-                        max="7200"
-                        step="1"
-                        value={duration}
-                        onChange={(e) => setDuration(Number(e.target.value))}
-                        className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
-                      />
-                      <div className="text-white/90 text-xs">
-                        {duration < 60
-                          ? `${duration} seconds`
-                          : `${Math.floor(duration / 60)} minutes`}
-                      </div>
+
+                      {/* Gradient overlay for border effect */}
+                      <div className="absolute inset-0 -z-10 bg-gradient-to-br from-white/30 via-transparent to-white/10 rounded-xl blur-sm" />
                     </div>
                   </div>
                   <div className="mt-2">
-                    <button
-                      onClick={() => {
-                        setIsRunning(true);
-                        setRemainingTime(duration);
-                        onStart(duration / 60); // Convert to minutes for the callback
+                    <div className="relative w-full isolate">
+                      {/* Background layers for better blur and gradient effects */}
+                      <div className="absolute inset-0 rounded-full">
+                        <div className="absolute inset-0 rounded-full bg-gradient-to-t from-gray-400/15 to-transparent opacity-80" />
+                        <div className="absolute inset-0 rounded-full bg-gradient-to-b from-white/10 to-transparent" />
+                        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-white/5 via-transparent to-white/5" />
+                      </div>
 
-                        // Start the countdown
-                        const startTime = Date.now();
-                        timerRef.current = setInterval(() => {
-                          const elapsedSeconds = Math.floor(
-                            (Date.now() - startTime) / 1000,
-                          );
-                          const newRemainingTime = Math.max(
-                            0,
-                            duration - elapsedSeconds,
-                          );
+                      <button
+                        onClick={() => {
+                          setIsRunning(true);
+                          setRemainingTime(duration);
+                          onStart(duration / 60);
 
-                          setRemainingTime(newRemainingTime);
+                          const startTime = Date.now();
+                          timerRef.current = setInterval(() => {
+                            const elapsedSeconds = Math.floor(
+                              (Date.now() - startTime) / 1000,
+                            );
+                            const newRemainingTime = Math.max(
+                              0,
+                              duration - elapsedSeconds,
+                            );
 
-                          if (newRemainingTime <= 0) {
-                            clearInterval(timerRef.current);
-                          }
-                        }, 1000);
-                      }}
-                      className="bg-black/60 backdrop-blur-sm text-white px-4 py-2 shadow-md rounded-xl text-base font-medium hover:bg-black/70 transition-colors"
-                    >
-                      Start focus session
-                    </button>
+                            setRemainingTime(newRemainingTime);
+
+                            if (newRemainingTime <= 0) {
+                              clearInterval(timerRef.current);
+                            }
+                          }, 1000);
+                        }}
+                        className="relative w-full bg-gray-900/70 backdrop-blur-lg text-white px-6 py-3 rounded-full text-lg text-center 
+      border border-white/10 hover:border-white/20 
+      focus:border-2 focus:border-white/80 focus:ring-0 focus:outline-none 
+      shadow-lg transition-all duration-150 ease-in-out group"
+                      >
+                        {/* Hover overlay */}
+                        <div className="absolute inset-0 rounded-full bg-black/0 shadow-md group-hover:bg-black/30 transition-colors duration-300 ease-in-out" />
+
+                        {/* Content */}
+                        <span className="relative z-10">
+                          Start focus session
+                        </span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
             </div>
-            <div className="absolute bottom-4 right-4 flex gap-2">
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
               <Button
                 variant="secondary"
                 className="bg-background/80 backdrop-blur-sm flex items-center gap-2 rounded-full"

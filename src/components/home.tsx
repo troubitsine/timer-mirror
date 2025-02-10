@@ -8,6 +8,16 @@ interface HomeProps {
 }
 
 const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
+  // Reset state when component mounts
+  React.useEffect(() => {
+    setShowMontage(false);
+    setSessionData({
+      screenshots: [],
+      webcamPhotos: [],
+      taskName: "",
+      duration: 0,
+    });
+  }, []);
   const [showMontage, setShowMontage] = useState(false);
   const [sessionData, setSessionData] = useState({
     screenshots: [],
