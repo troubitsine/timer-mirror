@@ -333,7 +333,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
               className="w-full h-full object-cover"
               style={{ width, height }}
             />
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/30 backdrop-blur-[2px]">
+            <div className="absolute inset-0 flex flex-col items-center pt-6 bg-black/30 backdrop-blur-[2px] gap-2">
               <div className="w-full max-w-lg relative isolate">
                 <div className="relative">
                   {/* Background layer to force blur isolation */}
@@ -424,39 +424,56 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                     </div>
                   </div>
                   <div className="mt-2">
-                    <button
-                      onClick={() => {
-                        setIsRunning(true);
-                        setRemainingTime(duration);
-                        onStart(duration / 60); // Convert to minutes for the callback
+                    <div className="relative w-full isolate">
+                      {/* Background layers for better blur and gradient effects */}
+                      <div className="absolute inset-0 rounded-full">
+                        <div className="absolute inset-0 rounded-full bg-gradient-to-t from-gray-400/15 to-transparent opacity-80" />
+                        <div className="absolute inset-0 rounded-full bg-gradient-to-b from-white/10 to-transparent" />
+                        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-white/5 via-transparent to-white/5" />
+                      </div>
 
-                        // Start the countdown
-                        const startTime = Date.now();
-                        timerRef.current = setInterval(() => {
-                          const elapsedSeconds = Math.floor(
-                            (Date.now() - startTime) / 1000,
-                          );
-                          const newRemainingTime = Math.max(
-                            0,
-                            duration - elapsedSeconds,
-                          );
+                      <button
+                        onClick={() => {
+                          setIsRunning(true);
+                          setRemainingTime(duration);
+                          onStart(duration / 60);
 
-                          setRemainingTime(newRemainingTime);
+                          const startTime = Date.now();
+                          timerRef.current = setInterval(() => {
+                            const elapsedSeconds = Math.floor(
+                              (Date.now() - startTime) / 1000,
+                            );
+                            const newRemainingTime = Math.max(
+                              0,
+                              duration - elapsedSeconds,
+                            );
 
-                          if (newRemainingTime <= 0) {
-                            clearInterval(timerRef.current);
-                          }
-                        }, 1000);
-                      }}
-                      className="bg-black/60 backdrop-blur-sm text-white px-4 py-2 shadow-md rounded-xl text-base font-medium hover:bg-black/70 transition-colors"
-                    >
-                      Start focus session
-                    </button>
+                            setRemainingTime(newRemainingTime);
+
+                            if (newRemainingTime <= 0) {
+                              clearInterval(timerRef.current);
+                            }
+                          }, 1000);
+                        }}
+                        className="relative w-full bg-gray-900/60 backdrop-blur-lg text-white px-6 py-3 rounded-full text-lg text-center 
+      border border-white/10 hover:border-white/20 
+      focus:border-2 focus:border-white/80 focus:ring-0 focus:outline-none 
+      shadow-lg transition-all duration-150 ease-in-out group"
+                      >
+                        {/* Hover overlay */}
+                        <div className="absolute inset-0 rounded-full bg-black/0 shadow-md group-hover:bg-black/30 transition-colors duration-300 ease-in-out" />
+
+                        {/* Content */}
+                        <span className="relative z-10">
+                          Start focus session
+                        </span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
             </div>
-            <div className="absolute bottom-4 right-4 flex gap-2">
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
               <Button
                 variant="secondary"
                 className="bg-background/80 backdrop-blur-sm flex items-center gap-2 rounded-full"
