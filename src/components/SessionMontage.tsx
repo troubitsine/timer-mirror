@@ -117,11 +117,11 @@ const SessionMontage = ({
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.2 }}
               >
-                <div className="w-full h-full bg-white rounded-[14px] p-1 shadow-[rgba(21,_22,_31,_0.06)_0px_0.662406px_1.45729px_-0.583333px,_rgba(21,_22,_31,_0.063)_0px_2.51739px_5.53825px_-1.16667px,_rgba(21,_22,_31,_0.098)_0px_11px_24.2px_-1.75px]">
+                <div className="w-full h-full bg-white rounded-[14px] p-1 ring-[0.5px] ring-black/5 shadow-[rgba(21,_22,_31,_0.015)_0px_0.662406px_1.45729px_-0.583333px,_rgba(21,_22,_31,_0.015)_0px_2.51739px_5.53825px_-1.16667px,_rgba(21,_22,_31,_0.025)_0px_11px_24.2px_-1.75px]">
                   <img
                     src={photo}
                     alt={`Stack photo ${index + 1}`}
-                    className="w-full h-full object-cover rounded-[12px] ring-[0.5px] ring-black/10"
+                    className="w-full h-full object-cover rounded-[12px] ring-[0.5px] ring-black/5"
                   />
                 </div>
               </motion.div>
@@ -141,10 +141,10 @@ const SessionMontage = ({
             }}
             key="collage"
           >
-            <div className="bg-white rounded-[14px] p-2 overflow-hidden shadow-[rgba(21,_22,_31,_0.06)_0px_0.662406px_1.45729px_-0.583333px,_rgba(21,_22,_31,_0.063)_0px_2.51739px_5.53825px_-1.16667px,_rgba(21,_22,_31,_0.098)_0px_11px_24.2px_-1.75px]">
+            <div className="bg-white rounded-[14px] p-2 overflow-hidden ring-[0.5px] ring-black/5 shadow-[rgba(21,_22,_31,_0.06)_0px_0.662406px_1.45729px_-0.583333px,_rgba(21,_22,_31,_0.063)_0px_2.51739px_5.53825px_-1.16667px,_rgba(21,_22,_31,_0.098)_0px_11px_24.2px_-1.75px]">
               <div className="relative">
                 <div
-                  className="grid w-full ring-1 ring-inset ring-black/10 rounded-lg overflow-hidden"
+                  className="grid w-full ring-[0.5px] ring-black/5 rounded-lg overflow-hidden"
                   style={{
                     gridTemplateColumns: `repeat(${Math.ceil(
                       Math.sqrt(allPhotos.length),
@@ -162,7 +162,7 @@ const SessionMontage = ({
                   ))}
                 </div>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="bg-black/75 backdrop-blur-sm text-white px-4 py-2 rounded-lg text-sm font-medium shadow-md">
+                  <div className="bg-gray-900/75 backdrop-blur-sm text-white/90 px-4 py-2 rounded-lg text-sm font-medium shadow-md">
                     {taskName} • {duration}{" "}
                     {duration === 1 ? "minute" : "minutes"}
                   </div>

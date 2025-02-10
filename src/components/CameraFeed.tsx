@@ -346,7 +346,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                       type="text"
                       value={taskName}
                       placeholder="Write down what you want to work on"
-                      className={`relative bg-gray-700/30 backdrop-blur-lg text-white px-6 py-3 rounded-xl text-lg text-center 
+                      className={`relative bg-gray-700/30 backdrop-blur-lg text-white/90 px-6 py-3 rounded-xl text-lg text-center 
       placeholder:text-white/55 border-2 border-white/10 hover:border-white/20
       focus:border-2 focus:border-white/80 focus:ring-0 focus:outline-none 
       shadow-lg transition-all duration-200 ease-in-out z-10 ${isRunning ? "w-auto min-w-[200px]" : "w-full"}`}
@@ -371,10 +371,10 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                       <div className="absolute inset-0 bg-black/15 backdrop-blur-lg rounded-xl" />
 
                       <div
-                        className="relative w-fit bg-gray-700/30 backdrop-blur-lg text-white px-6 py-4 rounded-xl text-lg
+                        className="relative w-fit bg-gray-700/30 backdrop-blur-lg text-white/90 px-6 py-4 rounded-xl text-lg
                       border-1 border-white/10 z-10 space-y-3"
                       >
-                        <div className="text-3xl font-bold text-white text-center">
+                        <div className="text-3xl font-bold text-white/90 text-center">
                           {Math.floor(remainingTime / 60)}:
                           {String(Math.floor(remainingTime % 60)).padStart(
                             2,
@@ -396,7 +396,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                       <div className="absolute inset-0 bg-black/15 backdrop-blur-lg rounded-xl" />
 
                       <div
-                        className="relative w-full bg-gray-700/30 backdrop-blur-lg text-white px-6 py-4 rounded-xl text-lg
+                        className="relative w-full bg-gray-700/30 backdrop-blur-lg text-white/90 px-6 py-4 rounded-xl text-lg
                         border-1 border-white/10 z-10 space-y-3"
                       >
                         <div className="text-white/80 text-lg font-medium text-center">
@@ -408,7 +408,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                               <button
                                 key={mins}
                                 onClick={() => setDuration(mins * 60)}
-                                className="group relative px-4 py-1.5 rounded-lg text-sm font-medium text-white transition-all duration-100 ease-in-out"
+                                className="group relative px-4 py-1.5 rounded-lg text-sm font-medium text-white/90 transition-all duration-100 ease-in-out"
                               >
                                 {/* Base layer with multiple gradients - made lighter */}
                                 <div className="absolute inset-0 rounded-lg bg-gradient-to-t from-gray-400/15 to-transparent opacity-80" />
@@ -480,7 +480,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                             }
                           }, 1000);
                         }}
-                        className="relative w-full bg-gray-900/60 backdrop-blur-lg text-white px-6 py-3 rounded-full text-lg text-center 
+                        className="relative w-full bg-gray-900/70 backdrop-blur-lg text-white px-6 py-3 rounded-full text-lg text-center 
       border border-white/10 hover:border-white/20 
       focus:border-2 focus:border-white/80 focus:ring-0 focus:outline-none 
       shadow-lg transition-all duration-150 ease-in-out group"
