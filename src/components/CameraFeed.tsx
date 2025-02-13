@@ -333,7 +333,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
               className="w-full h-full object-cover"
               style={{ width, height }}
             />
-            <div className="absolute inset-0 flex flex-col items-center bg-black/30 backdrop-blur-[2px]">
+            <div className="absolute inset-0 flex flex-col items-center bg-black/30">
               <div className="w-full flex flex-col items-center pt-6 mb-4">
                 <div
                   className={`relative isolate ${isRunning ? "w-auto" : "w-full max-w-lg"}`}
@@ -449,50 +449,46 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                     </div>
                   </div>
                   <div className="mt-2">
-                    <div className="relative w-full isolate">
-                      {/* Background layers for better blur and gradient effects */}
-                      <div className="absolute inset-0 rounded-full">
-                        <div className="absolute inset-0 rounded-full bg-gradient-to-t from-gray-400/15 to-transparent opacity-80" />
-                        <div className="absolute inset-0 rounded-full bg-gradient-to-b from-white/10 to-transparent" />
-                        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-white/5 via-transparent to-white/5" />
-                      </div>
+                    <div className="relative isolate">
+                      <div className="relative">
+                        {/* Background layer to force blur isolation */}
+                        <div className="absolute inset-0 bg-black/15 backdrop-blur-lg rounded-full" />
 
-                      <button
-                        onClick={() => {
-                          setIsRunning(true);
-                          setRemainingTime(duration);
-                          onStart(duration / 60);
+                        <button
+                          onClick={() => {
+                            setIsRunning(true);
+                            setRemainingTime(duration);
+                            onStart(duration / 60);
 
-                          const startTime = Date.now();
-                          timerRef.current = setInterval(() => {
-                            const elapsedSeconds = Math.floor(
-                              (Date.now() - startTime) / 1000,
-                            );
-                            const newRemainingTime = Math.max(
-                              0,
-                              duration - elapsedSeconds,
-                            );
+                            const startTime = Date.now();
+                            timerRef.current = setInterval(() => {
+                              const elapsedSeconds = Math.floor(
+                                (Date.now() - startTime) / 1000,
+                              );
+                              const newRemainingTime = Math.max(
+                                0,
+                                duration - elapsedSeconds,
+                              );
 
-                            setRemainingTime(newRemainingTime);
+                              setRemainingTime(newRemainingTime);
 
-                            if (newRemainingTime <= 0) {
-                              clearInterval(timerRef.current);
-                            }
-                          }, 1000);
-                        }}
-                        className="relative w-full bg-gray-900/70 backdrop-blur-lg text-white px-6 py-3 rounded-full text-lg text-center 
-      border border-white/10 hover:border-white/20 
-      focus:border-2 focus:border-white/80 focus:ring-0 focus:outline-none 
-      shadow-lg transition-all duration-150 ease-in-out group"
-                      >
-                        {/* Hover overlay */}
-                        <div className="absolute inset-0 rounded-full bg-black/0 shadow-md group-hover:bg-black/30 transition-colors duration-300 ease-in-out" />
-
-                        {/* Content */}
-                        <span className="relative z-10">
+                              if (newRemainingTime <= 0) {
+                                clearInterval(timerRef.current);
+                              }
+                            }, 1000);
+                          }}
+                          className="relative w-full bg-gray-800/30 backdrop-blur-lg text-white/90 px-6 py-3 rounded-full text-lg text-center
+                            border-2 border-white/10 hover:border-white/20
+                            focus:border-2 focus:border-white/80 focus:ring-0 hover:bg-gray-800/40 focus:outline-none
+                            shadow-lg transition-all 
+                            duration-200 ease-in-out z-10"
+                        >
                           Start focus session
-                        </span>
-                      </button>
+                        </button>
+
+                        {/* Gradient overlay for border effect */}
+                        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-white/30 via-transparent to-white/10 rounded-full blur-sm" />
+                      </div>
                     </div>
                   </div>
                 </div>
