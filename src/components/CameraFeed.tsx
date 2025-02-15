@@ -126,6 +126,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
             width: 100%;
             height: 100%;
             object-fit: cover;
+            transform: rotateY(180deg);
           }
           .pip-timer {
             position: absolute;
@@ -136,7 +137,6 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
             justify-content: center;
             gap: 8px;
             background: rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(2px);
           }
           .pip-task-name {
             background: rgba(0, 0, 0, 0.6);
