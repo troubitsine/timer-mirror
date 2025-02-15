@@ -42,11 +42,13 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-b from-background to-background/80 p-8">
+    <div className="min-h-screen w-full bg-neutral-800 p-8">
       <div className="max-w-7xl mx-auto space-y-8">
         <header className="text-center space-y-2">
-          <h1 className="text-4xl font-bold tracking-tight">Focus Timer</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-4xl text-white/70 font-bold tracking-tight">
+            Focus Timer
+          </h1>
+          <p className="text-white/60">
             Stay focused and create a visual record of your work session
           </p>
         </header>
