@@ -83,10 +83,10 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
       <div className="relative z-10 w-full min-h-screen p-8">
         <div className="max-w-7xl mx-auto space-y-8">
           <header className="text-center space-y-2">
-            <h1 className="text-4xl text-white/90 font-bold tracking-tight">
+            <h1 className="text-4xl text-white/80 font-bold tracking-tight">
               Focus Timer
             </h1>
-            <p className="text-white/80">
+            <p className="text-white/70">
               Stay focused and create a visual record of your work session
             </p>
           </header>
