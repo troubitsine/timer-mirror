@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import TimerCard from "./TimerCard";
 import SessionMontage from "./SessionMontage";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,8 +8,10 @@ interface HomeProps {
 }
 
 const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
   // Reset state when component mounts
-  React.useEffect(() => {
+  useEffect(() => {
     setShowMontage(false);
     setSessionData({
       screenshots: [],
@@ -17,7 +19,28 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
       taskName: "",
       duration: 0,
     });
+
+    // Initialize camera
+    if (navigator.mediaDevices?.getUserMedia) {
+      navigator.mediaDevices
+        .getUserMedia({ video: true })
+        .then((stream) => {
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+          }
+        })
+        .catch((err) => console.error("Camera error:", err));
+    }
+
+    // Cleanup
+    return () => {
+      if (videoRef.current?.srcObject) {
+        const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
+        tracks.forEach((track) => track.stop());
+      }
+    };
   }, []);
+
   const [showMontage, setShowMontage] = useState(false);
   const [sessionData, setSessionData] = useState({
     screenshots: [],
@@ -42,57 +65,69 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-neutral-800 p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
-        <header className="text-center space-y-2">
-          <h1 className="text-4xl text-white/70 font-bold tracking-tight">
-            Focus Timer
-          </h1>
-          <p className="text-white/60">
-            Stay focused and create a visual record of your work session
-          </p>
-        </header>
+    <div className="min-h-screen w-full relative overflow-hidden">
+      {/* Background video */}
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        className="absolute inset-0 w-full h-full object-cover [transform:rotateY(180deg)] blur-md brightness-[0.35]"
+      />
 
-        <AnimatePresence mode="wait">
-          {!showMontage ? (
-            <motion.div
-              key="timer"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-              className="flex justify-center"
-            >
-              <TimerCard
-                onSessionStart={handleSessionStart}
-                onSessionEnd={handleSessionEnd}
-                onCameraPermissionGranted={() =>
-                  console.log("Camera permission granted")
-                }
-                onCameraPermissionDenied={() =>
-                  console.log("Camera permission denied")
-                }
-              />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="montage"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-              className="w-full max-w-6xl mx-auto"
-            >
-              <SessionMontage
-                screenshots={sessionData.screenshots}
-                webcamPhotos={sessionData.webcamPhotos}
-                taskName={sessionData.taskName}
-                duration={sessionData.duration}
-                onSave={() => console.log("Saving session montage...")}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+      {/* Content overlay */}
+      <div className="relative z-10 w-full min-h-screen p-8">
+        <div className="max-w-7xl mx-auto space-y-8">
+          <header className="text-center space-y-2">
+            <h1 className="text-4xl text-white/90 font-bold tracking-tight">
+              Focus Timer
+            </h1>
+            <p className="text-white/80">
+              Stay focused and create a visual record of your work session
+            </p>
+          </header>
+
+          <AnimatePresence mode="wait">
+            {!showMontage ? (
+              <motion.div
+                key="timer"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className="flex justify-center"
+              >
+                <TimerCard
+                  onSessionStart={handleSessionStart}
+                  onSessionEnd={handleSessionEnd}
+                  onCameraPermissionGranted={() =>
+                    console.log("Camera permission granted")
+                  }
+                  onCameraPermissionDenied={() =>
+                    console.log("Camera permission denied")
+                  }
+                />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="montage"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className="w-full max-w-6xl mx-auto"
+              >
+                <SessionMontage
+                  screenshots={sessionData.screenshots}
+                  webcamPhotos={sessionData.webcamPhotos}
+                  taskName={sessionData.taskName}
+                  duration={sessionData.duration}
+                  onSave={() => console.log("Saving session montage...")}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );

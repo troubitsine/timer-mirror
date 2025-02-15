@@ -330,7 +330,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
               autoPlay
               playsInline
               muted
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover [transform:rotateY(180deg)]"
               style={{ width, height }}
             />
             <div className="absolute inset-0 flex flex-col items-center bg-black/30">
