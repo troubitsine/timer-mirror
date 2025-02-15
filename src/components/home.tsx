@@ -66,14 +66,18 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
 
   return (
     <div className="min-h-screen w-full relative overflow-hidden">
-      {/* Background video */}
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        muted
-        className="absolute inset-0 w-full h-full object-cover [transform:rotateY(180deg)] blur-md brightness-[0.35]"
-      />
+      {/* Background video with overflow hidden container */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute inset-0 scale-[1.1]">
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className="absolute inset-0 w-full h-full object-cover [transform:rotateY(180deg)] blur-md brightness-[0.35]"
+          />
+        </div>
+      </div>
 
       {/* Content overlay */}
       <div className="relative z-10 w-full min-h-screen p-8">
