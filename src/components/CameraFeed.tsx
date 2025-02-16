@@ -35,6 +35,9 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
     },
     ref,
   ) => {
+    const [selectedDuration, setSelectedDuration] = useState<number | null>(
+      null,
+    );
     const localVideoRef = useRef<HTMLVideoElement>(null);
     const videoRef =
       (ref as React.RefObject<HTMLVideoElement>) || localVideoRef;
@@ -396,7 +399,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                       <div className="absolute inset-0 bg-black/15 backdrop-blur-lg rounded-xl" />
 
                       <div
-                        className="relative w-full bg-gray-700/30 backdrop-blur-lg text-white/90 px-6 py-4 rounded-xl text-lg
+                        className="relative w-full bg-neutral-800/50 backdrop-blur-lg text-white/90 px-6 py-4 rounded-xl text-lg
                         border-1 border-white/10 z-10 space-y-3"
                       >
                         <div className="text-white/80 text-lg font-medium text-center">
@@ -407,8 +410,11 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                             {[15, 30, 45, 60].map((mins) => (
                               <button
                                 key={mins}
-                                onClick={() => setDuration(mins * 60)}
-                                className="group relative px-4 py-1.5 rounded-lg text-sm font-medium text-white/90 transition-all duration-100 ease-in-out"
+                                onClick={() => {
+                                  setDuration(mins * 60);
+                                  setSelectedDuration(mins);
+                                }}
+                                className={`group relative px-4 py-1.5 rounded-lg text-sm font-medium text-white/90 transition-all duration-100 ease-in-out ${selectedDuration === mins ? "inner-stroke-white-20-lg bg-neutral-800/55" : ""}`}
                               >
                                 {/* Base layer with multiple gradients - made lighter */}
                                 <div className="absolute inset-0 rounded-lg bg-gradient-to-t from-gray-400/15 to-transparent opacity-80" />
@@ -416,7 +422,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                                 <div className="absolute inset-0 rounded-lg bg-white/10" />
 
                                 {/* Hover state overlay - made darker */}
-                                <div className="absolute inset-0 rounded-lg bg-black/0 group-hover:bg-black/40 transition-colors duration-75" />
+                                <div className="absolute inset-0 rounded-lg bg-black/0 group-hover:bg-neutral-800/30 transition-colors duration-75" />
 
                                 {/* Content */}
                                 <span className="relative z-10">
@@ -427,13 +433,14 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                           </div>
                           <input
                             type="range"
-                            min="20"
+                            min="300"
                             max="7200"
-                            step="1"
+                            step="300"
                             value={duration}
-                            onChange={(e) =>
-                              setDuration(Number(e.target.value))
-                            }
+                            onChange={(e) => {
+                              setDuration(Number(e.target.value));
+                              setSelectedDuration(null);
+                            }}
                             className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
                           />
                           <div className="text-white/90 text-xs text-center">
