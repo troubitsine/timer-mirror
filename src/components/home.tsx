@@ -78,10 +78,9 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
           />
         </div>
       </div>
-
       {/* Content overlay */}
-      <div className="relative z-10 w-full min-h-screen p-8">
-        <div className="max-w-7xl mx-auto space-y-8">
+      <div className="relative z-10 w-full min-h-screen p-8 flex items-center pb-32">
+        <div className="max-w-7xl w-full mx-auto space-y-8">
           <header className="text-center space-y-2">
             <h1 className="text-4xl text-white/80 font-bold tracking-tight">
               Focus Timer
