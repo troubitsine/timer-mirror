@@ -68,30 +68,37 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
     <div className="min-h-screen w-full relative overflow-hidden">
       {/* Background video with overflow hidden container */}
       <div className="absolute inset-0 overflow-hidden">
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className="absolute inset-0 w-full h-full object-cover [transform:rotateY(180deg)] brightness-[0.35]"
-        />
-        <div
-          className="absolute inset-0"
-          style={{
-            backdropFilter: "blur(12px)",
-            WebkitBackdropFilter: "blur(12px)",
-            backgroundColor: "rgba(0, 0, 0, 0.1)",
-          }}
-        />
+        {!showMontage && (
+          <>
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="absolute inset-0 w-full h-full object-cover [transform:rotateY(180deg)] brightness-[0.35]"
+            />
+            <div
+              className="absolute inset-0"
+              style={{
+                backdropFilter: "blur(12px)",
+                WebkitBackdropFilter: "blur(12px)",
+                backgroundColor: "rgba(0, 0, 0, 0.1)",
+              }}
+            />
+          </>
+        )}
+        {showMontage && <div className="absolute inset-0 bg-stone-50" />}
       </div>
       {/* Content overlay */}
       <div className="relative z-10 w-full min-h-screen p-8 flex items-center pb-32">
         <div className="max-w-7xl w-full mx-auto space-y-8">
           <header className="text-center space-y-2">
-            <h1 className="text-4xl text-white/80 font-bold tracking-tight">
+            <h1
+              className={`text-4xl font-bold tracking-tight ${showMontage ? "text-black/80" : "text-white/80"}`}
+            >
               Focus Timer
             </h1>
-            <p className="text-white/70">
+            <p className={showMontage ? "text-black/60" : "text-white/70"}>
               Stay focused and create a visual record of your work session
             </p>
           </header>

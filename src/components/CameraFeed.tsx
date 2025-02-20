@@ -461,6 +461,21 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
               )}
             </div>
 
+            {/* Secret end session button */}
+            {isRunning && (
+              <button
+                onClick={() => {
+                  if (timerRef.current) {
+                    clearInterval(timerRef.current);
+                  }
+                  setIsRunning(false);
+                  showEndMessage();
+                  onSessionComplete();
+                }}
+                className="absolute bottom-4 right-4 w-4 h-4 rounded-lg opacity-0 hover:opacity-100 hover:bg-white/20 transition-all duration-200"
+              />
+            )}
+
             {/* PiP button in bottom center */}
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
               <Button
