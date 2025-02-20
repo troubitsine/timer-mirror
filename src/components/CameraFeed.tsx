@@ -142,7 +142,9 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
             background: rgba(0, 0, 0, 0.3);
           }
           .pip-task-name {
-            background: rgba(0, 0, 0, 0.6);
+            background: rgb(23 23 23 / 0.5);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
             padding: 0.5rem 1rem;
             border-radius: 0.5rem;
             font-size: 1rem;
@@ -366,7 +368,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
               {/* Running state: show timer */}
               {isRunning ? (
                 <div className="absolute inset-0 flex items-center justify-center w-full">
-                  <div className="px-6 py-4 rounded-xl bg-black/30 inner-stroke-white-20">
+                  <div className="px-6 py-4 rounded-xl bg-gradient-to-b from-neutral-700/50 via-neutral-900/50 to-neutral-900/50  shadow-sm backdrop-blur-md border-none  inner-stroke-white-10-sm">
                     <div className="text-3xl font-bold text-white/90 text-center">
                       {Math.floor(remainingTime / 60)}:
                       {String(Math.floor(remainingTime % 60)).padStart(2, "0")}
