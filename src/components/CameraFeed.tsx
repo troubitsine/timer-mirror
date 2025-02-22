@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import TaskNameInput from "./TaskNameInput";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import {
@@ -10,7 +11,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "./ui/alert-dialog";
-import { Camera, CameraOff, Maximize2 } from "lucide-react";
+import { CameraOff, Maximize2 } from "lucide-react";
 
 interface CameraFeedProps {
   onPermissionGranted?: () => void;
@@ -35,6 +36,9 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
     },
     ref,
   ) => {
+    const [selectedDuration, setSelectedDuration] = useState<number | null>(
+      null,
+    );
     const localVideoRef = useRef<HTMLVideoElement>(null);
     const videoRef =
       (ref as React.RefObject<HTMLVideoElement>) || localVideoRef;
@@ -69,14 +73,14 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
         const timerDiv = pipWindow.document.querySelector(".pip-timer");
         if (timerDiv) {
           timerDiv.innerHTML = `
-          <div class="pip-end-message">
-            <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
-              <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
-              <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
-            </svg>
-            <div class="pip-task-name">Session Complete 🎉</div>
-          </div>
-        `;
+            <div class="pip-end-message">
+              <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+              </svg>
+              <div class="pip-task-name">Session Complete 🎉</div>
+            </div>
+          `;
         }
       }
     };
@@ -126,6 +130,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
             width: 100%;
             height: 100%;
             object-fit: cover;
+            transform: rotateY(180deg);
           }
           .pip-timer {
             position: absolute;
@@ -136,10 +141,11 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
             justify-content: center;
             gap: 8px;
             background: rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(2px);
           }
           .pip-task-name {
-            background: rgba(0, 0, 0, 0.6);
+            background: rgb(23 23 23 / 0.5);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
             padding: 0.5rem 1rem;
             border-radius: 0.5rem;
             font-size: 1rem;
@@ -322,186 +328,160 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
     }, []);
 
     return (
-      <Card className="w-full h-full bg-background 0 relative  border-1 border-white/8 overflow-hidden shadow-sm rounded-lg">
+      <Card className="w-full h-full bg-background relative border-none inner-stroke-black-10-sm overflow-hidden shadow-sm rounded-lg">
         {hasPermission ? (
-          <div className="relative w-full h-full rounded-lg overflow-hidden bg-muted">
+          <div className="relative w-full h-full  overflow-hidden">
+            {/* 1) No blur here on the camera feed */}
             <video
               ref={videoRef}
               autoPlay
               playsInline
               muted
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover [transform:rotateY(180deg)]"
               style={{ width, height }}
             />
-            <div className="absolute inset-0 flex flex-col items-center bg-black/30 backdrop-blur-[2px]">
-              <div className="w-full flex flex-col items-center pt-6 mb-4">
-                <div
-                  className={`relative isolate ${isRunning ? "w-auto" : "w-full max-w-lg"}`}
-                >
-                  <div className="relative">
-                    {/* Background layer to force blur isolation */}
-                    <div className="absolute inset-0 bg-black/15 backdrop-blur-lg rounded-xl" />
 
-                    <input
-                      type="text"
-                      value={taskName}
-                      placeholder="Write down what you want to work on"
-                      className={`relative bg-gray-700/30 backdrop-blur-lg text-white/90 px-6 py-3 rounded-xl text-lg text-center 
-      placeholder:text-white/55 border-2 border-white/10 hover:border-white/20
-      focus:border-2 focus:border-white/80 focus:ring-0 focus:outline-none 
-      shadow-lg transition-all duration-200 ease-in-out z-10 ${isRunning ? "w-auto min-w-[200px]" : "w-full"}`}
-                      readOnly={isRunning}
-                      autoFocus
-                      onChange={(e) => {
-                        setTaskName(e.target.value);
-                        onTaskNameChange(e.target.value);
-                      }}
-                    />
-
-                    {/* Gradient overlay for border effect */}
-                    <div className="absolute inset-0 -z-10 bg-gradient-to-br from-white/30 via-transparent to-white/10 rounded-xl blur-sm" />
-                  </div>
-                </div>
-              </div>
+            <div className="absolute inset-0 flex flex-col items-center bg-black/20">
               {isRunning ? (
-                <div className="absolute inset-0 flex items-center justify-center w-full">
-                  <div className="relative w-fit max-w-[90%] h-auto max-h-60 isolate">
-                    <div className="relative">
-                      {/* Background layer to force blur isolation */}
-                      <div className="absolute inset-0 bg-black/15 backdrop-blur-lg rounded-xl" />
-
-                      <div
-                        className="relative w-fit bg-gray-700/30 backdrop-blur-lg text-white/90 px-6 py-4 rounded-xl text-lg
-                      border-1 border-white/10 z-10 space-y-3"
-                      >
-                        <div className="text-3xl font-bold text-white/90 text-center">
-                          {Math.floor(remainingTime / 60)}:
-                          {String(Math.floor(remainingTime % 60)).padStart(
-                            2,
-                            "0",
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Gradient overlay for border effect */}
-                      <div className="absolute inset-0 -z-10 bg-gradient-to-br from-white/30 via-transparent to-white/10 rounded-xl blur-sm" />
-                    </div>
-                  </div>
+                <div className="w-full flex flex-col items-center pt-4 sm:pt-6 mb-2 sm:mb-4">
+                  <TaskNameInput
+                    value={taskName}
+                    readOnly
+                    isRunning={true}
+                    onChange={(value) => {
+                      setTaskName(value);
+                      onTaskNameChange(value);
+                    }}
+                  />
                 </div>
               ) : (
-                <div className="space-y-3 text-center w-full max-w-lg">
-                  <div className="relative isolate">
-                    <div className="relative">
-                      {/* Background layer to force blur isolation */}
-                      <div className="absolute inset-0 bg-black/15 backdrop-blur-lg rounded-xl" />
-
-                      <div
-                        className="relative w-full bg-gray-700/30 backdrop-blur-lg text-white/90 px-6 py-4 rounded-xl text-lg
-                        border-1 border-white/10 z-10 space-y-3"
-                      >
-                        <div className="text-white/80 text-lg font-medium text-center">
-                          Set your timer
-                        </div>
-                        <div className="w-full space-y-3">
-                          <div className="flex gap-2 justify-center">
-                            {[15, 30, 45, 60].map((mins) => (
-                              <button
-                                key={mins}
-                                onClick={() => setDuration(mins * 60)}
-                                className="group relative px-4 py-1.5 rounded-lg text-sm font-medium text-white/90 transition-all duration-100 ease-in-out"
-                              >
-                                {/* Base layer with multiple gradients - made lighter */}
-                                <div className="absolute inset-0 rounded-lg bg-gradient-to-t from-gray-400/15 to-transparent opacity-80" />
-                                <div className="absolute inset-0 rounded-lg bg-gradient-to-b from-white/10 to-transparent" />
-                                <div className="absolute inset-0 rounded-lg bg-white/10" />
-
-                                {/* Hover state overlay - made darker */}
-                                <div className="absolute inset-0 rounded-lg bg-black/0 group-hover:bg-black/40 transition-colors duration-75" />
-
-                                {/* Content */}
-                                <span className="relative z-10">
-                                  {mins === 60 ? "1 hr" : `${mins} min`}
-                                </span>
-                              </button>
-                            ))}
-                          </div>
-                          <input
-                            type="range"
-                            min="20"
-                            max="7200"
-                            step="1"
-                            value={duration}
-                            onChange={(e) =>
-                              setDuration(Number(e.target.value))
-                            }
-                            className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
-                          />
-                          <div className="text-white/90 text-xs text-center">
-                            {duration < 60
-                              ? `${duration} seconds`
-                              : `${Math.floor(duration / 60)} minutes`}
-                          </div>
-                        </div>
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 md:gap-3 p-3 sm:p-6 mb-4 sm:mb-12">
+                  <TaskNameInput
+                    value={taskName}
+                    autoFocus
+                    isRunning={false}
+                    onChange={(value) => {
+                      setTaskName(value);
+                      onTaskNameChange(value);
+                    }}
+                  />
+                  <div className="w-full max-w-lg space-y-1 md:space-y-3">
+                    <div className="px-4 sm:px-6 py-2 sm:py-3 rounded-xl bg-gradient-to-b from-neutral-700/50 via-neutral-900/50 to-neutral-900/50 shadow-sm backdrop-blur-md border-none inner-stroke-white-10-sm">
+                      <div className="text-white/80 text-base sm:text-lg text-center font-medium mb-2">
+                        Set your timer
                       </div>
-
-                      {/* Gradient overlay for border effect */}
-                      <div className="absolute inset-0 -z-10 bg-gradient-to-br from-white/30 via-transparent to-white/10 rounded-xl blur-sm" />
-                    </div>
-                  </div>
-                  <div className="mt-2">
-                    <div className="relative w-full isolate">
-                      {/* Background layers for better blur and gradient effects */}
-                      <div className="absolute inset-0 rounded-full">
-                        <div className="absolute inset-0 rounded-full bg-gradient-to-t from-gray-400/15 to-transparent opacity-80" />
-                        <div className="absolute inset-0 rounded-full bg-gradient-to-b from-white/10 to-transparent" />
-                        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-white/5 via-transparent to-white/5" />
+                      <div className="flex gap-2 justify-center mb-3">
+                        {[15, 30, 45, 60].map((mins) => (
+                          <button
+                            key={mins}
+                            onClick={() => {
+                              setDuration(mins * 60);
+                              setSelectedDuration(mins);
+                            }}
+                            className={`
+                            px-3 sm:px-4 py-1.5 rounded-lg text-sm font-medium text-white/90 
+                            inner-stroke-white-10-sm
+                            bg-gradient-to-t from-neutral-500/50 to-neutral-400/50 hover:bg-neutral-800/35
+                            transition-all 
+                            ${selectedDuration === mins ? "bg-black/60 inner-stroke-white-20-lg" : ""}
+                          `}
+                          >
+                            {mins === 60 ? "1 hr" : `${mins} min`}
+                          </button>
+                        ))}
                       </div>
-
-                      <button
-                        onClick={() => {
-                          setIsRunning(true);
-                          setRemainingTime(duration);
-                          onStart(duration / 60);
-
-                          const startTime = Date.now();
-                          timerRef.current = setInterval(() => {
-                            const elapsedSeconds = Math.floor(
-                              (Date.now() - startTime) / 1000,
-                            );
-                            const newRemainingTime = Math.max(
-                              0,
-                              duration - elapsedSeconds,
-                            );
-
-                            setRemainingTime(newRemainingTime);
-
-                            if (newRemainingTime <= 0) {
-                              clearInterval(timerRef.current);
-                            }
-                          }, 1000);
+                      <input
+                        type="range"
+                        min="300"
+                        max="7200"
+                        step="300"
+                        value={duration}
+                        onChange={(e) => {
+                          setDuration(Number(e.target.value));
+                          setSelectedDuration(null);
                         }}
-                        className="relative w-full bg-gray-900/70 backdrop-blur-lg text-white px-6 py-3 rounded-full text-lg text-center 
-      border border-white/10 hover:border-white/20 
-      focus:border-2 focus:border-white/80 focus:ring-0 focus:outline-none 
-      shadow-lg transition-all duration-150 ease-in-out group"
-                      >
-                        {/* Hover overlay */}
-                        <div className="absolute inset-0 rounded-full bg-black/0 shadow-md group-hover:bg-black/30 transition-colors duration-300 ease-in-out" />
+                        className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <div className="text-white/90 text-xs text-center mt-1 mb-1">
+                        {duration < 60
+                          ? `${duration} seconds`
+                          : `${Math.floor(duration / 60)} minutes`}
+                      </div>
+                    </div>
 
-                        {/* Content */}
-                        <span className="relative z-10">
-                          Start focus session
-                        </span>
-                      </button>
+                    <Button
+                      className={`
+                     px-6 py-4 sm:py-6 rounded-full w-full
+                     bg-neutral-800/50
+                     before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/10 before:to-transparent before:rounded-full
+                     backdrop-blur-md 
+                     hover:bg-neutral-800/60
+                     text-white/85 text-sm sm:text-md 
+                     inner-stroke-white-10-sm
+                     border-none
+                     transition-all
+                    `}
+                      onClick={() => {
+                        setIsRunning(true);
+                        setRemainingTime(duration);
+                        onStart(duration / 60);
+
+                        const startTime = Date.now();
+                        timerRef.current = setInterval(() => {
+                          const elapsedSeconds = Math.floor(
+                            (Date.now() - startTime) / 1000,
+                          );
+                          const newRemainingTime = Math.max(
+                            0,
+                            duration - elapsedSeconds,
+                          );
+
+                          setRemainingTime(newRemainingTime);
+                          if (newRemainingTime <= 0) {
+                            clearInterval(timerRef.current);
+                          }
+                        }, 1000);
+                      }}
+                    >
+                      Start focus session
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Running state: show timer */}
+              {isRunning && (
+                <div className="absolute inset-0 flex items-center justify-center w-full">
+                  <div className="px-4 sm:px-6 py-3 sm:py-4 rounded-xl bg-gradient-to-b from-neutral-700/50 via-neutral-900/50 to-neutral-900/50  shadow-sm backdrop-blur-md border-none  inner-stroke-white-10-sm">
+                    <div className="text-2xl sm:text-3xl font-bold text-white/90 text-center">
+                      {Math.floor(remainingTime / 60)}:
+                      {String(Math.floor(remainingTime % 60)).padStart(2, "0")}
                     </div>
                   </div>
                 </div>
               )}
             </div>
+
+            {/* Secret end session button */}
+            {isRunning && (
+              <button
+                onClick={() => {
+                  if (timerRef.current) {
+                    clearInterval(timerRef.current);
+                  }
+                  setIsRunning(false);
+                  showEndMessage();
+                  onSessionComplete();
+                }}
+                className="absolute bottom-4 right-4 w-4 h-4 rounded-lg opacity-0 hover:opacity-100 hover:bg-white/20 transition-all duration-200"
+              />
+            )}
+
+            {/* PiP button in bottom center */}
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
               <Button
                 variant="secondary"
-                className="bg-background/80 backdrop-blur-sm flex items-center gap-2 rounded-full"
+                className="bg-white/60 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-2 rounded-full inner-stroke-white-20-sm"
                 onClick={enterPiP}
               >
                 <Maximize2 className="h-4 w-4" />

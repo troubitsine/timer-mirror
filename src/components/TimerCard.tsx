@@ -88,15 +88,15 @@ const TimerCard = ({
   };
 
   return (
-    <Card className="w-[800px] bg-background p-2 space-y-6 shadow-xl rounded-xl">
-      <div className="w-full h-[400px]">
+    <Card className="w-[calc(100%-40px)] lg:w-[65vw] min-w-[300px] max-w-[1800px] inner-stroke-white-5-sm border-none bg-white/20 p-2 space-y-6 shadow-xl rounded-xl">
+      <div className="w-full aspect-video">
         <CameraFeed
           ref={videoRef}
           onPermissionGranted={onCameraPermissionGranted}
           onPermissionDenied={onCameraPermissionDenied}
           onTaskNameChange={setTaskName}
-          width={800}
-          height={400}
+          width="100%"
+          height="100%"
           onStart={handleStart}
           onSessionComplete={handleSessionComplete}
         />
