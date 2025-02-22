@@ -342,87 +342,79 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
 
             {/* 2) UI overlay container with a single blur */}
             <div className="absolute inset-0 flex flex-col items-center bg-black/20">
-              <div className="w-full flex flex-col items-center pt-6 mb-4">
-                <input
-                  type="text"
-                  value={taskName}
-                  placeholder="Write down what you want to work on"
-                  className={`
-                    text-white/90 
-                    placeholder:text-white/55 
-                    px-6 py-3 rounded-xl text-lg text-center shadow-sm
-                    bg-neutral-800/40 
-                     backdrop-blur-md hover:bg-neutral-800/50 focus:bg-neutral-800/50 
-                     focus:outline-none focus:ring-2 focus:ring-opacity-50 focus:ring-white focus:ring-inset transition-colors 
-                    ${isRunning ? "w-auto min-w-[200px]" : "w-full max-w-lg"}
-                  `}
-                  readOnly={isRunning}
-                  autoFocus
-                  onChange={(e) => {
-                    setTaskName(e.target.value);
-                    onTaskNameChange(e.target.value);
-                  }}
-                />
-              </div>
-
-              {/* Running state: show timer */}
               {isRunning ? (
-                <div className="absolute inset-0 flex items-center justify-center w-full">
-                  <div className="px-6 py-4 rounded-xl bg-gradient-to-b from-neutral-700/50 via-neutral-900/50 to-neutral-900/50  shadow-sm backdrop-blur-md border-none  inner-stroke-white-10-sm">
-                    <div className="text-3xl font-bold text-white/90 text-center">
-                      {Math.floor(remainingTime / 60)}:
-                      {String(Math.floor(remainingTime % 60)).padStart(2, "0")}
-                    </div>
-                  </div>
+                <div className="w-full flex flex-col items-center pt-6 mb-4">
+                  <input
+                    type="text"
+                    value={taskName}
+                    placeholder="Write down what you want to work on"
+                    className="text-white/90 placeholder:text-white/55 px-6 py-3 rounded-xl text-lg text-center shadow-sm bg-neutral-800/40 backdrop-blur-md hover:bg-neutral-800/50 focus:bg-neutral-800/50 focus:outline-none focus:ring-2 focus:ring-opacity-50 focus:ring-white focus:ring-inset transition-colors w-auto min-w-[200px]"
+                    readOnly
+                    onChange={(e) => {
+                      setTaskName(e.target.value);
+                      onTaskNameChange(e.target.value);
+                    }}
+                  />
                 </div>
               ) : (
-                /* Not running: show timer controls */
-                <div className="space-y-4 text-center w-full max-w-lg">
-                  <div className="px-6 py-4 rounded-xl bg-gradient-to-b from-neutral-700/50 via-neutral-900/50 to-neutral-900/50  shadow-sm backdrop-blur-md border-none inner-stroke-white-10-sm">
-                    <div className="text-white/80 text-lg font-medium mb-2">
-                      Set your timer
-                    </div>
-                    <div className="flex gap-2 justify-center mb-3">
-                      {[15, 30, 45, 60].map((mins) => (
-                        <button
-                          key={mins}
-                          onClick={() => {
-                            setDuration(mins * 60);
-                            setSelectedDuration(mins);
-                          }}
-                          className={`
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 mb-12">
+                  <input
+                    type="text"
+                    value={taskName}
+                    placeholder="Write down what you want to work on"
+                    className="w-full max-w-lg text-white/90 placeholder:text-white/55 px-6 py-3 rounded-xl text-lg text-center shadow-sm bg-neutral-800/40 backdrop-blur-md hover:bg-neutral-800/50 focus:bg-neutral-800/50 focus:outline-none focus:ring-2 focus:ring-opacity-50 focus:ring-white focus:ring-inset transition-colors"
+                    autoFocus
+                    onChange={(e) => {
+                      setTaskName(e.target.value);
+                      onTaskNameChange(e.target.value);
+                    }}
+                  />
+                  <div className="w-full max-w-lg space-y-4">
+                    <div className="px-6 py-3 rounded-xl bg-gradient-to-b from-neutral-700/50 via-neutral-900/50 to-neutral-900/50 shadow-sm backdrop-blur-md border-none inner-stroke-white-10-sm">
+                      <div className="text-white/80 text-lg text-center font-medium mb-2">
+                        Set your timer
+                      </div>
+                      <div className="flex gap-2 justify-center mb-3">
+                        {[15, 30, 45, 60].map((mins) => (
+                          <button
+                            key={mins}
+                            onClick={() => {
+                              setDuration(mins * 60);
+                              setSelectedDuration(mins);
+                            }}
+                            className={`
                             px-4 py-1.5 rounded-lg text-sm font-medium text-white/90 
                             inner-stroke-white-10-sm
                             bg-gradient-to-t from-neutral-500/50 to-neutral-400/50 hover:bg-neutral-800/35
                             transition-all 
                             ${selectedDuration === mins ? "bg-black/60 inner-stroke-white-20-lg" : ""}
                           `}
-                        >
-                          {mins === 60 ? "1 hr" : `${mins} min`}
-                        </button>
-                      ))}
+                          >
+                            {mins === 60 ? "1 hr" : `${mins} min`}
+                          </button>
+                        ))}
+                      </div>
+                      <input
+                        type="range"
+                        min="300"
+                        max="7200"
+                        step="300"
+                        value={duration}
+                        onChange={(e) => {
+                          setDuration(Number(e.target.value));
+                          setSelectedDuration(null);
+                        }}
+                        className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <div className="text-white/90 text-xs text-center mt-1 mb-1">
+                        {duration < 60
+                          ? `${duration} seconds`
+                          : `${Math.floor(duration / 60)} minutes`}
+                      </div>
                     </div>
-                    <input
-                      type="range"
-                      min="300"
-                      max="7200"
-                      step="300"
-                      value={duration}
-                      onChange={(e) => {
-                        setDuration(Number(e.target.value));
-                        setSelectedDuration(null);
-                      }}
-                      className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer"
-                    />
-                    <div className="text-white/90 text-xs text-center mt-1">
-                      {duration < 60
-                        ? `${duration} seconds`
-                        : `${Math.floor(duration / 60)} minutes`}
-                    </div>
-                  </div>
 
-                  <Button
-                    className={`
+                    <Button
+                      className={`
                      px-6 py-6 rounded-full w-full
     bg-neutral-800/50
     before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/10 before:to-transparent before:rounded-full
@@ -433,30 +425,43 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
     border-none
     transition-all
                     `}
-                    onClick={() => {
-                      setIsRunning(true);
-                      setRemainingTime(duration);
-                      onStart(duration / 60);
+                      onClick={() => {
+                        setIsRunning(true);
+                        setRemainingTime(duration);
+                        onStart(duration / 60);
 
-                      const startTime = Date.now();
-                      timerRef.current = setInterval(() => {
-                        const elapsedSeconds = Math.floor(
-                          (Date.now() - startTime) / 1000,
-                        );
-                        const newRemainingTime = Math.max(
-                          0,
-                          duration - elapsedSeconds,
-                        );
+                        const startTime = Date.now();
+                        timerRef.current = setInterval(() => {
+                          const elapsedSeconds = Math.floor(
+                            (Date.now() - startTime) / 1000,
+                          );
+                          const newRemainingTime = Math.max(
+                            0,
+                            duration - elapsedSeconds,
+                          );
 
-                        setRemainingTime(newRemainingTime);
-                        if (newRemainingTime <= 0) {
-                          clearInterval(timerRef.current);
-                        }
-                      }, 1000);
-                    }}
-                  >
-                    Start focus session
-                  </Button>
+                          setRemainingTime(newRemainingTime);
+                          if (newRemainingTime <= 0) {
+                            clearInterval(timerRef.current);
+                          }
+                        }, 1000);
+                      }}
+                    >
+                      Start focus session
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Running state: show timer */}
+              {isRunning && (
+                <div className="absolute inset-0 flex items-center justify-center w-full">
+                  <div className="px-6 py-4 rounded-xl bg-gradient-to-b from-neutral-700/50 via-neutral-900/50 to-neutral-900/50  shadow-sm backdrop-blur-md border-none  inner-stroke-white-10-sm">
+                    <div className="text-3xl font-bold text-white/90 text-center">
+                      {Math.floor(remainingTime / 60)}:
+                      {String(Math.floor(remainingTime % 60)).padStart(2, "0")}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
