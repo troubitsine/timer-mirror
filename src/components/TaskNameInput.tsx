@@ -94,7 +94,7 @@ const TaskNameInput = ({
                   x: -(textWidth + 32),
                 }}
                 transition={{
-                  duration: textWidth * 0.03,
+                  duration: textWidth * 0.05,
                   ease: "linear",
                   repeat: Infinity,
                   repeatType: "loop",
