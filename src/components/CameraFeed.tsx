@@ -341,7 +341,6 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
               style={{ width, height }}
             />
 
-            {/* 2) UI overlay container with a single blur */}
             <div className="absolute inset-0 flex flex-col items-center bg-black/20">
               {isRunning ? (
                 <div className="w-full flex flex-col items-center pt-6 mb-4">
@@ -353,7 +352,6 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                       setTaskName(value);
                       onTaskNameChange(value);
                     }}
-                    className="w-auto min-w-[200px]"
                   />
                 </div>
               ) : (
