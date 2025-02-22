@@ -343,7 +343,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
 
             <div className="absolute inset-0 flex flex-col items-center bg-black/20">
               {isRunning ? (
-                <div className="w-full flex flex-col items-center pt-6 mb-4">
+                <div className="w-full flex flex-col items-center pt-4 sm:pt-6 mb-2 sm:mb-4">
                   <TaskNameInput
                     value={taskName}
                     readOnly
@@ -355,7 +355,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                   />
                 </div>
               ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 mb-12">
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 md:gap-3 p-3 sm:p-6 mb-4 sm:mb-12">
                   <TaskNameInput
                     value={taskName}
                     autoFocus
@@ -365,9 +365,9 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                       onTaskNameChange(value);
                     }}
                   />
-                  <div className="w-full max-w-lg space-y-4">
-                    <div className="px-6 py-3 rounded-xl bg-gradient-to-b from-neutral-700/50 via-neutral-900/50 to-neutral-900/50 shadow-sm backdrop-blur-md border-none inner-stroke-white-10-sm">
-                      <div className="text-white/80 text-lg text-center font-medium mb-2">
+                  <div className="w-full max-w-lg space-y-1 md:space-y-3">
+                    <div className="px-4 sm:px-6 py-2 sm:py-3 rounded-xl bg-gradient-to-b from-neutral-700/50 via-neutral-900/50 to-neutral-900/50 shadow-sm backdrop-blur-md border-none inner-stroke-white-10-sm">
+                      <div className="text-white/80 text-base sm:text-lg text-center font-medium mb-2">
                         Set your timer
                       </div>
                       <div className="flex gap-2 justify-center mb-3">
@@ -379,7 +379,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                               setSelectedDuration(mins);
                             }}
                             className={`
-                            px-4 py-1.5 rounded-lg text-sm font-medium text-white/90 
+                            px-3 sm:px-4 py-1.5 rounded-lg text-sm font-medium text-white/90 
                             inner-stroke-white-10-sm
                             bg-gradient-to-t from-neutral-500/50 to-neutral-400/50 hover:bg-neutral-800/35
                             transition-all 
@@ -411,15 +411,15 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
 
                     <Button
                       className={`
-                     px-6 py-6 rounded-full w-full
-    bg-neutral-800/50
-    before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/10 before:to-transparent before:rounded-full
-    backdrop-blur-md 
-    hover:bg-neutral-800/60
-    text-white/85 text-md 
-    inner-stroke-white-10-sm
-    border-none
-    transition-all
+                     px-6 py-4 sm:py-6 rounded-full w-full
+                     bg-neutral-800/50
+                     before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/10 before:to-transparent before:rounded-full
+                     backdrop-blur-md 
+                     hover:bg-neutral-800/60
+                     text-white/85 text-sm sm:text-md 
+                     inner-stroke-white-10-sm
+                     border-none
+                     transition-all
                     `}
                       onClick={() => {
                         setIsRunning(true);
@@ -452,8 +452,8 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
               {/* Running state: show timer */}
               {isRunning && (
                 <div className="absolute inset-0 flex items-center justify-center w-full">
-                  <div className="px-6 py-4 rounded-xl bg-gradient-to-b from-neutral-700/50 via-neutral-900/50 to-neutral-900/50  shadow-sm backdrop-blur-md border-none  inner-stroke-white-10-sm">
-                    <div className="text-3xl font-bold text-white/90 text-center">
+                  <div className="px-4 sm:px-6 py-3 sm:py-4 rounded-xl bg-gradient-to-b from-neutral-700/50 via-neutral-900/50 to-neutral-900/50  shadow-sm backdrop-blur-md border-none  inner-stroke-white-10-sm">
+                    <div className="text-2xl sm:text-3xl font-bold text-white/90 text-center">
                       {Math.floor(remainingTime / 60)}:
                       {String(Math.floor(remainingTime % 60)).padStart(2, "0")}
                     </div>

@@ -29,15 +29,18 @@ const TaskNameInput = ({
 
   useEffect(() => {
     if (inputRef.current && containerRef.current) {
+      const parentWidth =
+        containerRef.current.parentElement?.clientWidth || 512;
+      const maxContainerWidth = Math.min(512, parentWidth);
+
       if (isRunning) {
         const font = getFontString(inputRef.current);
         const currentTextWidth = getTextWidth(value || placeholder, font);
         const paddingWidth = 48;
         const minWidth = 200;
-        const maxWidth = 512;
         const containerWidth = Math.min(
           Math.max(currentTextWidth + paddingWidth, minWidth),
-          maxWidth,
+          maxContainerWidth,
         );
         setWidth(containerWidth);
 
@@ -48,7 +51,7 @@ const TaskNameInput = ({
           setShouldScroll(false);
         }
       } else {
-        setWidth(512);
+        setWidth(maxContainerWidth);
         setShouldScroll(false);
       }
     }
@@ -58,10 +61,30 @@ const TaskNameInput = ({
     <div
       ref={containerRef}
       style={{ width: width > 0 ? width : "auto" }}
-      className="relative overflow-hidden"
+      className={`
+        relative 
+        group 
+        ${!readOnly ? "hover:bg-neutral-900/5" : ""}
+        rounded-xl
+        focus-within:ring-2 focus-within:ring-white/50
+        overflow-hidden
+        min-h-[32px] sm:min-h-[52px]
+        w-full max-w-lg mx-auto max-w-full
+      `}
     >
-      <div className="absolute inset-0 bg-gradient-to-b from-neutral-700/50 to-neutral-900/50 rounded-xl backdrop-blur-md [box-shadow:inset_0_0_0_1px_rgba(255,255,255,0.1)]" />
-      <div className="relative px-6 py-3 rounded-xl">
+      {/* Background with inner stroke */}
+      <div
+        className="
+          absolute inset-0 
+          bg-gradient-to-b from-neutral-700/50 to-neutral-900/50 
+          backdrop-blur-md 
+          rounded-xl
+          before:absolute before:inset-0 before:rounded-xl before:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]
+        "
+      />
+
+      {/* Content container */}
+      <div className="relative h-full flex items-center px-3 py-2 sm:px-6 sm:py-3">
         {shouldScroll ? (
           <div className="overflow-hidden">
             <div className="flex">
@@ -71,7 +94,7 @@ const TaskNameInput = ({
                   x: -(textWidth + 32),
                 }}
                 transition={{
-                  duration: textWidth * 0.025,
+                  duration: textWidth * 0.03,
                   ease: "linear",
                   repeat: Infinity,
                   repeatType: "loop",
@@ -93,7 +116,17 @@ const TaskNameInput = ({
             readOnly={readOnly}
             autoFocus={autoFocus}
             onChange={(e) => onChange(e.target.value)}
-            className={`w-full text-white/90 placeholder:text-white/55 text-lg text-center shadow-sm bg-transparent hover:bg-neutral-900/5 focus:bg-neutral-900/5 focus:outline-none focus:ring-2 focus:ring-opacity-50 focus:ring-white focus:ring-inset transition-colors ${className}`}
+            className={`
+              w-full 
+              text-white/90 
+              placeholder:text-white/55 
+              text-base sm:text-lg 
+              text-center 
+              bg-transparent 
+              focus:outline-none 
+              transition-colors 
+              ${className}
+            `}
           />
         )}
       </div>
