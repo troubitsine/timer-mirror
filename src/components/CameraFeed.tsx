@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import TaskNameInput from "./TaskNameInput";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import {
@@ -344,29 +345,26 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
             <div className="absolute inset-0 flex flex-col items-center bg-black/20">
               {isRunning ? (
                 <div className="w-full flex flex-col items-center pt-6 mb-4">
-                  <input
-                    type="text"
+                  <TaskNameInput
                     value={taskName}
-                    placeholder="Write down what you want to work on"
-                    className="text-white/90 placeholder:text-white/55 px-6 py-3 rounded-xl text-lg text-center shadow-sm bg-neutral-800/40 backdrop-blur-md hover:bg-neutral-800/50 focus:bg-neutral-800/50 focus:outline-none focus:ring-2 focus:ring-opacity-50 focus:ring-white focus:ring-inset transition-colors w-auto min-w-[200px]"
                     readOnly
-                    onChange={(e) => {
-                      setTaskName(e.target.value);
-                      onTaskNameChange(e.target.value);
+                    isRunning={true}
+                    onChange={(value) => {
+                      setTaskName(value);
+                      onTaskNameChange(value);
                     }}
+                    className="w-auto min-w-[200px]"
                   />
                 </div>
               ) : (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 mb-12">
-                  <input
-                    type="text"
+                  <TaskNameInput
                     value={taskName}
-                    placeholder="Write down what you want to work on"
-                    className="w-full max-w-lg text-white/90 placeholder:text-white/55 px-6 py-3 rounded-xl text-lg text-center shadow-sm bg-neutral-800/40 backdrop-blur-md hover:bg-neutral-800/50 focus:bg-neutral-800/50 focus:outline-none focus:ring-2 focus:ring-opacity-50 focus:ring-white focus:ring-inset transition-colors"
                     autoFocus
-                    onChange={(e) => {
-                      setTaskName(e.target.value);
-                      onTaskNameChange(e.target.value);
+                    isRunning={false}
+                    onChange={(value) => {
+                      setTaskName(value);
+                      onTaskNameChange(value);
                     }}
                   />
                   <div className="w-full max-w-lg space-y-4">
