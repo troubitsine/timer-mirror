@@ -89,8 +89,12 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
     useEffect(() => {
       if (remainingTime === 0 && isRunning) {
         setIsRunning(false);
+        // Show end message before completing the session
         showEndMessage();
-        onSessionComplete();
+        // Delay session completion to allow animation to be seen
+        setTimeout(() => {
+          onSessionComplete();
+        }, 3000);
       }
     }, [remainingTime, isRunning, showEndMessage, onSessionComplete]);
 
@@ -266,8 +270,12 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                     clearInterval(timerRef.current);
                   }
                   setIsRunning(false);
+                  // Show end message before completing the session
                   showEndMessage();
-                  onSessionComplete();
+                  // Delay session completion to allow animation to be seen
+                  setTimeout(() => {
+                    onSessionComplete();
+                  }, 3000);
                 }}
                 className="absolute bottom-4 right-4 w-4 h-4 rounded-lg opacity-0 hover:opacity-100 hover:bg-white/20 transition-all duration-200"
               />
