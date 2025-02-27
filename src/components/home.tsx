@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import TimerCard from "./TimerCard";
 import SessionMontage from "./SessionMontage";
 import { motion, AnimatePresence } from "framer-motion";
@@ -53,15 +54,16 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
     setShowMontage(false);
   };
 
+  const navigate = useNavigate();
+
   const handleSessionEnd = (data: {
     screenshots: string[];
     webcamPhotos: string[];
     taskName: string;
     duration: number;
   }) => {
-    setSessionData(data);
-    setShowMontage(true);
     onSessionComplete();
+    navigate("/complete", { state: data });
   };
 
   return (
