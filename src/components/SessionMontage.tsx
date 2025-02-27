@@ -18,6 +18,7 @@ const SessionMontage = ({
   taskName = "Focus Session",
   duration = 25,
 }: SessionMontageProps) => {
+  const navigate = useNavigate();
   const [isPlaying, setIsPlaying] = useState(true);
   const [showCollage, setShowCollage] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -89,7 +90,7 @@ const SessionMontage = ({
       <div className="absolute top-6 right-6">
         <Button
           variant="outline"
-          onClick={() => window.location.reload()}
+          onClick={() => navigate("/")}
           className="flex items-center gap-2"
         >
           <Timer className="h-4 w-4" />
