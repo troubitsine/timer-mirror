@@ -279,23 +279,54 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
               )}
             </div>
 
-            {/* Secret end session button */}
+            {/* Secret buttons */}
             {isRunning && (
-              <button
-                onClick={() => {
-                  if (timerRef.current) {
-                    clearInterval(timerRef.current);
-                  }
-                  setIsRunning(false);
-                  // Show end message before completing the session
-                  showEndMessage();
-                  // Delay session completion to allow animation to be seen
-                  setTimeout(() => {
-                    onSessionComplete();
-                  }, 3000);
-                }}
-                className="absolute bottom-4 right-4 w-4 h-4 rounded-lg opacity-0 hover:opacity-100 hover:bg-white/20 transition-all duration-200"
-              />
+              <>
+                {/* Secret end session button */}
+                <button
+                  onClick={() => {
+                    if (timerRef.current) {
+                      clearInterval(timerRef.current);
+                    }
+                    setIsRunning(false);
+                    // Show end message before completing the session
+                    showEndMessage();
+                    // Delay session completion to allow animation to be seen
+                    setTimeout(() => {
+                      onSessionComplete();
+                    }, 3000);
+                  }}
+                  className="absolute bottom-4 right-4 w-4 h-4 rounded-lg opacity-0 hover:opacity-100 hover:bg-white/20 transition-all duration-200"
+                />
+
+                {/* Secret button to reduce time to 1 minute */}
+                <button
+                  onClick={() => {
+                    // Set remaining time to 60 seconds (1 minute)
+                    setRemainingTime(60);
+
+                    // Clear the existing interval
+                    if (timerRef.current) {
+                      clearInterval(timerRef.current);
+                    }
+
+                    // Create a new interval that counts down from 60 seconds
+                    const startTime = Date.now();
+                    timerRef.current = setInterval(() => {
+                      const elapsedSeconds = Math.floor(
+                        (Date.now() - startTime) / 1000,
+                      );
+                      const newRemainingTime = Math.max(0, 60 - elapsedSeconds);
+
+                      setRemainingTime(newRemainingTime);
+                      if (newRemainingTime <= 0) {
+                        clearInterval(timerRef.current);
+                      }
+                    }, 1000);
+                  }}
+                  className="absolute bottom-4 left-4 w-4 h-4 rounded-lg opacity-0 hover:opacity-100 hover:bg-white/20 transition-all duration-200"
+                />
+              </>
             )}
 
             {/* PiP button - only show on desktop */}
