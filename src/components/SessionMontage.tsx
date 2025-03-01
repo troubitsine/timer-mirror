@@ -4,12 +4,14 @@ import { Button } from "./ui/button";
 import { Play, Timer } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { isMobileDevice } from "@/lib/deviceDetection";
 
 interface SessionMontageProps {
   screenshots?: string[];
   webcamPhotos?: string[];
   taskName?: string;
   duration?: number;
+  onSave?: () => void;
 }
 
 const SessionMontage = ({
@@ -17,13 +19,19 @@ const SessionMontage = ({
   webcamPhotos = [],
   taskName = "Focus Session",
   duration = 25,
+  onSave = () => {},
 }: SessionMontageProps) => {
   const navigate = useNavigate();
   const [isPlaying, setIsPlaying] = useState(true);
   const [showCollage, setShowCollage] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isStackExiting, setIsStackExiting] = useState(false);
-  const allPhotos = [...screenshots, ...webcamPhotos];
+  const isMobile = isMobileDevice();
+
+  // For mobile, we only use webcam photos
+  const allPhotos = isMobile
+    ? [...webcamPhotos].filter(Boolean)
+    : [...screenshots, ...webcamPhotos].filter(Boolean);
 
   const outerTimerRef = React.useRef<NodeJS.Timeout | null>(null);
   const innerTimerRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -87,16 +95,6 @@ const SessionMontage = ({
 
   return (
     <Card className="w-full min-h-[400px] bg-background p-6 relative">
-      <div className="absolute top-6 right-6">
-        <Button
-          variant="outline"
-          onClick={() => navigate("/")}
-          className="flex items-center gap-2"
-        >
-          <Timer className="h-4 w-4" />
-          Start New Timer
-        </Button>
-      </div>
       <div className="flex flex-col h-full items-center justify-center gap-8">
         {!showCollage ? (
           <motion.div
@@ -172,10 +170,20 @@ const SessionMontage = ({
             </div>
           </motion.div>
         )}
-        <Button variant="default" size="lg" onClick={startAnimation}>
-          <Play className="h-4 w-4 mr-2" />
-          {showCollage ? "Replay Animation" : "Play Animation"}
-        </Button>
+        <div className="flex flex-col gap-3 items-center">
+          <Button variant="outline" onClick={startAnimation}>
+            <Play className="h-4 w-4 mr-2" />
+            {showCollage ? "Replay Animation" : "Play Animation"}
+          </Button>
+          <Button
+            variant="default"
+            onClick={() => navigate("/")}
+            className="flex items-center gap-2"
+          >
+            <Timer className="h-4 w-4" />
+            Start New Timer
+          </Button>
+        </div>
       </div>
     </Card>
   );
