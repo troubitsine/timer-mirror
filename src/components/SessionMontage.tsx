@@ -95,16 +95,6 @@ const SessionMontage = ({
 
   return (
     <Card className="w-full min-h-[400px] bg-background p-6 relative">
-      <div className="absolute top-6 right-6">
-        <Button
-          variant="outline"
-          onClick={() => navigate("/")}
-          className="flex items-center gap-2"
-        >
-          <Timer className="h-4 w-4" />
-          Start New Timer
-        </Button>
-      </div>
       <div className="flex flex-col h-full items-center justify-center gap-8">
         {!showCollage ? (
           <motion.div
@@ -180,10 +170,20 @@ const SessionMontage = ({
             </div>
           </motion.div>
         )}
-        <Button variant="default" size="lg" onClick={startAnimation}>
-          <Play className="h-4 w-4 mr-2" />
-          {showCollage ? "Replay Animation" : "Play Animation"}
-        </Button>
+        <div className="flex flex-col gap-3 items-center">
+          <Button variant="outline" onClick={startAnimation}>
+            <Play className="h-4 w-4 mr-2" />
+            {showCollage ? "Replay Animation" : "Play Animation"}
+          </Button>
+          <Button
+            variant="default"
+            onClick={() => navigate("/")}
+            className="flex items-center gap-2"
+          >
+            <Timer className="h-4 w-4" />
+            Start New Timer
+          </Button>
+        </div>
       </div>
     </Card>
   );
