@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import TimerCard from "./TimerCard";
 import SessionMontage from "./SessionMontage";
 import { motion, AnimatePresence } from "framer-motion";
+import { isMobileDevice } from "@/lib/deviceDetection";
 
 interface HomeProps {
   onSessionComplete?: () => void;
@@ -10,6 +11,7 @@ interface HomeProps {
 
 const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const isMobile = isMobileDevice();
 
   // Reset state when component mounts
   useEffect(() => {
@@ -24,7 +26,11 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
     // Initialize camera
     if (navigator.mediaDevices?.getUserMedia) {
       navigator.mediaDevices
-        .getUserMedia({ video: true })
+        .getUserMedia({
+          video: {
+            facingMode: "user", // Use front camera on mobile devices
+          },
+        })
         .then((stream) => {
           if (videoRef.current) {
             videoRef.current.srcObject = stream;
@@ -92,15 +98,17 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
         {showMontage && <div className="absolute inset-0 bg-stone-50" />}
       </div>
       {/* Content overlay */}
-      <div className="relative z-10 w-full min-h-screen p-8 flex items-center pb-32">
-        <div className="max-w-7xl w-full mx-auto space-y-8">
+      <div className="relative z-10 w-full min-h-screen p-1 sm:p-8 flex items-center pt-6 pb-12 sm:pb-32">
+        <div className="max-w-7xl w-full mx-auto space-y-4 sm:space-y-8">
           <header className="text-center space-y-2">
             <h1
-              className={`text-4xl font-bold tracking-tight ${showMontage ? "text-black/80" : "text-white/80"}`}
+              className={`text-3xl sm:text-4xl font-bold tracking-tight ${showMontage ? "text-black/80" : "text-white/80"}`}
             >
               Focus Timer
             </h1>
-            <p className={showMontage ? "text-black/60" : "text-white/70"}>
+            <p
+              className={`text-sm sm:text-base ${showMontage ? "text-black/60" : "text-white/70"}`}
+            >
               Stay focused and create a visual record of your work session
             </p>
           </header>

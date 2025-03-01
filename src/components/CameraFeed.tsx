@@ -17,11 +17,12 @@ import { usePictureInPicture } from "@/lib/usePictureInPicture";
 interface CameraFeedProps {
   onPermissionGranted?: () => void;
   onPermissionDenied?: () => void;
-  width?: number;
-  height?: number;
+  width?: number | string;
+  height?: number | string;
   onStart?: (duration: number) => void;
   onTaskNameChange?: (name: string) => void;
   onSessionComplete?: () => void;
+  isMobile?: boolean;
 }
 
 const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
@@ -34,6 +35,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
       onStart = () => {},
       onTaskNameChange = () => {},
       onSessionComplete = () => {},
+      isMobile = false,
     },
     ref,
   ) => {
@@ -61,9 +63,15 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
 
     const startCamera = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-        });
+        const constraints = {
+          video: {
+            facingMode: "user", // Use front camera on mobile devices
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+        };
+
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           setHasPermission(true);
@@ -107,7 +115,11 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
 
       // Request camera permissions
       navigator.mediaDevices
-        .getUserMedia({ video: true })
+        .getUserMedia({
+          video: {
+            facingMode: "user", // Use front camera on mobile devices
+          },
+        })
         .then(() => {
           setHasPermission(true);
           startCamera();
@@ -126,6 +138,11 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
         }
       };
     }, []);
+
+    // Predefined duration options - adjust for mobile
+    const durationOptions = isMobile
+      ? [5, 15, 30, 45] // Shorter options for mobile
+      : [15, 30, 45, 60];
 
     return (
       <Card className="w-full h-full bg-background relative border-none inner-stroke-black-10-sm overflow-hidden shadow-sm rounded-lg">
@@ -155,7 +172,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                   />
                 </div>
               ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 md:gap-3 p-3 sm:p-6 mb-4 sm:mb-12">
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 md:gap-3 p-3 sm:p-6 mb-4 sm:mb-12 w-full">
                   <TaskNameInput
                     value={taskName}
                     autoFocus
@@ -165,13 +182,13 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                       onTaskNameChange(value);
                     }}
                   />
-                  <div className="w-full max-w-lg space-y-1 md:space-y-3">
-                    <div className="px-4 sm:px-6 py-2 sm:py-3 rounded-xl bg-gradient-to-b from-neutral-700/50 via-neutral-900/50 to-neutral-900/50 shadow-sm backdrop-blur-md border-none inner-stroke-white-10-sm">
+                  <div className="w-full max-w-lg mx-auto space-y-1 md:space-y-3 sm:px-0">
+                    <div className="px-3 sm:px-6 py-3 sm:py-3 rounded-xl bg-gradient-to-b from-neutral-700/50 via-neutral-900/50 to-neutral-900/50 shadow-sm backdrop-blur-md border-none inner-stroke-white-10-sm">
                       <div className="text-white/80 text-base sm:text-lg text-center font-medium mb-2">
                         Set your timer
                       </div>
-                      <div className="flex gap-2 justify-center mb-3">
-                        {[15, 30, 45, 60].map((mins) => (
+                      <div className="flex flex-wrap gap-2 justify-center mb-3">
+                        {durationOptions.map((mins) => (
                           <button
                             key={mins}
                             onClick={() => {
@@ -192,9 +209,9 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                       </div>
                       <input
                         type="range"
-                        min="300"
-                        max="7200"
-                        step="300"
+                        min={isMobile ? "60" : "300"} // 1 minute minimum on mobile, 5 minutes on desktop
+                        max={isMobile ? "3600" : "7200"} // 1 hour max on mobile, 2 hours on desktop
+                        step={isMobile ? "60" : "300"} // 1 minute steps on mobile, 5 minute steps on desktop
                         value={duration}
                         onChange={(e) => {
                           setDuration(Number(e.target.value));
@@ -211,7 +228,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
 
                     <Button
                       className={`
-                     px-6 py-4 sm:py-6 rounded-full w-full
+                     px-6 py-5 sm:py-6 rounded-full w-full
                      bg-neutral-800/50
                      before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/10 before:to-transparent before:rounded-full
                      backdrop-blur-md 
@@ -281,17 +298,19 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
               />
             )}
 
-            {/* PiP button in bottom center */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-              <Button
-                variant="secondary"
-                className="bg-white/60 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-2 rounded-full inner-stroke-white-20-sm"
-                onClick={() => enterPiP({ width: 400, height: 300 })}
-              >
-                <Maximize2 className="h-4 w-4" />
-                Open floating window
-              </Button>
-            </div>
+            {/* PiP button - only show on desktop */}
+            {!isMobile && (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                <Button
+                  variant="secondary"
+                  className="bg-white/60 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-2 rounded-full inner-stroke-white-20-sm"
+                  onClick={() => enterPiP({ width: 400, height: 300 })}
+                >
+                  <Maximize2 className="h-4 w-4" />
+                  Open floating window
+                </Button>
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center w-full h-full space-y-4 bg-muted rounded-lg">

@@ -29,18 +29,18 @@ const TaskNameInput = ({
 
   useEffect(() => {
     if (inputRef.current && containerRef.current) {
-      const parentWidth =
-        containerRef.current.parentElement?.clientWidth || 512;
-      const maxContainerWidth = Math.min(512, parentWidth);
+      // Get the parent container width
+      const parentWidth = containerRef.current.parentElement?.clientWidth || 0;
 
       if (isRunning) {
         const font = getFontString(inputRef.current);
         const currentTextWidth = getTextWidth(value || placeholder, font);
         const paddingWidth = 48;
         const minWidth = 200;
+        // Use parent width as the constraint instead of a fixed 512px
         const containerWidth = Math.min(
           Math.max(currentTextWidth + paddingWidth, minWidth),
-          maxContainerWidth,
+          parentWidth > 0 ? parentWidth : 512,
         );
         setWidth(containerWidth);
 
@@ -51,7 +51,8 @@ const TaskNameInput = ({
           setShouldScroll(false);
         }
       } else {
-        setWidth(maxContainerWidth);
+        // Use 100% of parent width instead of a fixed max width
+        setWidth(0); // Setting to 0 will make it use 100% width from CSS
         setShouldScroll(false);
       }
     }
@@ -60,7 +61,7 @@ const TaskNameInput = ({
   return (
     <div
       ref={containerRef}
-      style={{ width: width > 0 ? width : "auto" }}
+      style={{ width: width > 0 ? width : "100%" }}
       className={`
         relative 
         group 
@@ -69,7 +70,7 @@ const TaskNameInput = ({
         focus-within:ring-2 focus-within:ring-white/50
         overflow-hidden
         min-h-[32px] sm:min-h-[52px]
-        w-full max-w-lg mx-auto max-w-full
+        w-full max-w-lg mx-auto
       `}
     >
       {/* Background with inner stroke */}

@@ -1,3 +1,5 @@
+import { isMobileDevice, isScreenCaptureSupported } from "./deviceDetection";
+
 let screenVideo: HTMLVideoElement | null = null;
 let webcamVideo: HTMLVideoElement | null = null;
 
@@ -8,26 +10,40 @@ export async function initializeMediaCapture(
   webcamStream: MediaStream | null;
 }> {
   try {
-    // Get screen stream
-    const screenStream = await navigator.mediaDevices.getDisplayMedia({
-      video: {
-        displaySurface: "monitor",
-        logicalSurface: true,
-      },
-    });
-
-    // Set up hidden screen video element
-    screenVideo = document.createElement("video");
-    screenVideo.style.display = "none";
-    screenVideo.srcObject = screenStream;
-    document.body.appendChild(screenVideo);
-    await screenVideo.play();
-
     // Get webcam stream from the existing video element
     const webcamStream = webcamElement.srcObject as MediaStream;
     webcamVideo = webcamElement;
 
-    return { screenStream, webcamStream };
+    // Only attempt to capture screen on desktop devices
+    if (isScreenCaptureSupported()) {
+      try {
+        // Get screen stream
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({
+          video: {
+            displaySurface: "monitor",
+            logicalSurface: true,
+          },
+        });
+
+        // Set up hidden screen video element
+        screenVideo = document.createElement("video");
+        screenVideo.style.display = "none";
+        screenVideo.srcObject = screenStream;
+        document.body.appendChild(screenVideo);
+        await screenVideo.play();
+
+        return { screenStream, webcamStream };
+      } catch (screenError) {
+        console.error("Error initializing screen capture:", screenError);
+        return { screenStream: null, webcamStream };
+      }
+    } else {
+      // On mobile, we only use webcam
+      console.log(
+        "Screen capture not supported on this device, using webcam only",
+      );
+      return { screenStream: null, webcamStream };
+    }
   } catch (error) {
     console.error("Error initializing media capture:", error);
     return { screenStream: null, webcamStream: null };
@@ -37,7 +53,9 @@ export async function initializeMediaCapture(
 export function captureScreenshot(): Promise<string> {
   return new Promise((resolve, reject) => {
     if (!screenVideo) {
-      reject("Screen capture not initialized");
+      // If screen capture is not available, return an empty string
+      // This allows the app to continue with just webcam photos on mobile
+      resolve("");
       return;
     }
 
@@ -50,7 +68,7 @@ export function captureScreenshot(): Promise<string> {
       resolve(canvas.toDataURL("image/jpeg"));
     } catch (error) {
       console.error("Error capturing screenshot:", error);
-      reject(error);
+      resolve(""); // Return empty string on error to continue with webcam only
     }
   });
 }
@@ -96,16 +114,24 @@ export function scheduleCaptures(
   );
 
   const captureTimeouts: NodeJS.Timeout[] = [];
+  const isMobile = isMobileDevice();
 
   for (let i = 1; i <= totalCaptures; i++) {
     const timeout = setTimeout(
       async () => {
         try {
-          const [screenshot, webcamPhoto] = await Promise.all([
-            captureScreenshot(),
-            captureWebcam(),
-          ]);
-          onCapture(screenshot, webcamPhoto);
+          if (isMobile) {
+            // On mobile, only capture webcam photos
+            const webcamPhoto = await captureWebcam();
+            onCapture("", webcamPhoto); // Empty string for screenshot
+          } else {
+            // On desktop, capture both
+            const [screenshot, webcamPhoto] = await Promise.all([
+              captureScreenshot(),
+              captureWebcam(),
+            ]);
+            onCapture(screenshot, webcamPhoto);
+          }
         } catch (error) {
           console.error("Error during capture:", error);
         }

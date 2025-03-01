@@ -4,12 +4,14 @@ import { Button } from "./ui/button";
 import { Play, Timer } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { isMobileDevice } from "@/lib/deviceDetection";
 
 interface SessionMontageProps {
   screenshots?: string[];
   webcamPhotos?: string[];
   taskName?: string;
   duration?: number;
+  onSave?: () => void;
 }
 
 const SessionMontage = ({
@@ -17,13 +19,19 @@ const SessionMontage = ({
   webcamPhotos = [],
   taskName = "Focus Session",
   duration = 25,
+  onSave = () => {},
 }: SessionMontageProps) => {
   const navigate = useNavigate();
   const [isPlaying, setIsPlaying] = useState(true);
   const [showCollage, setShowCollage] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isStackExiting, setIsStackExiting] = useState(false);
-  const allPhotos = [...screenshots, ...webcamPhotos];
+  const isMobile = isMobileDevice();
+
+  // For mobile, we only use webcam photos
+  const allPhotos = isMobile
+    ? [...webcamPhotos].filter(Boolean)
+    : [...screenshots, ...webcamPhotos].filter(Boolean);
 
   const outerTimerRef = React.useRef<NodeJS.Timeout | null>(null);
   const innerTimerRef = React.useRef<NodeJS.Timeout | null>(null);
