@@ -32,12 +32,13 @@ export function usePictureInPicture({
     }
   }, [remainingTime, pipWindow]);
 
-  // Cleanup on unmount
+  // Keep PiP window open even when component unmounts
+  // We'll let the user close it manually
   useEffect(() => {
     return () => {
-      if (pipWindow) {
-        pipWindow.close();
-      }
+      // We intentionally don't close the PiP window here
+      // so it remains visible with the completion animation
+      // even after navigating to the session montage page
     };
   }, [pipWindow]);
 
@@ -321,7 +322,8 @@ export function usePictureInPicture({
         if (newPipWindow) {
           newPipWindow.removeEventListener("unload", handleUnload);
           newPipWindow.removeEventListener("beforeunload", handleUnload);
-          newPipWindow.close();
+          // We intentionally don't close the PiP window here
+          // so it remains visible with the completion animation
         }
       };
     } catch (err) {
