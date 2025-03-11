@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import TimerCard from "./TimerCard";
 import SessionMontage from "./SessionMontage";
+import OnboardingCard from "./OnboardingCard";
 import { motion, AnimatePresence } from "framer-motion";
 import { isMobileDevice } from "@/lib/deviceDetection";
 
@@ -112,6 +113,8 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
               Stay focused and create a visual record of your work session
             </p>
           </header>
+
+          {!showMontage && <OnboardingCard />}
 
           <AnimatePresence mode="wait">
             {!showMontage ? (
