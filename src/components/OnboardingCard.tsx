@@ -5,19 +5,20 @@ import { motion } from "framer-motion";
 
 interface OnboardingCardProps {
   className?: string;
+  initialCollapsed?: boolean;
 }
 
-const OnboardingCard = ({ className = "" }: OnboardingCardProps) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const isMobile = isMobileDevice();
-
-  // Load collapsed state from localStorage
-  useEffect(() => {
+const OnboardingCard = ({
+  className = "",
+  initialCollapsed,
+}: OnboardingCardProps) => {
+  // Initialize with initialCollapsed if provided, otherwise check localStorage
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (initialCollapsed !== undefined) return initialCollapsed;
     const savedState = localStorage.getItem("onboardingCollapsed");
-    if (savedState) {
-      setIsCollapsed(savedState === "true");
-    }
-  }, []);
+    return savedState === "true";
+  });
+  const isMobile = isMobileDevice();
 
   // Save collapsed state to localStorage
   const toggleCollapsed = () => {
@@ -76,7 +77,10 @@ const OnboardingCard = ({ className = "" }: OnboardingCardProps) => {
             height: isCollapsed ? 0 : "auto",
             opacity: isCollapsed ? 0 : 1,
           }}
-          initial={{ height: 0, opacity: 0 }}
+          initial={{
+            height: isCollapsed ? 0 : "auto",
+            opacity: isCollapsed ? 0 : 1,
+          }}
           transition={{ duration: 0.3, bounce: 5 }}
         >
           <div>

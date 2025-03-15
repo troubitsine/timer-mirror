@@ -24,6 +24,10 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
       duration: 0,
     });
 
+    // Read the collapsed state from localStorage once on mount
+    const savedCollapsedState =
+      localStorage.getItem("onboardingCollapsed") === "true";
+
     // Initialize camera
     if (navigator.mediaDevices?.getUserMedia) {
       navigator.mediaDevices
@@ -115,7 +119,13 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
             </header>
           )}
 
-          {!showMontage && <OnboardingCard />}
+          {!showMontage && (
+            <OnboardingCard
+              initialCollapsed={
+                localStorage.getItem("onboardingCollapsed") === "true"
+              }
+            />
+          )}
 
           <AnimatePresence mode="wait">
             {!showMontage ? (
