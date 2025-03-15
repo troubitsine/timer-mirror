@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { isMobileDevice } from "@/lib/deviceDetection";
+import { motion } from "framer-motion";
 
 interface OnboardingCardProps {
   className?: string;
@@ -30,72 +31,94 @@ const OnboardingCard = ({ className = "" }: OnboardingCardProps) => {
 
   return (
     <div
-      className={`w-full lg:w-[65vw] min-w-[300px] max-w-[1800px] mx-auto mb-6 ${className}`}
+      className={`w-full lg:w-[65vw] min-w-[300px] max-w-[1800px] mx-auto mb-4 ${className}`}
     >
-      <div
-        className={`px-4 py-3 sm:py-4 bg-neutral-500/60
+      <motion.div
+        className={`px-4 py-4 bg-neutral-500/60
                before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/10 before:to-transparent before:rounded-xl before:pointer-events-none
-               backdrop-blur-md rounded-xl transition-all duration-300 ${isCollapsed ? "h-14.5" : ""}`}
+               backdrop-blur-md rounded-xl`}
+        animate={{ height: isCollapsed ? "auto" : "auto" }}
+        transition={{ duration: 0.3, bounce: 0 }}
       >
-        <div className="flex justify-between items-center">
-          <h2 className="text-lg sm:text-xl font-semibold text-white/90">
+        <div className="flex flex-col items-center relative">
+          <div className="absolute right-0 top-1">
+            <motion.div
+              layout
+              transition={{
+                type: "spring",
+                stiffness: 500,
+                damping: 30,
+              }}
+            >
+              <motion.div
+                whileTap={{ scale: 0.95 }}
+                transition={{ duration: 0.1 }}
+              >
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={toggleCollapsed}
+                  className="bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-2 rounded-full inner-stroke-white-20-sm px-[11px]  py-[6px]"
+                >
+                  {isCollapsed ? "About" : "Hide"}
+                </Button>
+              </motion.div>
+            </motion.div>
+          </div>
+          <h1 className="text-2xl font-semibold text-white/90 mb-1">
             Focus Reel
-          </h2>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={toggleCollapsed}
-            className="bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-2 rounded-full inner-stroke-white-20-sm px-[11px]  py-[6px]"
-          >
-            {isCollapsed ? "About" : "Hide"}
-          </Button>
+          </h1>
         </div>
 
-        {!isCollapsed && (
-          <div className="mt-2">
-            <p className="text-white/80 text-sm mb-4">
-              Focus Reel is a timer designed to help you concentrate. Studies
-              show that being in front of a mirror make people X% more
-              accountable.
+        <motion.div
+          className="overflow-hidden"
+          animate={{
+            height: isCollapsed ? 0 : "auto",
+            opacity: isCollapsed ? 0 : 1,
+          }}
+          initial={{ height: 0, opacity: 0 }}
+          transition={{ duration: 0.3, bounce: 5 }}
+        >
+          <div>
+            <p className="text-white/80 text-xs mb-5 text-balance mx-auto text-center max-w-[90%]">
+              Focus Reel is a productivity timer designed to help you
+              concentrate. Studies show that seeing your own reflection
+              increases self-awareness and accountability, helping you stay
+              focused and minimize distractions as you work.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <OnboardingStep
                 number={1}
-                title="Allow camera permissions"
-                description="to work in front of a mirror"
+                description="Allow camera permissions to to see your reflection as you work"
                 imageSrc="/onboarding/step-1-illustration.png"
               />
               <OnboardingStep
                 number={2}
-                title="Start your timer"
-                description="and allow screen sharing"
+                description="Start your timer and allow screen sharing so Focus Reel can capture moments from your session"
                 imageSrc="/onboarding/step-2-illustration.png"
               />
               <OnboardingStep
                 number={3}
-                title="Get a montage"
-                description="of your working session when you're done"
+                description="Celebrate your progress with a personalized montage highlighting your productive moments"
                 imageSrc="/onboarding/step-3-illustration.png"
               />
             </div>
           </div>
-        )}
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 };
 
 interface OnboardingStepProps {
   number: number;
-  title: string;
   description: string;
   imageSrc: string;
 }
 
 const OnboardingStep = ({
   number,
-  title,
   description,
   imageSrc,
 }: OnboardingStepProps) => {
@@ -111,9 +134,7 @@ const OnboardingStep = ({
           className="max-w-full max-h-full object-contain"
         />
       </div>
-      <div className="text-center text-white/80 text-xs">
-        <span className="font-medium">{title}</span>
-        <br />
+      <div className="text-center text-white/80 text-xs text-balance">
         {description}
       </div>
     </div>
