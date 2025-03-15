@@ -65,6 +65,9 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
           },
         };
 
+        // Show the permission dialog again
+        setShowPermissionDialog(true);
+
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
@@ -75,6 +78,16 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
         console.error("Error accessing camera:", err);
         setHasPermission(false);
         onPermissionDenied();
+
+        // If permission is denied, guide the user to reset permissions
+        if (
+          err.name === "NotAllowedError" ||
+          err.name === "PermissionDeniedError"
+        ) {
+          alert(
+            "Camera access was denied. Please reset permissions in your browser settings and try again.",
+          );
+        }
       }
     };
 
@@ -337,7 +350,30 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
           <div className="flex flex-col items-center justify-center w-full h-full space-y-4 bg-muted rounded-lg">
             <CameraOff className="h-12 w-12 text-muted-foreground" />
             <p className="text-muted-foreground">Camera access is required</p>
-            <Button onClick={startCamera}>Enable Camera</Button>
+            <Button
+              onClick={() => {
+                // Try to start the camera
+                startCamera();
+
+                // If the browser has a permissions API, suggest using it
+                if (navigator.permissions && navigator.permissions.query) {
+                  navigator.permissions
+                    .query({ name: "camera" as PermissionName })
+                    .then((permissionStatus) => {
+                      if (permissionStatus.state === "denied") {
+                        alert(
+                          "Camera permission is blocked. Please reset permissions in your browser settings and refresh the page.",
+                        );
+                      }
+                    })
+                    .catch((err) =>
+                      console.error("Error checking permission status:", err),
+                    );
+                }
+              }}
+            >
+              Enable Camera
+            </Button>
           </div>
         )}
 
