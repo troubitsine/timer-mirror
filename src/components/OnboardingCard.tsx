@@ -35,7 +35,7 @@ const OnboardingCard = ({
       className={`w-full lg:w-[65vw] min-w-[300px] max-w-[1800px] mx-auto mb-4 ${className}`}
     >
       <motion.div
-        className={`px-4 py-4 bg-neutral-500/60
+        className={`px-4 py-4 bg-neutral-600/55
                before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/10 before:to-transparent before:rounded-xl before:pointer-events-none
                backdrop-blur-md rounded-xl`}
         animate={{ height: isCollapsed ? "auto" : "auto" }}
