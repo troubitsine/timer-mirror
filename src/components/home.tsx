@@ -60,6 +60,7 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
     taskName: "",
     duration: 0,
   });
+  const [hasCameraPermission, setHasCameraPermission] = useState(false);
 
   const handleSessionStart = () => {
     setShowMontage(false);
@@ -124,6 +125,7 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
               initialCollapsed={
                 localStorage.getItem("onboardingCollapsed") === "true"
               }
+              hasCameraPermission={hasCameraPermission}
             />
           )}
 
@@ -140,12 +142,14 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
                 <TimerCard
                   onSessionStart={handleSessionStart}
                   onSessionEnd={handleSessionEnd}
-                  onCameraPermissionGranted={() =>
-                    console.log("Camera permission granted")
-                  }
-                  onCameraPermissionDenied={() =>
-                    console.log("Camera permission denied")
-                  }
+                  onCameraPermissionGranted={() => {
+                    console.log("Camera permission granted");
+                    setHasCameraPermission(true);
+                  }}
+                  onCameraPermissionDenied={() => {
+                    console.log("Camera permission denied");
+                    setHasCameraPermission(false);
+                  }}
                 />
               </motion.div>
             ) : (

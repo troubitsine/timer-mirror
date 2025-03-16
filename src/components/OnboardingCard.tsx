@@ -2,15 +2,18 @@ import React, { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { isMobileDevice } from "@/lib/deviceDetection";
 import { motion } from "framer-motion";
+import { CheckIcon } from "@radix-ui/react-icons";
 
 interface OnboardingCardProps {
   className?: string;
   initialCollapsed?: boolean;
+  hasCameraPermission?: boolean;
 }
 
 const OnboardingCard = ({
   className = "",
   initialCollapsed,
+  hasCameraPermission = false,
 }: OnboardingCardProps) => {
   // Initialize with initialCollapsed if provided, otherwise check localStorage
   const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -96,6 +99,7 @@ const OnboardingCard = ({
                 number={1}
                 description="Allow camera permissions to to see your reflection as you work"
                 imageSrc="/onboarding/step-1-illustration.png"
+                completed={hasCameraPermission}
               />
               <OnboardingStep
                 number={2}
@@ -119,17 +123,33 @@ interface OnboardingStepProps {
   number: number;
   description: string;
   imageSrc: string;
+  completed?: boolean;
 }
 
 const OnboardingStep = ({
   number,
   description,
   imageSrc,
+  completed = false,
 }: OnboardingStepProps) => {
+  // Only apply opacity to the first step when completed
+  const isFirstStepCompleted = number === 1 && completed;
+
   return (
     <div className="flex flex-col items-center">
-      <div className="w-7 h-7 bg-white/70 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-2 rounded-full inner-stroke-white-20-sm flex items-center justify-center mb-2 ">
-        <span className="text-black/75 text-xs font-semibold">{number}</span>
+      <div className="relative mb-2">
+        {" "}
+        {/* Container for circle and badge */}
+        <div
+          className={`w-7 h-7 bg-white/70 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-2 rounded-full inner-stroke-white-20-sm flex items-center justify-center relative ${isFirstStepCompleted ? "opacity-70" : ""}`}
+        >
+          <span className="text-black/75 text-xs font-semibold">{number}</span>
+        </div>
+        {completed && (
+          <div className="absolute -top-0.5 -right-0.5 w-3 h-3 before:absolute before:inset-0 before:bg-gradient-to-b before:from-white-30 before:to-black/20 before:rounded-full backdrop-blur-md bg-green-500/90 rounded-full flex items-center justify-center">
+            <CheckIcon className="text-white w-2.5 h-2.5" />
+          </div>
+        )}
       </div>
       <div className="bg-neutral-800/50 rounded-xl border border-white/10 mb-2 w-full max-w-[164px] flex h-28 justify-center items-center">
         <img
