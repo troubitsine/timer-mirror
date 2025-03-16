@@ -34,7 +34,7 @@ const OnboardingCard = ({
 
   return (
     <div
-      className={`w-full lg:w-[65vw] min-w-[300px] max-w-[1800px] mx-auto mb-4 ${className}`}
+      className={`w-[calc(100%-20px)] lg:w-[65vw] min-w-[300px] max-w-[1800px] mx-auto mb-4 ${className}`}
     >
       <motion.div
         className={`px-4 py-4 bg-neutral-600/55
