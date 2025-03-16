@@ -131,7 +131,7 @@ const OnboardingStep = ({
       <div className="w-7 h-7 bg-white/70 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-2 rounded-full inner-stroke-white-20-sm flex items-center justify-center mb-2 ">
         <span className="text-black/75 text-xs font-semibold">{number}</span>
       </div>
-      <div className="bg-neutral-800/50 rounded-xl border border-white/10 mb-2 w-full max-w-[164px] flex h-28 py-[4] py-[4] p-2 justify-center items-center">
+      <div className="bg-neutral-800/50 rounded-xl border border-white/10 mb-2 w-full max-w-[164px] flex h-28 justify-center items-center">
         <img
           src={imageSrc}
           alt={`Step ${number}`}
