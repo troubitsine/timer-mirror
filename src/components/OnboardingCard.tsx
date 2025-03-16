@@ -30,8 +30,7 @@ const OnboardingCard = ({
     localStorage.setItem("onboardingCollapsed", String(newState));
   };
 
-  // Don't render on mobile
-  if (isMobile) return null;
+  // We now render on mobile too
 
   return (
     <div
@@ -103,8 +102,16 @@ const OnboardingCard = ({
               />
               <OnboardingStep
                 number={2}
-                description="Start your timer and allow screen sharing so Focus Reel can capture moments from your session"
-                imageSrc="/onboarding/step-2-illustration.png"
+                description={
+                  isMobile
+                    ? "Start your timer, then Focus Reel will capture moments from your session as you work. Note: if you open the app on a desktop device Focus Reel will also take screenshots of your screen"
+                    : "Start your timer and allow screen sharing so Focus Reel can capture moments from your session"
+                }
+                imageSrc={
+                  isMobile
+                    ? "/onboarding/step-2-illustration-mobile.png"
+                    : "/onboarding/step-2-illustration.png"
+                }
               />
               <OnboardingStep
                 number={3}

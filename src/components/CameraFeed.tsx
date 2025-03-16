@@ -5,7 +5,7 @@ import { Button } from "./ui/button";
 import { AlertDialog, AlertDialogContent } from "./ui/alert-dialog";
 import { CameraOff, Maximize2 } from "lucide-react";
 import { Cross2Icon } from "@radix-ui/react-icons";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { usePictureInPicture } from "@/lib/usePictureInPicture";
 
 interface CameraFeedProps {
@@ -378,58 +378,69 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
         )}
 
         <AlertDialog open={!hasPermission && showPermissionDialog}>
-          <AlertDialogContent className="p-0 border-none overflow-hidden max-w-sm bg-transparent">
-            <div
-              className="p-2 bg-neutral-700/70
-               before:absolute before:inset-0 before:bg-gradient-to-br before:from-neutral-400/40 before:to-transparent before:rounded-xl before:pointer-events-none
-               backdrop-blur-md rounded-xl"
-            >
-              <div className="flex flex-col items-center relative">
-                <div className="absolute right-0 top-0">
-                  <motion.div
-                    layout
-                    transition={{
-                      type: "spring",
-                      stiffness: 500,
-                      damping: 30,
-                    }}
+          <AnimatePresence>
+            {!hasPermission && showPermissionDialog && (
+              <motion.div
+                initial={{ opacity: 1, scale: 1, y: 0 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.75, y: 20 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+              >
+                <AlertDialogContent className="p-0 border-none overflow-hidden max-w-sm bg-transparent">
+                  <div
+                    className="p-2 bg-neutral-700/70
+                     before:absolute before:inset-0 before:bg-gradient-to-br before:from-neutral-400/40 before:to-transparent before:rounded-xl before:pointer-events-none
+                     backdrop-blur-md rounded-xl"
                   >
-                    <motion.div
-                      whileTap={{ scale: 0.95 }}
-                      transition={{ duration: 0.1 }}
-                    >
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => setShowPermissionDialog(false)}
-                        className="bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-2 rounded-full inner-stroke-white-20-sm p-2"
-                      >
-                        <Cross2Icon className="h-4 w-4" />
-                      </Button>
-                    </motion.div>
-                  </motion.div>
-                </div>
+                    <div className="flex flex-col items-center relative">
+                      <div className="absolute right-0 top-0">
+                        <motion.div
+                          layout
+                          transition={{
+                            type: "spring",
+                            stiffness: 500,
+                            damping: 30,
+                          }}
+                        >
+                          <motion.div
+                            whileTap={{ scale: 0.95 }}
+                            transition={{ duration: 0.1 }}
+                          >
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => setShowPermissionDialog(false)}
+                              className="bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-2 rounded-full inner-stroke-white-20-sm p-2"
+                            >
+                              <Cross2Icon className="h-4 w-4" />
+                            </Button>
+                          </motion.div>
+                        </motion.div>
+                      </div>
 
-                <div className="w-full max-w-[180px] flex h-24 justify-center items-center">
-                  <img
-                    src="/onboarding/step-1-illustration.png"
-                    alt="Camera permission"
-                    className="max-w-full max-h-full object-contain"
-                  />
-                </div>
+                      <div className="w-full max-w-[180px] flex h-24 justify-center items-center">
+                        <img
+                          src="/onboarding/step-1-illustration.png"
+                          alt="Camera permission"
+                          className="max-w-full max-h-full object-contain"
+                        />
+                      </div>
 
-                <h2 className="text-lg font-semibold text-white/85 mb-1 text-center">
-                  Focus Reel requires camera permissions
-                </h2>
+                      <h2 className="text-lg font-semibold text-white/85 mb-1 text-center">
+                        Focus Reel requires camera permissions
+                      </h2>
 
-                <p className="text-white/75 text-sm mb-4 text-balance mx-auto text-center">
-                  Focus Reel helps you stay focused by showing your reflection
-                  as you work. Enable camera access to enhance your
-                  concentration and accountability.
-                </p>
-              </div>
-            </div>
-          </AlertDialogContent>
+                      <p className="text-white/75 text-sm mb-4 text-balance mx-auto text-center">
+                        Focus Reel helps you stay focused by showing your
+                        reflection as you work. Enable camera access to enhance
+                        your concentration and accountability.
+                      </p>
+                    </div>
+                  </div>
+                </AlertDialogContent>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </AlertDialog>
       </Card>
     );
