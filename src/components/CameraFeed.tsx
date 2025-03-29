@@ -7,6 +7,7 @@ import { CameraOff, Maximize2 } from "lucide-react";
 import { Cross2Icon } from "@radix-ui/react-icons";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePictureInPicture } from "@/lib/usePictureInPicture";
+import { captureScreenshot, captureWebcam } from "@/lib/mediaCapture";
 
 interface CameraFeedProps {
   onPermissionGranted?: () => void;
@@ -15,7 +16,9 @@ interface CameraFeedProps {
   height?: number | string;
   onStart?: (duration: number) => void;
   onTaskNameChange?: (name: string) => void;
-  onSessionComplete?: () => void;
+  onSessionComplete?: (
+    capturedMedia?: Array<{ screenshot: string; webcamPhoto: string }>,
+  ) => void;
   isMobile?: boolean;
 }
 
@@ -289,15 +292,64 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
               <>
                 {/* Secret end session button */}
                 <button
-                  onClick={() => {
+                  onClick={async () => {
+                    // Capture at least 3 photos before ending
+                    const capturePromises = [];
+                    const isMobile = window.innerWidth < 768;
+
+                    for (let i = 0; i < 3; i++) {
+                      if (isMobile) {
+                        // On mobile, only capture webcam
+                        capturePromises.push(
+                          new Promise((resolve) => {
+                            setTimeout(async () => {
+                              try {
+                                const webcamPhoto = await captureWebcam(
+                                  videoRef.current,
+                                );
+                                resolve({ screenshot: "", webcamPhoto });
+                              } catch (err) {
+                                console.error("Error capturing webcam:", err);
+                                resolve({ screenshot: "", webcamPhoto: "" });
+                              }
+                            }, i * 300); // Capture every 300ms
+                          }),
+                        );
+                      } else {
+                        // On desktop, capture both screen and webcam
+                        capturePromises.push(
+                          new Promise((resolve) => {
+                            setTimeout(async () => {
+                              try {
+                                const screenshot = await captureScreenshot();
+                                const webcamPhoto = await captureWebcam(
+                                  videoRef.current,
+                                );
+                                resolve({ screenshot, webcamPhoto });
+                              } catch (err) {
+                                console.error("Error capturing media:", err);
+                                resolve({ screenshot: "", webcamPhoto: "" });
+                              }
+                            }, i * 300); // Capture every 300ms
+                          }),
+                        );
+                      }
+                    }
+
+                    // Wait for all captures to complete
+                    const results = await Promise.all(capturePromises);
+
+                    // Stop the timer
                     if (timerRef.current) {
                       clearInterval(timerRef.current);
                     }
                     setIsRunning(false);
+
                     // Show end message in the PiP window
                     showEndMessage();
-                    // Immediately complete the session without delay
-                    onSessionComplete();
+
+                    // Complete the session with the captured photos
+                    onSessionComplete(results);
                   }}
                   className="absolute bottom-4 right-4 w-4 h-4 rounded-lg opacity-0 hover:opacity-100 hover:bg-white/20 transition-all duration-200"
                 />

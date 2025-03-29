@@ -73,19 +73,24 @@ export function captureScreenshot(): Promise<string> {
   });
 }
 
-export function captureWebcam(): Promise<string> {
+export function captureWebcam(
+  videoElement?: HTMLVideoElement | null,
+): Promise<string> {
   return new Promise((resolve, reject) => {
-    if (!webcamVideo) {
+    // Use provided video element if available, otherwise use the global webcamVideo
+    const videoToCapture = videoElement || webcamVideo;
+
+    if (!videoToCapture) {
       reject("Webcam capture not initialized");
       return;
     }
 
     try {
       const canvas = document.createElement("canvas");
-      canvas.width = webcamVideo.videoWidth;
-      canvas.height = webcamVideo.videoHeight;
+      canvas.width = videoToCapture.videoWidth;
+      canvas.height = videoToCapture.videoHeight;
       const ctx = canvas.getContext("2d");
-      ctx?.drawImage(webcamVideo, 0, 0);
+      ctx?.drawImage(videoToCapture, 0, 0);
       resolve(canvas.toDataURL("image/jpeg"));
     } catch (error) {
       console.error("Error capturing webcam:", error);

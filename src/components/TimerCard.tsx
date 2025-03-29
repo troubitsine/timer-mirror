@@ -6,12 +6,15 @@ import { isMobileDevice } from "@/lib/deviceDetection";
 
 interface TimerCardProps {
   onSessionStart?: () => void;
-  onSessionEnd?: (data: {
-    screenshots: string[];
-    webcamPhotos: string[];
-    taskName: string;
-    duration: number;
-  }) => void;
+  onSessionEnd?: (
+    data: {
+      screenshots: string[];
+      webcamPhotos: string[];
+      taskName: string;
+      duration: number;
+    },
+    capturedMedia?: Array<{ screenshot: string; webcamPhoto: string }>,
+  ) => void;
   onCameraPermissionGranted?: () => void;
   onCameraPermissionDenied?: () => void;
 }
@@ -79,17 +82,22 @@ const TimerCard = ({
     onSessionStart();
   };
 
-  const handleSessionComplete = () => {
+  const handleSessionComplete = (
+    capturedMedia?: Array<{ screenshot: string; webcamPhoto: string }>,
+  ) => {
     if (captureCleanupRef.current) {
       captureCleanupRef.current();
       captureCleanupRef.current = undefined;
     }
     setIsRunning(false);
-    onSessionEnd({
-      ...sessionData,
-      taskName,
-      duration: Math.round(sessionDuration / 60),
-    });
+    onSessionEnd(
+      {
+        ...sessionData,
+        taskName,
+        duration: Math.round(sessionDuration / 60),
+      },
+      capturedMedia,
+    );
   };
 
   return (

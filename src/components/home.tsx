@@ -68,14 +68,34 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
 
   const navigate = useNavigate();
 
-  const handleSessionEnd = (data: {
-    screenshots: string[];
-    webcamPhotos: string[];
-    taskName: string;
-    duration: number;
-  }) => {
+  const handleSessionEnd = (
+    data: {
+      screenshots: string[];
+      webcamPhotos: string[];
+      taskName: string;
+      duration: number;
+    },
+    capturedMedia?: Array<{ screenshot: string; webcamPhoto: string }>,
+  ) => {
     onSessionComplete();
-    navigate("/complete", { state: data });
+
+    // If we have additional captured media, add it to the data
+    if (capturedMedia && capturedMedia.length > 0) {
+      const updatedData = {
+        ...data,
+        screenshots: [
+          ...data.screenshots,
+          ...capturedMedia.map((item) => item.screenshot).filter(Boolean),
+        ],
+        webcamPhotos: [
+          ...data.webcamPhotos,
+          ...capturedMedia.map((item) => item.webcamPhoto).filter(Boolean),
+        ],
+      };
+      navigate("/complete", { state: updatedData });
+    } else {
+      navigate("/complete", { state: data });
+    }
   };
 
   return (
