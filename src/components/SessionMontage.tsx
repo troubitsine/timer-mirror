@@ -24,10 +24,25 @@ const SessionMontage = ({
   const navigate = useNavigate();
   const isMobile = isMobileDevice();
 
+  // Helper function to interleave two arrays
+  const interleaveArrays = (arr1: string[], arr2: string[]): string[] => {
+    const result: string[] = [];
+    const maxLength = Math.max(arr1.length, arr2.length);
+    for (let i = 0; i < maxLength; i++) {
+      if (arr1[i]) result.push(arr1[i]);
+      if (arr2[i]) result.push(arr2[i]);
+    }
+    return result;
+  };
+
   // For mobile, we only use webcam photos
-  const allPhotos = isMobile
-    ? [...webcamPhotos].filter(Boolean)
-    : [...screenshots, ...webcamPhotos].filter(Boolean);
+  const allPhotos = useMemo(() => {
+    if (isMobile) {
+      return [...webcamPhotos].filter(Boolean);
+    } else {
+      return interleaveArrays(screenshots, webcamPhotos).filter(Boolean);
+    }
+  }, [screenshots, webcamPhotos, isMobile]);
 
   // Animation states
   const [animationPhase, setAnimationPhase] = useState<
@@ -38,17 +53,55 @@ const SessionMontage = ({
 
   // Calculate number of cards based on available photos
   const numberOfCards = Math.min(allPhotos.length, 12); // Limit to 12 cards max
-  const radius = 180; // Slightly smaller radius than the example
-  const angleOffsetPerCard = 360 / numberOfCards;
+
+  // Function to get random number of photos per circle (between 4 and 6)
+  const getRandomPhotosPerCircle = () => {
+    return Math.floor(Math.random() * 3) + 4; // Generates a random number between 4 and 6
+  };
+
+  // Calculate spiral parameters
+  const baseRadius = 100; // Starting radius for the innermost circle
+  const radiusIncrement = 8; // How much to increase radius for each circle
+
+  // Create circles data structure with random photos per circle
+  const circlesData = useMemo(() => {
+    const circles = [];
+    let remainingPhotos = numberOfCards;
+    let currentCircle = 0;
+
+    while (remainingPhotos > 0) {
+      // Get random number of photos for this circle (between 4-6)
+      // But don't exceed remaining photos
+      const photosInThisCircle = Math.min(
+        getRandomPhotosPerCircle(),
+        remainingPhotos,
+      );
+
+      circles.push({
+        circleIndex: currentCircle,
+        photosCount: photosInThisCircle,
+        radius: baseRadius + currentCircle * radiusIncrement,
+      });
+
+      remainingPhotos -= photosInThisCircle;
+      currentCircle++;
+    }
+
+    return circles;
+  }, [numberOfCards]);
 
   // Generate random rotations for the pile effect
   const randomRotations = useMemo(
     () =>
-      Array.from({ length: numberOfCards }).map(() => ({
-        rotate: Math.random() * 40 - 20, // Random rotation between -20 and 20 degrees
-        x: Math.random() * 20 - 10, // Small random x offset
-        y: Math.random() * 20 - 10, // Small random y offset
-      })),
+      Array.from({ length: numberOfCards }).map((_, index) => {
+        const randomRotation = Math.random() * 16 - 8; // Random rotation between -8 and 8 degrees
+        const rotate = index % 2 === 0 ? randomRotation : -randomRotation; // Alternate sign
+        return {
+          rotate: rotate,
+          x: Math.random() * 20 - 10, // Small random x offset
+          y: Math.random() * 20 - 10, // Small random y offset
+        };
+      }),
     [numberOfCards],
   );
 
@@ -84,13 +137,50 @@ const SessionMontage = ({
     return () => {};
   }, []);
 
+  // Calculate position data for each photo
+  const photoPositions = useMemo(() => {
+    const positions = [];
+    let photoIndex = 0;
+
+    // For each circle
+    for (const circle of circlesData) {
+      const photosInCircle = circle.photosCount;
+      const angleOffsetPerCard = 360 / photosInCircle;
+      const angleOffset = 250; // Offset in degrees to start from top-left
+
+      // For each photo in this circle
+      for (let i = 0; i < photosInCircle; i++) {
+        if (photoIndex >= numberOfCards) break;
+
+        // Calculate the angle for this card (in radians)
+        const angle = ((i * angleOffsetPerCard + angleOffset) * Math.PI) / 180;
+
+        // Calculate the spread position using trigonometry
+        const spreadX = circle.radius * Math.cos(angle);
+        const spreadY = circle.radius * Math.sin(angle);
+
+        positions.push({
+          photoIndex,
+          angle,
+          spreadX,
+          spreadY,
+          circleIndex: circle.circleIndex,
+        });
+
+        photoIndex++;
+      }
+    }
+
+    return positions;
+  }, [circlesData, numberOfCards]);
+
   return (
     <Card className="w-full min-h-[400px] bg-background p-6 relative">
-      <div className="flex flex-col h-full items-center justify-center gap-8">
+      <div className="flex flex-col h-full items-center justify-center gap-16">
         <div className="relative h-[300px] w-full max-w-[500px]">
           {/* Session info displayed at the top of the card */}
           <motion.div
-            className="relative flex justify-center w-full"
+            className="relative flex justify-center w-full mb-4"
             initial={{ opacity: 0, y: -20 }}
             animate={
               badgeVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: -20 }
@@ -102,26 +192,21 @@ const SessionMontage = ({
             </div>
           </motion.div>
 
-          {/* Circular animation */}
+          {/* Spiral animation */}
           {numberOfCards > 0 && (
             <div
-              className={`relative h-full w-full ${animationPhase === "pile" ? "cursor-pointer" : ""}`}
+              className={`relative h-full w-full ${
+                animationPhase === "pile" ? "cursor-pointer" : ""
+              }`}
               onMouseEnter={() =>
                 animationPhase === "pile" && setIsHovering(true)
               }
               onMouseLeave={() => setIsHovering(false)}
               onClick={() => animationPhase === "pile" && startAnimation()}
             >
-              {Array.from({ length: numberOfCards }).map((_, index) => {
+              {photoPositions.map((position, index) => {
                 // Use the actual photo from allPhotos
                 const photo = allPhotos[index % allPhotos.length];
-
-                // Calculate the angle for this card (in radians)
-                const angle = (index * angleOffsetPerCard * Math.PI) / 180;
-
-                // Calculate the spread position using trigonometry
-                const spreadX = radius * Math.cos(angle);
-                const spreadY = radius * Math.sin(angle);
 
                 // Get random rotation for pile effect
                 const {
@@ -131,9 +216,11 @@ const SessionMontage = ({
                 } = randomRotations[index];
 
                 // Calculate hover reveal position (slightly outward from center)
-                const hoverRevealFactor = 0.3; // How much to reveal (0.3 = 30% of the full spread)
-                const hoverX = spreadX * hoverRevealFactor + pileOffsetX;
-                const hoverY = spreadY * hoverRevealFactor + pileOffsetY;
+                const hoverRevealFactor = 0.4; // How much to reveal (0.3 = 30% of the full spread)
+                const hoverX =
+                  position.spreadX * hoverRevealFactor + pileOffsetX;
+                const hoverY =
+                  position.spreadY * hoverRevealFactor + pileOffsetY;
 
                 return (
                   <motion.div
@@ -156,8 +243,8 @@ const SessionMontage = ({
                         ? {}
                         : animationPhase === "spread"
                           ? {
-                              x: spreadX,
-                              y: spreadY,
+                              x: position.spreadX,
+                              y: position.spreadY,
                               scale: 1,
                               opacity: 1,
                               rotate: 0,
@@ -188,10 +275,10 @@ const SessionMontage = ({
                       stiffness: animationPhase === "spread" ? 260 : 300,
                       damping: animationPhase === "spread" ? 20 : 25,
                       delay: animationPhase === "spread" ? index * 0.1 : 0, // stagger only on spread
-                      duration: 0.4,
+                      duration: 0.5,
                     }}
                   >
-                    <div className="h-[120px] w-[180px] -translate-x-1/2 -translate-y-1/2 bg-white rounded-[14px] p-1 ring-[0.5px] ring-black/5 shadow-[rgba(21,_22,_31,_0.015)_0px_0.662406px_1.45729px_-0.583333px,_rgba(21,_22,_31,_0.015)_0px_2.51739px_5.53825px_-1.16667px,_rgba(21,_22,_31,_0.025)_0px_11px_24.2px_-1.75px]">
+                    <div className="h-[140px] w-[200px] -translate-x-1/2 -translate-y-1/2 bg-white rounded-[14px] p-1 ring-[0.5px] ring-black/10 shadow-[rgba(21,_22,_31,_0.01)_0px_0.6px_1.4px_-0.5px,_rgba(21,_22,_31,_0.01)_0px_2.5px_5.5px_-1.1px,_rgba(21,_22,_31,_0.02)_0px_11px_24.2px_-1.75px]">
                       <img
                         src={photo}
                         alt={`Photo ${index + 1}`}
