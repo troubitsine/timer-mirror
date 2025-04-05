@@ -296,9 +296,8 @@ const SessionMontage = ({
           <Button
             variant="default"
             onClick={() => navigate("/")}
-            className="flex items-center gap-2"
+            className="bg-neutral-900/75 before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/20 before:to-transparent before:rounded-full text-white/85 backdrop-blur-md flex items-center gap-2 rounded-full inner-stroke-white-20-sm hover:bg-neutral-800/75"
           >
-            <Timer className="h-4 w-4" />
             Start New Timer
           </Button>
         </div>
