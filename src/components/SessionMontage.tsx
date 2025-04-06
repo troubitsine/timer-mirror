@@ -175,27 +175,25 @@ const SessionMontage = ({
   }, [circlesData, numberOfCards]);
 
   return (
-    <Card className="w-full min-h-[400px] bg-background p-6 relative">
-      <div className="flex flex-col h-full items-center justify-center gap-16">
-        <div className="relative h-[300px] w-full max-w-[500px]">
-          {/* Session info displayed at the top of the card */}
-          <motion.div
-            className="relative flex justify-center w-full mb-4"
-            initial={{ opacity: 0, y: -20 }}
-            animate={
-              badgeVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: -20 }
-            }
-            transition={{ duration: 0.4 }}
-          >
-            <div className="bg-gray-900/75 backdrop-blur-sm text-white/90 px-4 py-2 rounded-lg text-sm font-medium shadow-md">
-              {taskName} • {duration} {duration === 1 ? "minute" : "minutes"}
-            </div>
-          </motion.div>
+    <Card className="w-[calc(100%-20px)] lg:w-[65vw] min-w-[300px] max-w-[1800px] mx-auto space-y-4 h-[65vh] sm:aspect-video relative">
+      {/* Session info displayed at the top of the card - absolutely positioned */}
+      <motion.div
+        className="absolute top-5 w-full text-center"
+        initial={{ opacity: 0, y: -20 }}
+        animate={badgeVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: -20 }}
+        transition={{ duration: 0.4 }}
+      >
+        <div className="inline-block bg-gray-900/75 backdrop-blur-sm text-white/90 px-4 py-2 rounded-lg text-sm font-medium shadow-md">
+          {taskName} • {duration} {duration === 1 ? "minute" : "minutes"}
+        </div>
+      </motion.div>
 
+      <div className="flex flex-col h-full items-center justify-center">
+        <div className="h-[300px] w-full max-w-[500px] flex items-center justify-center">
           {/* Spiral animation */}
           {numberOfCards > 0 && (
             <div
-              className={`relative h-full w-full ${
+              className={`relative h-full w-full flex items-center justify-center ${
                 animationPhase === "pile" ? "cursor-pointer" : ""
               }`}
               onMouseEnter={() =>
@@ -292,15 +290,7 @@ const SessionMontage = ({
           )}
         </div>
 
-        <div className="flex flex-col gap-3 items-center">
-          <Button
-            variant="default"
-            onClick={() => navigate("/")}
-            className="bg-neutral-900/75 before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/20 before:to-transparent before:rounded-full text-white/85 backdrop-blur-md flex items-center gap-2 rounded-full inner-stroke-white-20-sm hover:bg-neutral-800/75"
-          >
-            Start New Timer
-          </Button>
-        </div>
+        {/* Button removed and moved to SessionCompletePage */}
       </div>
     </Card>
   );
