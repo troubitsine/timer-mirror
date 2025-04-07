@@ -15,6 +15,9 @@ const SessionCompletePage = () => {
       return;
     }
 
+    // Scroll to top on mount
+    window.scrollTo(0, 0);
+
     track("session_complete", {
       duration: sessionData.duration,
       taskName: sessionData.taskName,
@@ -26,11 +29,19 @@ const SessionCompletePage = () => {
   return (
     <div className="min-h-screen w-full relative overflow-hidden">
       <div className="absolute inset-0 bg-stone-50" />
-      <div className="relative z-10 w-full min-h-screen p-1 sm:p-8 flex items-center pt-6 pb-12 sm:pb-32">
-        <div className="w-[calc(100%-20px)] lg:w-[65vw] min-w-[300px] max-w-[1800px] mx-auto">
-          {/* Header section moved outside the aspect-video container */}
-          <div className="w-full mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
-            <div className="rounded-xl relative text-left space-y-1 max-w-md">
+      <div className="relative z-10 w-full min-h-screen p-2 sm:p-8 flex sm:items-start pt-4 pb-12 sm:pb-32">
+        <div className="w-[calc(100%-20px)] lg:w-[65vw] min-w-[300px] max-w-[1800px] mx-auto flex flex-col gap-4 sm:gap-6">
+          <div className="w-full h-[60vh] sm:aspect-video">
+            <SessionMontage
+              screenshots={sessionData.screenshots}
+              webcamPhotos={sessionData.webcamPhotos}
+              taskName={sessionData.taskName}
+              duration={sessionData.duration}
+            />
+          </div>
+
+          <div className="w-full flex flex-col items-center sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
+            <div className="rounded-xl relative text-center sm:text-left space-y-1 max-w-md">
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900/90">
                 Session Complete
               </h1>
@@ -47,16 +58,6 @@ const SessionCompletePage = () => {
             >
               Start New Timer
             </Button>
-          </div>
-
-          {/* Now the aspect-video container only contains the SessionMontage */}
-          <div className="w-full h-[65vh] sm:aspect-video">
-            <SessionMontage
-              screenshots={sessionData.screenshots}
-              webcamPhotos={sessionData.webcamPhotos}
-              taskName={sessionData.taskName}
-              duration={sessionData.duration}
-            />
           </div>
         </div>
       </div>

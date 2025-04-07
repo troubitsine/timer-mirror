@@ -175,7 +175,7 @@ const SessionMontage = ({
   }, [circlesData, numberOfCards]);
 
   return (
-    <Card className="w-full lg:w-[65vw] min-w-[300px] max-w-[1800px] mx-auto space-y-4 h-[65vh] sm:aspect-video relative">
+    <Card className="w-full lg:w-[65vw] min-w-[300px] max-w-[1800px] mx-auto space-y-4 h-[60vh] sm:aspect-video relative">
       {/* Session info displayed at the top of the card - absolutely positioned */}
       <motion.div
         className="absolute top-5 w-full text-center"
