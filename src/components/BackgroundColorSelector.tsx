@@ -27,14 +27,16 @@ const BackgroundColorSelector = ({
         <button
           key={option.id}
           onClick={() => onSelect(option.id)}
-          className={cn(
-            "w-8 h-8 rounded-full transition-all",
-            "ring-offset-2 ring-offset-white/10",
-            selectedId === option.id
-              ? "ring-2 ring-white scale-110"
-              : "ring-1 ring-white/30",
-            option.className,
-          )}
+          className={
+            cn(
+              " rounded-full transition-all",
+              "ring-offset-2 ring-offset-white/10",
+              selectedId === option.id
+                ? "ring-1 ring-white scale-110"
+                : "ring-1 ring-white/30",
+              option.className,
+            ) + " w-5  h-5"
+          }
           style={option.style}
           title={option.name}
           aria-label={option.name}

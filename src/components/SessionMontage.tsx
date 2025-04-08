@@ -9,6 +9,7 @@ import BackgroundColorSelector, {
   BackgroundOption,
 } from "./BackgroundColorSelector";
 import { cn } from "@/lib/utils";
+import { Vibrant } from "node-vibrant/browser";
 
 interface SessionMontageProps {
   screenshots?: string[];
@@ -28,8 +29,8 @@ const SessionMontage = ({
   const navigate = useNavigate();
   const isMobile = isMobileDevice();
 
-  // Background options
-  const backgroundOptions: BackgroundOption[] = [
+  // Default background options (will be replaced with dynamic ones if available)
+  const defaultBackgroundOptions: BackgroundOption[] = [
     {
       id: "gradient",
       name: "Purple Gradient",
@@ -60,6 +61,11 @@ const SessionMontage = ({
     },
   ];
 
+  // State for dynamic background options
+  const [backgroundOptions, setBackgroundOptions] = useState<
+    BackgroundOption[]
+  >(defaultBackgroundOptions);
+
   // State for selected background
   const [selectedBackgroundId, setSelectedBackgroundId] = useState("gradient");
 
@@ -87,6 +93,88 @@ const SessionMontage = ({
       return interleaveArrays(screenshots, webcamPhotos).filter(Boolean);
     }
   }, [screenshots, webcamPhotos, isMobile]);
+
+  // Get the last photo for color extraction
+  const lastPhoto = useMemo(() => {
+    if (isMobile) {
+      // On mobile, use the last webcam photo
+      return webcamPhotos.length > 0
+        ? webcamPhotos[webcamPhotos.length - 1]
+        : null;
+    } else {
+      // On desktop, prefer the last screenshot, fallback to webcam photo
+      return screenshots.length > 0
+        ? screenshots[screenshots.length - 1]
+        : webcamPhotos.length > 0
+          ? webcamPhotos[webcamPhotos.length - 1]
+          : null;
+    }
+  }, [screenshots, webcamPhotos, isMobile]);
+
+  // Function to extract colors from an image
+  const extractColorsFromImage = async (imageSrc: string) => {
+    try {
+      const palette = await Vibrant.from(imageSrc).getPalette();
+
+      // Create dynamic background options based on the palette
+      const dynamicOptions: BackgroundOption[] = [];
+
+      // Add gradient option using Vibrant and LightVibrant
+      if (palette.Vibrant && palette.LightVibrant) {
+        dynamicOptions.push({
+          id: "dynamicGradient",
+          name: "Dynamic Gradient",
+          style: {
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 1111 1111' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.4' numOctaves='3' stitchTiles='stitch'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0.5'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"),
+            radial-gradient(circle at 0% 99%, ${palette.Vibrant.hex} 0%, transparent 67%),
+            radial-gradient(circle at 46% 94%, ${palette.LightVibrant.hex} 0%, transparent 81%),
+            radial-gradient(circle at 93% 95%, ${palette.Vibrant.hex} 0%, transparent 66%),
+            radial-gradient(circle at 89% 8%, ${palette.LightVibrant.hex} 0%, transparent 150%)`,
+            backgroundColor: palette.Vibrant.hex,
+            backgroundBlendMode: "overlay, normal, normal, normal, normal",
+          },
+        });
+      }
+
+      // Add solid color options
+      if (palette.LightVibrant) {
+        dynamicOptions.push({
+          id: "lightVibrant",
+          name: "Light Vibrant",
+          className: `bg-[${palette.LightVibrant.hex}]`,
+          style: { backgroundColor: palette.LightVibrant.hex },
+        });
+      }
+
+      if (palette.Muted) {
+        dynamicOptions.push({
+          id: "muted",
+          name: "Muted",
+          className: `bg-[${palette.Muted.hex}]`,
+          style: { backgroundColor: palette.Muted.hex },
+        });
+      }
+
+      if (palette.LightMuted) {
+        dynamicOptions.push({
+          id: "lightMuted",
+          name: "Light Muted",
+          className: `bg-[${palette.LightMuted.hex}]`,
+          style: { backgroundColor: palette.LightMuted.hex },
+        });
+      }
+
+      // If we have dynamic options, use them; otherwise, keep the defaults
+      if (dynamicOptions.length > 0) {
+        setBackgroundOptions(dynamicOptions);
+        // Set the first dynamic option as selected
+        setSelectedBackgroundId(dynamicOptions[0].id);
+      }
+    } catch (error) {
+      console.error("Error extracting colors from image:", error);
+      // Keep using default options if there's an error
+    }
+  };
 
   // Animation states
   const [animationPhase, setAnimationPhase] = useState<
@@ -181,6 +269,13 @@ const SessionMontage = ({
     return () => {};
   }, []);
 
+  // Extract colors from the last photo when available
+  useEffect(() => {
+    if (lastPhoto) {
+      extractColorsFromImage(lastPhoto);
+    }
+  }, [lastPhoto]);
+
   // Calculate position data for each photo
   const photoPositions = useMemo(() => {
     const positions = [];
@@ -228,7 +323,7 @@ const SessionMontage = ({
     >
       {/* Session info displayed at the top of the card - absolutely positioned */}
       <motion.div
-        className="absolute top-5 w-full text-center"
+        className="absolute top-3 w-full text-center"
         initial={{ opacity: 0, y: -20 }}
         animate={badgeVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: -20 }}
         transition={{ duration: 0.4 }}
@@ -341,7 +436,7 @@ const SessionMontage = ({
         </div>
 
         {/* Background color selector */}
-        <div className="absolute bottom-4 left-0 right-0 flex justify-center">
+        <div className="absolute bottom-3 left-0 right-0 flex justify-center">
           <BackgroundColorSelector
             options={backgroundOptions}
             selectedId={selectedBackgroundId}
