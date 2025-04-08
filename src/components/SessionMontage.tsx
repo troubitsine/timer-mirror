@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
-import { Timer } from "lucide-react";
+import { Timer, RotateCw } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { isMobileDevice } from "@/lib/deviceDetection";
@@ -29,45 +29,23 @@ const SessionMontage = ({
   const navigate = useNavigate();
   const isMobile = isMobileDevice();
 
-  // Default background options (will be replaced with dynamic ones if available)
-  const defaultBackgroundOptions: BackgroundOption[] = [
-    {
-      id: "gradient",
-      name: "Purple Gradient",
-      style: {
-        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 1111 1111' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.4' numOctaves='3' stitchTiles='stitch'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0.5'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"),
-        radial-gradient(circle at 0% 99%, #8171E1 0%, transparent 67%),
-        radial-gradient(circle at 46% 94%, #5E48C9 0%, transparent 81%),
-        radial-gradient(circle at 93% 95%, #5E48C9 0%, transparent 66%),
-        radial-gradient(circle at 89% 8%, #8171E1 0%, transparent 150%)`,
-        backgroundColor: "#8171E1",
-        backgroundBlendMode: "overlay, normal, normal, normal, normal",
-      },
-    },
-    {
-      id: "beige",
-      name: "Beige",
-      className: "bg-[#DCD1B3]",
-    },
-    {
-      id: "blue",
-      name: "Blue",
-      className: "bg-[#4C6CAC]",
-    },
-    {
-      id: "lightBlue",
-      name: "Light Blue",
-      className: "bg-[#8AC6FC]",
-    },
-  ];
+  // Plain white background for when no dynamic colors are available
+  const plainWhiteBackground: BackgroundOption = {
+    id: "white",
+    name: "White",
+    className: "bg-white",
+  };
 
   // State for dynamic background options
   const [backgroundOptions, setBackgroundOptions] = useState<
     BackgroundOption[]
-  >(defaultBackgroundOptions);
+  >([plainWhiteBackground]);
+
+  // Track if dynamic colors were successfully extracted
+  const [hasDynamicColors, setHasDynamicColors] = useState(false);
 
   // State for selected background
-  const [selectedBackgroundId, setSelectedBackgroundId] = useState("gradient");
+  const [selectedBackgroundId, setSelectedBackgroundId] = useState("white");
 
   // Get the selected background option
   const selectedBackground = backgroundOptions.find(
@@ -164,11 +142,18 @@ const SessionMontage = ({
         });
       }
 
-      // If we have dynamic options, use them; otherwise, keep the defaults
+      // If we have dynamic options, use them; otherwise, keep the plain white background
       if (dynamicOptions.length > 0) {
         setBackgroundOptions(dynamicOptions);
         // Set the first dynamic option as selected
         setSelectedBackgroundId(dynamicOptions[0].id);
+        // Indicate that we have dynamic colors
+        setHasDynamicColors(true);
+      } else {
+        // Reset to plain white background if no dynamic colors could be extracted
+        setBackgroundOptions([plainWhiteBackground]);
+        setSelectedBackgroundId("white");
+        setHasDynamicColors(false);
       }
     } catch (error) {
       console.error("Error extracting colors from image:", error);
@@ -435,15 +420,37 @@ const SessionMontage = ({
           )}
         </div>
 
-        {/* Background color selector */}
-        <div className="absolute bottom-3 left-0 right-0 flex justify-center">
-          <BackgroundColorSelector
-            options={backgroundOptions}
-            selectedId={selectedBackgroundId}
-            onSelect={setSelectedBackgroundId}
-            className="p-2 rounded-full bg-black/20 backdrop-blur-sm"
-          />
-        </div>
+        {/* Background color selector - only show when dynamic colors are available */}
+        {hasDynamicColors && (
+          <div className="absolute bottom-3 left-0 right-0 flex justify-center">
+            <BackgroundColorSelector
+              options={backgroundOptions}
+              selectedId={selectedBackgroundId}
+              onSelect={setSelectedBackgroundId}
+              className="p-2 rounded-full bg-black/20 backdrop-blur-sm"
+            />
+          </div>
+        )}
+
+        {/* Replay button */}
+        <motion.div
+          className="absolute bottom-3 right-3"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.5, duration: 0.3 }}
+          onMouseEnter={() => animationPhase === "pile" && setIsHovering(true)}
+          onMouseLeave={() => setIsHovering(false)}
+        >
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={startAnimation}
+            className="bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-2 rounded-full inner-stroke-white-20-sm px-[11px] py-[6px]"
+          >
+            <RotateCw className="h-4 w-4" />
+            Replay
+          </Button>
+        </motion.div>
       </div>
     </Card>
   );
