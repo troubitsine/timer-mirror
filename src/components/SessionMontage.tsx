@@ -5,6 +5,10 @@ import { Timer } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { isMobileDevice } from "@/lib/deviceDetection";
+import BackgroundColorSelector, {
+  BackgroundOption,
+} from "./BackgroundColorSelector";
+import { cn } from "@/lib/utils";
 
 interface SessionMontageProps {
   screenshots?: string[];
@@ -23,6 +27,46 @@ const SessionMontage = ({
 }: SessionMontageProps) => {
   const navigate = useNavigate();
   const isMobile = isMobileDevice();
+
+  // Background options
+  const backgroundOptions: BackgroundOption[] = [
+    {
+      id: "gradient",
+      name: "Purple Gradient",
+      style: {
+        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 1111 1111' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.4' numOctaves='3' stitchTiles='stitch'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0.5'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"),
+        radial-gradient(circle at 0% 99%, #8171E1 0%, transparent 67%),
+        radial-gradient(circle at 46% 94%, #5E48C9 0%, transparent 81%),
+        radial-gradient(circle at 93% 95%, #5E48C9 0%, transparent 66%),
+        radial-gradient(circle at 89% 8%, #8171E1 0%, transparent 150%)`,
+        backgroundColor: "#8171E1",
+        backgroundBlendMode: "overlay, normal, normal, normal, normal",
+      },
+    },
+    {
+      id: "beige",
+      name: "Beige",
+      className: "bg-[#DCD1B3]",
+    },
+    {
+      id: "blue",
+      name: "Blue",
+      className: "bg-[#4C6CAC]",
+    },
+    {
+      id: "lightBlue",
+      name: "Light Blue",
+      className: "bg-[#8AC6FC]",
+    },
+  ];
+
+  // State for selected background
+  const [selectedBackgroundId, setSelectedBackgroundId] = useState("gradient");
+
+  // Get the selected background option
+  const selectedBackground = backgroundOptions.find(
+    (option) => option.id === selectedBackgroundId,
+  );
 
   // Helper function to interleave two arrays
   const interleaveArrays = (arr1: string[], arr2: string[]): string[] => {
@@ -175,7 +219,13 @@ const SessionMontage = ({
   }, [circlesData, numberOfCards]);
 
   return (
-    <Card className="w-full lg:w-[65vw] min-w-[300px] max-w-[1800px] mx-auto space-y-4 h-[60vh] sm:aspect-video relative">
+    <Card
+      className={cn(
+        "w-full lg:w-[65vw] min-w-[300px] max-w-[1800px] mx-auto space-y-4 h-[60vh] sm:aspect-video relative",
+        selectedBackground?.className,
+      )}
+      style={selectedBackground?.style}
+    >
       {/* Session info displayed at the top of the card - absolutely positioned */}
       <motion.div
         className="absolute top-5 w-full text-center"
@@ -290,7 +340,15 @@ const SessionMontage = ({
           )}
         </div>
 
-        {/* Button removed and moved to SessionCompletePage */}
+        {/* Background color selector */}
+        <div className="absolute bottom-4 left-0 right-0 flex justify-center">
+          <BackgroundColorSelector
+            options={backgroundOptions}
+            selectedId={selectedBackgroundId}
+            onSelect={setSelectedBackgroundId}
+            className="p-2 rounded-full bg-black/20 backdrop-blur-sm"
+          />
+        </div>
       </div>
     </Card>
   );
