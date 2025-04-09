@@ -168,6 +168,10 @@ const SessionMontage = ({
   const [isHovering, setIsHovering] = useState(false);
   const [badgeVisible, setBadgeVisible] = useState(false);
 
+  // State to track the order of photos for the shuffle effect
+  const [photoOrder, setPhotoOrder] = useState<number[]>([]);
+  const [isShuffling, setIsShuffling] = useState(false);
+
   // Calculate number of cards based on available photos
   const numberOfCards = Math.min(allPhotos.length, 12); // Limit to 12 cards max
 
@@ -250,9 +254,12 @@ const SessionMontage = ({
   useEffect(() => {
     startAnimation();
 
+    // Initialize photo order
+    setPhotoOrder(Array.from({ length: numberOfCards }, (_, i) => i));
+
     // Cleanup function
     return () => {};
-  }, []);
+  }, [numberOfCards]);
 
   // Extract colors from the last photo when available
   useEffect(() => {
@@ -322,19 +329,41 @@ const SessionMontage = ({
         <div className="h-[300px] w-full max-w-[500px] flex items-center justify-center">
           {/* Spiral animation */}
           {numberOfCards > 0 && (
-            <div
+            <motion.div
               className={`relative h-full w-full flex items-center justify-center ${
                 animationPhase === "pile" ? "cursor-pointer" : ""
               }`}
+              style={{ transformOrigin: "center" }}
+              whileHover={
+                animationPhase === "pile" && !isShuffling ? { scale: 1.2 } : {}
+              }
               onMouseEnter={() =>
                 animationPhase === "pile" && setIsHovering(true)
               }
               onMouseLeave={() => setIsHovering(false)}
-              onClick={() => animationPhase === "pile" && startAnimation()}
+              onClick={() => {
+                if (animationPhase === "pile" && !isShuffling) {
+                  // Shuffle the cards - move the top card to the bottom
+                  setIsShuffling(true);
+                  setTimeout(() => {
+                    setPhotoOrder((prev) => {
+                      const newOrder = [...prev];
+                      const topCard = newOrder.shift();
+                      if (topCard !== undefined) newOrder.push(topCard);
+                      return newOrder;
+                    });
+                    setIsShuffling(false);
+                  }, 500); // Wait for animation to complete
+                }
+              }}
             >
               {photoPositions.map((position, index) => {
+                // Get the actual index from the photoOrder array to determine which photo to show
+                const orderIndex =
+                  photoOrder[index] !== undefined ? photoOrder[index] : index;
+
                 // Use the actual photo from allPhotos
-                const photo = allPhotos[index % allPhotos.length];
+                const photo = allPhotos[orderIndex % allPhotos.length];
 
                 // Get random rotation for pile effect
                 const {
@@ -343,16 +372,12 @@ const SessionMontage = ({
                   y: pileOffsetY,
                 } = randomRotations[index];
 
-                // Calculate hover reveal position (slightly outward from center)
-                const hoverRevealFactor = 0.4; // How much to reveal (0.3 = 30% of the full spread)
-                const hoverX =
-                  position.spreadX * hoverRevealFactor + pileOffsetX;
-                const hoverY =
-                  position.spreadY * hoverRevealFactor + pileOffsetY;
+                // Determine if this is the top card being shuffled
+                const isTopCard = index === 0 && isShuffling;
 
                 return (
                   <motion.div
-                    key={index}
+                    key={`photo-${orderIndex}`}
                     className="absolute left-1/2 top-1/2"
                     style={{
                       zIndex:
@@ -378,26 +403,37 @@ const SessionMontage = ({
                               rotate: 0,
                               zIndex: 1,
                             }
-                          : isHovering
+                          : isTopCard
                             ? {
-                                // hover reveal effect
-                                x: hoverX,
-                                y: hoverY,
-                                scale: 1,
-                                opacity: 1,
+                                // Top card being shuffled animation - now moves down instead of up
+                                x: 0,
+                                y: 100, // Changed from -100 to 100 to move down
+                                scale: 0.8,
+                                opacity: 0,
                                 rotate: rotate,
-                                zIndex: numberOfCards - index,
+                                zIndex: numberOfCards + 1,
                               }
-                            : {
-                                // pile phase
-                                x: pileOffsetX,
-                                y: pileOffsetY,
-                                scale: 1,
-                                opacity: 1,
-                                rotate: rotate,
-                                zIndex: numberOfCards - index,
-                              }
+                            : index === 0 && !isShuffling
+                              ? {
+                                  // New top card - scale up by 5%
+                                  x: pileOffsetX,
+                                  y: pileOffsetY,
+                                  scale: 1.05, // Scale up by 5%
+                                  opacity: 1,
+                                  rotate: rotate,
+                                  zIndex: numberOfCards,
+                                }
+                              : {
+                                  // pile phase for other cards
+                                  x: pileOffsetX,
+                                  y: pileOffsetY,
+                                  scale: 1,
+                                  opacity: 1,
+                                  rotate: rotate,
+                                  zIndex: numberOfCards - index,
+                                }
                     }
+                    // Removed individual card hover effect since we're scaling the entire pile
                     transition={{
                       type: "spring",
                       stiffness: animationPhase === "spread" ? 260 : 300,
@@ -416,7 +452,7 @@ const SessionMontage = ({
                   </motion.div>
                 );
               })}
-            </div>
+            </motion.div>
           )}
         </div>
 
@@ -438,8 +474,8 @@ const SessionMontage = ({
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.5, duration: 0.3 }}
-          onMouseEnter={() => animationPhase === "pile" && setIsHovering(true)}
-          onMouseLeave={() => setIsHovering(false)}
+          onMouseEnter={() => {}}
+          onMouseLeave={() => {}}
         >
           <Button
             size="sm"
