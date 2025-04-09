@@ -163,7 +163,7 @@ const SessionMontage = ({
 
   // Animation states
   const [animationPhase, setAnimationPhase] = useState<
-    "initial" | "spread" | "pile"
+    "initial" | "spread" | "pile" | "fadeOut"
   >("initial");
   const [isHovering, setIsHovering] = useState(false);
   const [badgeVisible, setBadgeVisible] = useState(false);
@@ -228,26 +228,55 @@ const SessionMontage = ({
 
   // Start the animation sequence
   const startAnimation = () => {
-    // Reset to initial state for photos only
-    setAnimationPhase("initial");
-    setIsHovering(false);
+    // First fade out the current pile to the center
+    if (animationPhase === "pile") {
+      // Create a temporary animation phase for the fade out
+      const tempPhase = "fadeOut";
+      setAnimationPhase(tempPhase as any);
 
-    // Show badge first if not already visible
-    if (!badgeVisible) {
-      setBadgeVisible(true);
-    }
-
-    // Use setTimeout to ensure state updates before starting spread
-    // Add a delay to allow badge to appear first
-    setTimeout(() => {
-      setAnimationPhase("spread");
-
-      // After all cards have spread out, trigger the pile animation
-      const spreadDuration = numberOfCards * 100 + 1000; // Base on the stagger delay
+      // Wait for fade out animation to complete - further reduced time for even faster transition
       setTimeout(() => {
-        setAnimationPhase("pile");
-      }, spreadDuration);
-    }, 800); // Increased delay to allow badge to appear first
+        // Then reset to initial state
+        setAnimationPhase("initial");
+        setIsHovering(false);
+
+        // Show badge if not already visible
+        if (!badgeVisible) {
+          setBadgeVisible(true);
+        }
+
+        // Start the spread animation after a very short delay
+        setTimeout(() => {
+          setAnimationPhase("spread");
+
+          // After all cards have spread out, trigger the pile animation
+          const spreadDuration = numberOfCards * 80 + 800; // Reduced base time and stagger delay
+          setTimeout(() => {
+            setAnimationPhase("pile");
+          }, spreadDuration);
+        }, 300); // Further reduced delay for snappier transition
+      }, 200); // Further reduced time for fade out animation
+    } else {
+      // If not already in pile phase, just start the normal animation sequence
+      setAnimationPhase("initial");
+      setIsHovering(false);
+
+      // Show badge if not already visible
+      if (!badgeVisible) {
+        setBadgeVisible(true);
+      }
+
+      // Start the spread animation after a shorter delay
+      setTimeout(() => {
+        setAnimationPhase("spread");
+
+        // After all cards have spread out, trigger the pile animation
+        const spreadDuration = numberOfCards * 80 + 800; // Reduced base time and stagger delay
+        setTimeout(() => {
+          setAnimationPhase("pile");
+        }, spreadDuration);
+      }, 500); // Reduced delay to allow badge to appear first but be snappier
+    }
   };
 
   // Auto-start animation on first load
@@ -403,43 +432,55 @@ const SessionMontage = ({
                               rotate: 0,
                               zIndex: 1,
                             }
-                          : isTopCard
+                          : animationPhase === "fadeOut"
                             ? {
-                                // Top card being shuffled animation - now moves down instead of up
-                                x: 0,
-                                y: 100, // Changed from -100 to 100 to move down
-                                scale: 0.8,
+                                // Fade out to center animation - faster and more dramatic
+                                x: -50,
+                                y: -50,
+                                scale: 0.4, // Smaller scale for more dramatic effect
                                 opacity: 0,
-                                rotate: rotate,
-                                zIndex: numberOfCards + 1,
+                                rotate: 0,
+                                zIndex: numberOfCards - index,
                               }
-                            : index === 0 && !isShuffling
+                            : isTopCard
                               ? {
-                                  // New top card - scale up by 5%
-                                  x: pileOffsetX,
-                                  y: pileOffsetY,
-                                  scale: 1.05, // Scale up by 5%
-                                  opacity: 1,
-                                  rotate: rotate,
-                                  zIndex: numberOfCards,
+                                  // Top card being shuffled animation - moves down faster
+                                  x: 0,
+                                  y: 120, // Increased distance for more dramatic effect
+                                  scale: 0.7, // Smaller scale for more dramatic effect
+                                  opacity: 0,
+                                  rotate: rotate * 1.5, // More rotation for more dramatic effect
+                                  zIndex: numberOfCards + 1,
                                 }
-                              : {
-                                  // pile phase for other cards
-                                  x: pileOffsetX,
-                                  y: pileOffsetY,
-                                  scale: 1,
-                                  opacity: 1,
-                                  rotate: rotate,
-                                  zIndex: numberOfCards - index,
-                                }
+                              : index === 0 && !isShuffling
+                                ? {
+                                    // New top card - scale up by 8%
+                                    x: 0, // Center horizontally
+                                    y: 0, // Center vertically
+                                    scale: 1.08, // Scale up by 8% for more emphasis
+                                    opacity: 1,
+                                    rotate: rotate,
+                                    zIndex: numberOfCards,
+                                  }
+                                : {
+                                    // pile phase for other cards
+                                    x: 0, // Center horizontally
+                                    y: 0, // Center vertically
+                                    scale: 1,
+                                    opacity: 1,
+                                    rotate: rotate,
+                                    zIndex: numberOfCards - index,
+                                  }
                     }
                     // Removed individual card hover effect since we're scaling the entire pile
                     transition={{
-                      type: "spring",
-                      stiffness: animationPhase === "spread" ? 260 : 300,
-                      damping: animationPhase === "spread" ? 20 : 25,
-                      delay: animationPhase === "spread" ? index * 0.1 : 0, // stagger only on spread
-                      duration: 0.5,
+                      type: animationPhase === "fadeOut" ? "tween" : "spring",
+                      stiffness: animationPhase === "spread" ? 300 : 350, // Increased stiffness for snappier spring
+                      damping: animationPhase === "spread" ? 18 : 22, // Reduced damping for more bounce
+                      delay: animationPhase === "spread" ? index * 0.08 : 0, // Reduced stagger delay
+                      duration: animationPhase === "fadeOut" ? 0.15 : 0.4, // Even faster fadeOut animation
+                      ease:
+                        animationPhase === "fadeOut" ? "circOut" : undefined, // Changed to circOut for even snappier feel
                     }}
                   >
                     <div className="h-[140px] w-[200px] -translate-x-1/2 -translate-y-1/2 bg-white rounded-[14px] p-1 ring-[0.5px] ring-black/10 shadow-[rgba(21,_22,_31,_0.01)_0px_0.6px_1.4px_-0.5px,_rgba(21,_22,_31,_0.01)_0px_2.5px_5.5px_-1.1px,_rgba(21,_22,_31,_0.02)_0px_11px_24.2px_-1.75px]">
