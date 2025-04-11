@@ -355,7 +355,7 @@ const SessionMontage = ({
       </motion.div>
 
       <div className="flex flex-col h-full items-center justify-center">
-        <div className="h-[260px] w-full max-w-[500px] flex items-center justify-center mb-6">
+        <div className="h-[260px] w-full max-w-[500px] flex items-center justify-center mb-8">
           {/* Spiral animation */}
           {numberOfCards > 0 && (
             <motion.div
@@ -445,9 +445,9 @@ const SessionMontage = ({
                             : isTopCard
                               ? {
                                   // Top card being shuffled animation - moves down faster
-                                  x: 0,
-                                  y: 80, // Increased distance for more dramatic effect
-                                  scale: 0.8, // Smaller scale for more dramatic effect
+                                  x: -35,
+                                  y: 60, // Increased distance for more dramatic effect
+                                  scale: 0.5, // Smaller scale for more dramatic effect
                                   opacity: 0,
                                   rotate: rotate * 1.2, // More rotation for more dramatic effect
                                   zIndex: numberOfCards + 1,
@@ -457,7 +457,7 @@ const SessionMontage = ({
                                     // New top card - scale up by 8%
                                     x: 0, // Center horizontally
                                     y: 0, // Center vertically
-                                    scale: 1.08, // Scale up by 8% for more emphasis
+                                    scale: 1.06, // Scale up by 8% for more emphasis
                                     opacity: 1,
                                     rotate: rotate,
                                     zIndex: numberOfCards,
@@ -483,7 +483,14 @@ const SessionMontage = ({
                         animationPhase === "fadeOut" ? "circOut" : undefined, // Changed to circOut for even snappier feel
                     }}
                   >
-                    <div className="h-[180px] w-[240px] -translate-x-1/2 -translate-y-1/2 bg-white rounded-[15px] p-[5px] inner-stroke-black-5-sm">
+                    <div
+                      className={cn(
+                        "-translate-x-1/2 -translate-y-1/2 bg-white rounded-[15px] p-[5px] inner-stroke-black-5-sm",
+                        isMobile
+                          ? "h-[160px] w-[130px]"
+                          : "h-[180px] w-[240px]",
+                      )}
+                    >
                       <img
                         src={photo}
                         alt={`Photo ${index + 1}`}
@@ -511,7 +518,7 @@ const SessionMontage = ({
 
         {/* Replay button */}
         <motion.div
-          className="absolute bottom-3 right-3"
+          className="absolute bottom-4 right-3"
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.5, duration: 0.3 }}
@@ -522,7 +529,7 @@ const SessionMontage = ({
             size="sm"
             variant="secondary"
             onClick={startAnimation}
-            className="bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-2 rounded-full inner-stroke-white-20-sm px-[11px] py-[6px]"
+            className="bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-1 rounded-full inner-stroke-white-20-sm pl-[8px] pr-[10px] py-[6px]"
           >
             <RotateCw className="h-4 w-4" />
             Replay
