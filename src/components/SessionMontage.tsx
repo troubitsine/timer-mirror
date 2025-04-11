@@ -355,7 +355,7 @@ const SessionMontage = ({
       </motion.div>
 
       <div className="flex flex-col h-full items-center justify-center">
-        <div className="h-[300px] w-full max-w-[500px] flex items-center justify-center">
+        <div className="h-[260px] w-full max-w-[500px] flex items-center justify-center mb-6">
           {/* Spiral animation */}
           {numberOfCards > 0 && (
             <motion.div
@@ -364,7 +364,7 @@ const SessionMontage = ({
               }`}
               style={{ transformOrigin: "center" }}
               whileHover={
-                animationPhase === "pile" && !isShuffling ? { scale: 1.2 } : {}
+                animationPhase === "pile" && !isShuffling ? { scale: 1.15 } : {}
               }
               onMouseEnter={() =>
                 animationPhase === "pile" && setIsHovering(true)
@@ -417,7 +417,7 @@ const SessionMontage = ({
                       y: 0,
                       scale: 0,
                       opacity: 0,
-                      rotate: -30,
+                      rotate: -20,
                       zIndex: 1,
                     }}
                     animate={
@@ -446,10 +446,10 @@ const SessionMontage = ({
                               ? {
                                   // Top card being shuffled animation - moves down faster
                                   x: 0,
-                                  y: 120, // Increased distance for more dramatic effect
-                                  scale: 0.7, // Smaller scale for more dramatic effect
+                                  y: 80, // Increased distance for more dramatic effect
+                                  scale: 0.8, // Smaller scale for more dramatic effect
                                   opacity: 0,
-                                  rotate: rotate * 1.5, // More rotation for more dramatic effect
+                                  rotate: rotate * 1.2, // More rotation for more dramatic effect
                                   zIndex: numberOfCards + 1,
                                 }
                               : index === 0 && !isShuffling
@@ -483,11 +483,11 @@ const SessionMontage = ({
                         animationPhase === "fadeOut" ? "circOut" : undefined, // Changed to circOut for even snappier feel
                     }}
                   >
-                    <div className="h-[140px] w-[200px] -translate-x-1/2 -translate-y-1/2 bg-white rounded-[14px] p-1 ring-[0.5px] ring-black/10 shadow-[rgba(21,_22,_31,_0.01)_0px_0.6px_1.4px_-0.5px,_rgba(21,_22,_31,_0.01)_0px_2.5px_5.5px_-1.1px,_rgba(21,_22,_31,_0.02)_0px_11px_24.2px_-1.75px]">
+                    <div className="h-[180px] w-[240px] -translate-x-1/2 -translate-y-1/2 bg-white rounded-[15px] p-[5px] inner-stroke-black-5-sm">
                       <img
                         src={photo}
                         alt={`Photo ${index + 1}`}
-                        className="w-full h-full object-cover rounded-[12px] ring-[0.5px] ring-black/5"
+                        className="w-full h-full object-cover rounded-[11px] z-20 shadow-[0_1px_1px_rgba(0,0,0,0.03),0_0_0_1px_rgba(34,42,53,0.03),0_4px_6px_rgba(34,42,53,0.03),0_2px_3px_rgba(0,0,0,0.03)]"
                       />
                     </div>
                   </motion.div>
