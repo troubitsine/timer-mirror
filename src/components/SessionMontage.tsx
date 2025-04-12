@@ -97,21 +97,32 @@ const SessionMontage = ({
       // Create dynamic background options based on the palette
       const dynamicOptions: BackgroundOption[] = [];
 
-      // Add gradient option using Vibrant and LightVibrant
+      // Add gradient option using Vibrant and LightVibrant for desktop, solid color for mobile
       if (palette.Vibrant && palette.LightVibrant) {
-        dynamicOptions.push({
-          id: "dynamicGradient",
-          name: "Dynamic Gradient",
-          style: {
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 1111 1111' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.4' numOctaves='3' stitchTiles='stitch'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0.5'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"),
-            radial-gradient(circle at 0% 99%, ${palette.Vibrant.hex} 0%, transparent 67%),
-            radial-gradient(circle at 46% 94%, ${palette.LightVibrant.hex} 0%, transparent 81%),
-            radial-gradient(circle at 93% 95%, ${palette.Vibrant.hex} 0%, transparent 66%),
-            radial-gradient(circle at 89% 8%, ${palette.LightVibrant.hex} 0%, transparent 150%)`,
-            backgroundColor: palette.Vibrant.hex,
-            backgroundBlendMode: "overlay, normal, normal, normal, normal",
-          },
-        });
+        if (isMobile) {
+          // For mobile devices, use a solid Vibrant color instead of gradient
+          dynamicOptions.push({
+            id: "mobileVibrant",
+            name: "Vibrant",
+            className: `bg-[${palette.Vibrant.hex}]`,
+            style: { backgroundColor: palette.Vibrant.hex },
+          });
+        } else {
+          // For desktop, use the gradient as before
+          dynamicOptions.push({
+            id: "dynamicGradient",
+            name: "Dynamic Gradient",
+            style: {
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 1111 1111' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.4' numOctaves='3' stitchTiles='stitch'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0.5'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"),
+              radial-gradient(circle at 0% 99%, ${palette.Vibrant.hex} 0%, transparent 67%),
+              radial-gradient(circle at 46% 94%, ${palette.LightVibrant.hex} 0%, transparent 81%),
+              radial-gradient(circle at 93% 95%, ${palette.Vibrant.hex} 0%, transparent 66%),
+              radial-gradient(circle at 89% 8%, ${palette.LightVibrant.hex} 0%, transparent 150%)`,
+              backgroundColor: palette.Vibrant.hex,
+              backgroundBlendMode: "overlay, normal, normal, normal, normal",
+            },
+          });
+        }
       }
 
       // Add solid color options
@@ -494,6 +505,7 @@ const SessionMontage = ({
                       <img
                         src={photo}
                         alt={`Photo ${index + 1}`}
+                        loading="lazy"
                         className="w-full h-full object-cover rounded-[11px] z-20 shadow-[0_1px_1px_rgba(0,0,0,0.03),0_0_0_1px_rgba(34,42,53,0.03),0_4px_6px_rgba(34,42,53,0.03),0_2px_3px_rgba(0,0,0,0.03)]"
                       />
                     </div>
