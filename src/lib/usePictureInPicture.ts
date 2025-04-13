@@ -135,7 +135,7 @@ export function usePictureInPicture({
           width: 100%;
           display: flex;
           justify-content: center;
-          padding: 12px 8px 8px;
+          padding: 8px 8px 8px;
           box-sizing: border-box;
         }
         .pip-task-name {
@@ -148,7 +148,6 @@ export function usePictureInPicture({
           color: rgba(255, 255, 255, 0.9);
           position: relative;
           box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-          margin: 0 4px;
           width: calc(100% - 8px);
           white-space: nowrap;
           overflow: hidden;
@@ -177,8 +176,8 @@ export function usePictureInPicture({
         }
         .pip-countdown-container {
           position: absolute;
-          bottom: 12px;
-          left: 12px;
+          bottom: 8px;
+          left: 8px;
           width: 70px;
           height: 35px;
           display: flex;
@@ -210,24 +209,23 @@ export function usePictureInPicture({
           pointer-events: none;
         }
         .pip-complete-text {
-          background: linear-gradient(to bottom, rgba(70, 70, 70, 0.5), rgba(40, 40, 40, 0.5));
-          backdrop-filter: blur(8px);
-          -webkit-backdrop-filter: blur(8px);
-          padding: 12px 20px;
+          background: linear-gradient(to bottom, rgba(70, 70, 70, 0.5), rgba(40, 40, 40, 0.5));backdrop-filter: blur(8px);-webkit-backdrop-filter: blur(8px);
+          padding: 12px 16px;
           border-radius: 12px;
-          font-size: 24px;
-          font-weight: bold;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          font-size: 20px; /* Reduced from 24px */font-weight: 600;
           color: rgba(255, 255, 255, 0.85);
           position: relative;
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-        }
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);white-space: nowrap; /* Force text to stay on one line */
+          max-width: 100%; /* Ensure it doesn't exceed the container width */
+          }
         .pip-complete-text::after {
           content: none;
         }
         .pip-countdown-container {
           position: absolute;
-          bottom: 12px;
-          left: 12px;
+          bottom: 8px;
+          left: 8px;
           width: 70px;
           height: 35px;
           display: flex;
@@ -259,15 +257,15 @@ export function usePictureInPicture({
           pointer-events: none;
         }
         .pip-end-message {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          width: 100%;
-          padding: 16px;
-          box-sizing: border-box;
-          background: none;
-        }
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 16px;
+  box-sizing: border-box;
+  background: none;
+}
       `;
       newPipWindow.document.head.appendChild(style);
 
