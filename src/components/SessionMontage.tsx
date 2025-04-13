@@ -518,7 +518,7 @@ const SessionMontage = ({
 
         {/* Background color selector - only show when dynamic colors are available */}
         {hasDynamicColors && (
-          <div className="absolute bottom-3 left-0 right-0 flex justify-center">
+          <div className="absolute bottom-3 left-0 right-0 flex justify-center z-30">
             <BackgroundColorSelector
               options={backgroundOptions}
               selectedId={selectedBackgroundId}
@@ -530,7 +530,7 @@ const SessionMontage = ({
 
         {/* Replay button */}
         <motion.div
-          className="absolute bottom-4 right-3"
+          className="absolute bottom-4 right-3 z-30"
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.5, duration: 0.3 }}
