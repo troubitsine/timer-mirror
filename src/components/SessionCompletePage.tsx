@@ -1,13 +1,16 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import SessionMontage from "./SessionMontage";
-import { useEffect } from "react";
+import SessionGridView from "./SessionGridView";
+import { useState, useEffect } from "react";
 import { track } from "@vercel/analytics";
 import { Button } from "./ui/button";
+import { Grid2X2, Layers } from "lucide-react";
 
 const SessionCompletePage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const sessionData = location.state;
+  const [showGridView, setShowGridView] = useState(false);
 
   useEffect(() => {
     if (!sessionData) {
@@ -31,13 +34,45 @@ const SessionCompletePage = () => {
       <div className="absolute inset-0 bg-stone-50" />
       <div className="relative z-10 w-full min-h-screen p-2 sm:p-8 flex sm:items-start pt-4 pb-12 sm:pb-32">
         <div className="w-[calc(100%-20px)] lg:w-[65vw] min-w-[300px] max-w-[1800px] mx-auto flex flex-col gap-4 sm:gap-6">
-          <div className="w-full h-[60vh] sm:aspect-video">
-            <SessionMontage
-              screenshots={sessionData.screenshots}
-              webcamPhotos={sessionData.webcamPhotos}
-              taskName={sessionData.taskName}
-              duration={sessionData.duration}
-            />
+          <div className="w-full h-[60vh] sm:aspect-video relative">
+            {/* Toggle view button */}
+            <div className="absolute top-3 right-3 z-30">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => setShowGridView(!showGridView)}
+                className="bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-1 rounded-full inner-stroke-white-20-sm pl-[8px] pr-[10px] py-[6px]"
+              >
+                {showGridView ? (
+                  <>
+                    <Layers className="h-4 w-4" />
+                    <span className="hidden sm:inline">Show Animation</span>
+                  </>
+                ) : (
+                  <>
+                    <Grid2X2 className="h-4 w-4" />
+                    <span className="hidden sm:inline">Show Grid</span>
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {/* Conditionally render either the montage or grid view */}
+            {showGridView ? (
+              <SessionGridView
+                screenshots={sessionData.screenshots}
+                webcamPhotos={sessionData.webcamPhotos}
+                taskName={sessionData.taskName}
+                duration={sessionData.duration}
+              />
+            ) : (
+              <SessionMontage
+                screenshots={sessionData.screenshots}
+                webcamPhotos={sessionData.webcamPhotos}
+                taskName={sessionData.taskName}
+                duration={sessionData.duration}
+              />
+            )}
           </div>
 
           <div className="w-full flex flex-col items-center sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
