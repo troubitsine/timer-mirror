@@ -12,6 +12,7 @@ import BackgroundColorSelector, {
   BackgroundOption,
 } from "./BackgroundColorSelector";
 import { Vibrant } from "node-vibrant/browser";
+import Tilt from "./Tilt";
 
 interface SessionGridViewProps {
   screenshots?: string[];
@@ -334,11 +335,17 @@ const SessionGridView = ({
 
       <div className="w-full h-full overflow-auto pt-14 pb-14 flex justify-center items-center">
         {/* New wrapper with padding and shadow */}
-        <div className="p-1 bg-white rounded-xl shadow-md w-[55%] sm:w-[35%] md:w-[29%]">
-          <div className="relative">
-            <FillGrid photos={allPhotos} />
+        <Tilt
+          className="w-[55%] sm:w-[35%] md:w-[29%]"
+          rotationFactor={5}
+          springOptions={{ stiffness: 300, damping: 30 }}
+        >
+          <div className="p-1 bg-white rounded-xl shadow-md w-full">
+            <div className="relative">
+              <FillGrid photos={allPhotos} />
+            </div>
           </div>
-        </div>
+        </Tilt>
       </div>
 
       {/* Background color selector - only show when dynamic colors are available */}
