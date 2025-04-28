@@ -334,10 +334,7 @@ const SessionGridView = ({
 
       <div className="w-full h-full overflow-auto pt-14 pb-14 flex justify-center items-center">
         {/* New wrapper with padding and shadow */}
-        <div
-          className="p-1 bg-white rounded-xl shadow-md"
-          style={{ width: "28%" }}
-        >
+        <div className="p-1 bg-white rounded-xl shadow-md w-[55%] sm:w-[35%] md:w-[29%]">
           <div className="relative">
             <FillGrid photos={allPhotos} />
           </div>
