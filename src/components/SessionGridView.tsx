@@ -325,24 +325,23 @@ const SessionGridView = ({
       )}
       style={selectedBackground?.style}
     >
-      {/* Session info displayed at the top of the card */}
-      <div className="absolute top-3 w-full text-center z-10">
-        <div className="inline-block bg-gray-900/75 backdrop-blur-sm text-white/90 px-4 py-2 rounded-lg text-sm font-medium shadow-md">
-          {taskName} • {duration} {duration === 1 ? "minute" : "minutes"}
-        </div>
-      </div>
       {/* Fixed size container for grid layout */}
-
-      <div className="w-full h-full overflow-auto pt-14 pb-14 flex justify-center items-center">
+      <div className="w-full h-full overflow-auto flex justify-center items-center">
         {/* New wrapper with padding and shadow */}
         <Tilt
-          className="w-[55%] sm:w-[35%] md:w-[29%]"
+          className="w-[55%] sm:w-[35%] md:w-[29%] mb-8"
           rotationFactor={5}
           springOptions={{ stiffness: 300, damping: 30 }}
         >
           <div className="p-1 bg-white rounded-xl shadow-md w-full">
             <div className="relative">
               <FillGrid photos={allPhotos} />
+            </div>
+            {/* Session info displayed at the bottom of the card */}
+            <div className="w-full text-center mt-1">
+              <div className="inline-block bg-gray-900/75 backdrop-blur-sm text-white/90 px-4 py-2 rounded-lg text-sm font-medium shadow-md">
+                {taskName} • {duration} {duration === 1 ? "min" : "min"}
+              </div>
             </div>
           </div>
         </Tilt>

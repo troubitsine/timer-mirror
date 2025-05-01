@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Timer, RotateCw } from "lucide-react";
@@ -89,6 +89,9 @@ const SessionMontage = ({
     }
   }, [screenshots, webcamPhotos, isMobile]);
 
+  // Reference to the task badge element for updating CSS variables
+  const taskBadgeRef = useRef<HTMLDivElement>(null);
+
   // Function to extract colors from an image
   const extractColorsFromImage = async (imageSrc: string) => {
     try {
@@ -122,6 +125,77 @@ const SessionMontage = ({
               backgroundBlendMode: "overlay, normal, normal, normal, normal",
             },
           });
+        }
+
+        // Update task badge CSS variables with vibrant colors
+        if (taskBadgeRef.current) {
+          const vibrantColor = palette.Vibrant.hex;
+          const lightVibrantColor = palette.LightVibrant.hex;
+
+          // Convert hex to rgba with opacity
+          const toRgba = (hex: string, opacity: number) => {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+          };
+
+          // Set initial state colors
+          taskBadgeRef.current.style.setProperty(
+            "--color-1",
+            "rgba(24, 24, 44, 0.96)",
+          );
+          taskBadgeRef.current.style.setProperty(
+            "--color-2",
+            "rgba(24, 24, 44, 0.96)",
+          );
+          taskBadgeRef.current.style.setProperty(
+            "--color-3",
+            toRgba(vibrantColor, 0.3),
+          );
+          taskBadgeRef.current.style.setProperty(
+            "--color-4",
+            "rgba(24, 24, 44, 0.96)",
+          );
+          taskBadgeRef.current.style.setProperty(
+            "--color-5",
+            "rgba(24, 24, 44, 0.96)",
+          );
+
+          // Set border colors
+          taskBadgeRef.current.style.setProperty(
+            "--border-color-1",
+            toRgba(lightVibrantColor, 0.1),
+          );
+          taskBadgeRef.current.style.setProperty(
+            "--border-color-2",
+            toRgba(vibrantColor, 0.1),
+          );
+
+          // Set hover state colors
+          const style = document.createElement("style");
+          style.textContent = `
+            .task-badge:hover {
+              --pos-x: 0%;
+              --pos-y: 91.51%;
+              --spread-x: 120.24%;
+              --spread-y: 103.18%;
+              --color-1: ${toRgba(vibrantColor, 0.9)};
+    --color-2: ${toRgba(vibrantColor, 0.7)};
+    --color-3: ${toRgba(lightVibrantColor, 0.6)};
+    --color-4: ${toRgba(vibrantColor, 0.4)};
+    --color-5: ${toRgba(lightVibrantColor, 0.2)};
+    --border-angle: 150deg;
+    --border-color-1: ${toRgba(lightVibrantColor, 0.3)};
+    --border-color-2: ${toRgba(vibrantColor, 0.2)};
+              --stop-1: 0%;
+              --stop-2: 8.8%;
+              --stop-3: 21.44%;
+              --stop-4: 71.34%;
+              --stop-5: 85.76%;
+            }
+          `;
+          document.head.appendChild(style);
         }
       }
 
@@ -360,8 +434,14 @@ const SessionMontage = ({
         animate={badgeVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: -20 }}
         transition={{ duration: 0.4 }}
       >
-        <div className="inline-block bg-gray-900/75 backdrop-blur-sm text-white/90 px-4 py-2 rounded-lg text-sm font-medium shadow-md">
-          {taskName} • {duration} {duration === 1 ? "minute" : "minutes"}
+        <div className="inline-flex bg-white/80 p-1 rounded-xl">
+          <div
+            ref={taskBadgeRef}
+            className="task-badge text-neutral-50/90 inner-stroke-white-20-sm"
+            style={{ textShadow: "0px 1px 2px rgba(0,0,0,0.25)" }}
+          >
+            {taskName} • {duration} {duration === 1 ? "minute" : "minutes"}
+          </div>
         </div>
       </motion.div>
 
@@ -533,7 +613,8 @@ const SessionMontage = ({
           className="absolute bottom-4 right-3 z-30"
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.5, duration: 0.3 }}
+          transition={{ duration: 0.3 }}
+          whileTap={{ scale: 0.95 }}
           onMouseEnter={() => {}}
           onMouseLeave={() => {}}
         >

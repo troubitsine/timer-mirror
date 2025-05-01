@@ -36,7 +36,7 @@ const SessionCompletePage = () => {
         <div className="w-[calc(100%-20px)] lg:w-[65vw] min-w-[300px] max-w-[1800px] mx-auto flex flex-col gap-4 sm:gap-6">
           <div className="w-full h-[60vh] sm:aspect-video relative">
             {/* Toggle view button */}
-            <div className="absolute top-3 right-3 z-30">
+            <div className="absolute top-4 right-3 z-30">
               <Button
                 size="sm"
                 variant="secondary"
