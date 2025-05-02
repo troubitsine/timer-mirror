@@ -19,6 +19,7 @@ interface SessionMontageProps {
   onSave?: () => void;
 }
 
+
 const SessionMontage = ({
   screenshots = [],
   webcamPhotos = [],
@@ -422,7 +423,7 @@ const SessionMontage = ({
   return (
     <Card
       className={cn(
-        "w-full lg:w-[65vw] min-w-[300px] max-w-[1800px] mx-auto space-y-4 h-[60vh] sm:aspect-video relative",
+        "w-full h-full relative overflow-hidden",
         selectedBackground?.className,
       )}
       style={selectedBackground?.style}
@@ -438,15 +439,21 @@ const SessionMontage = ({
           <div
             ref={taskBadgeRef}
             className="task-badge text-neutral-50/90 inner-stroke-white-20-sm"
-            style={{ textShadow: "0px 1px 2px rgba(0,0,0,0.25)" }}
+            style={{
+              textShadow: "1px 1.5px 2px rgba(0,0,0,0.28)",
+              maxWidth: "480px",
+              overflowWrap: "break-word",
+              whiteSpace: "normal",
+              textWrap: "balance"
+            }}
           >
-            {taskName} • {duration} {duration === 1 ? "minute" : "minutes"}
+            {taskName} • {duration} {duration === 1 ? "min" : "min"}
           </div>
         </div>
       </motion.div>
 
       <div className="flex flex-col h-full items-center justify-center">
-        <div className="h-[260px] w-full max-w-[500px] flex items-center justify-center mb-8">
+        <div className="h-[260px] w-full max-w-[500px] flex items-center justify-center mb-5">
           {/* Spiral animation */}
           {numberOfCards > 0 && (
             <motion.div

@@ -33,8 +33,8 @@ const SessionCompletePage = () => {
     <div className="min-h-screen w-full relative overflow-hidden">
       <div className="absolute inset-0 bg-stone-50" />
       <div className="relative z-10 w-full min-h-screen p-2 sm:p-8 flex sm:items-start pt-4 pb-12 sm:pb-32">
-        <div className="w-[calc(100%-20px)] lg:w-[65vw] min-w-[300px] max-w-[1800px] mx-auto flex flex-col gap-4 sm:gap-6">
-          <div className="w-full h-[60vh] sm:aspect-video relative">
+        <div className="w-[calc(100%-20px)] lg:w-[65vw] min-w-[300px] max-w-[1800px] max-h-[1200px] mx-auto flex flex-col gap-4 sm:gap-6">
+          <div className="w-full h-[70vh] sm:aspect-video relative">
             {/* Toggle view button */}
             <div className="absolute top-4 right-3 z-30">
               <Button

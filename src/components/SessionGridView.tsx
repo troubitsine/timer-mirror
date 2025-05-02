@@ -5,13 +5,13 @@ import React, {
   useLayoutEffect,
   useMemo,
 } from "react";
+import { Vibrant } from "node-vibrant/browser";
 import { Card } from "./ui/card";
 import { cn } from "@/lib/utils";
 import { isMobileDevice } from "@/lib/deviceDetection";
 import BackgroundColorSelector, {
   BackgroundOption,
 } from "./BackgroundColorSelector";
-import { Vibrant } from "node-vibrant/browser";
 import Tilt from "./Tilt";
 
 interface SessionGridViewProps {
@@ -226,6 +226,9 @@ const SessionGridView = ({
     }
   }, [screenshots, webcamPhotos, isMobile]);
 
+  // Reference to the task badge element for color extraction and CSS variable updates
+  const taskBadgeRef = useRef<HTMLDivElement>(null);
+
   // Function to extract colors from an image
   const extractColorsFromImage = async (imageSrc: string) => {
     try {
@@ -259,6 +262,54 @@ const SessionGridView = ({
               backgroundBlendMode: "overlay, normal, normal, normal, normal",
             },
           });
+        }
+
+        // Update task badge CSS variables with vibrant colors
+        if (taskBadgeRef.current) {
+          const vibrantColor = palette.Vibrant.hex;
+          const lightVibrantColor = palette.LightVibrant.hex;
+
+          // Convert hex to rgba with opacity
+          const toRgba = (hex: string, opacity: number) => {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+          };
+
+          // Set initial state colors
+          taskBadgeRef.current.style.setProperty(
+            "--color-1",
+            "rgba(24, 24, 44, 0.96)",
+          );
+          taskBadgeRef.current.style.setProperty(
+            "--color-2",
+            "rgba(24, 24, 44, 0.96)",
+          );
+          taskBadgeRef.current.style.setProperty(
+            "--color-3",
+            toRgba(vibrantColor, 0.3),
+          );
+          taskBadgeRef.current.style.setProperty(
+            "--color-4",
+            "rgba(24, 24, 44, 0.96)",
+          );
+          taskBadgeRef.current.style.setProperty(
+            "--color-5",
+            "rgba(24, 24, 44, 0.96)",
+          );
+
+          // Set border colors
+          taskBadgeRef.current.style.setProperty(
+            "--border-color-1",
+            toRgba(lightVibrantColor, 0.1),
+          );
+          taskBadgeRef.current.style.setProperty(
+            "--border-color-2",
+            toRgba(vibrantColor, 0.1),
+          );
+
+          // Removed hover state colors to keep only static default state
         }
       }
 
@@ -329,7 +380,7 @@ const SessionGridView = ({
       <div className="w-full h-full overflow-auto flex justify-center items-center">
         {/* New wrapper with padding and shadow */}
         <Tilt
-          className="w-[55%] sm:w-[35%] md:w-[29%] mb-8"
+          className="w-[55%] sm:w-[35%] md:w-[29%] mb-9"
           rotationFactor={5}
           springOptions={{ stiffness: 300, damping: 30 }}
         >
@@ -339,7 +390,17 @@ const SessionGridView = ({
             </div>
             {/* Session info displayed at the bottom of the card */}
             <div className="w-full text-center mt-1">
-              <div className="inline-block bg-gray-900/75 backdrop-blur-sm text-white/90 px-4 py-2 rounded-lg text-sm font-medium shadow-md">
+              <div
+                ref={taskBadgeRef}
+                className="task-badge text-neutral-50/90 inner-stroke-white-20-sm pointer-events-none"
+                style={{
+                  textShadow: "1px 1.5px 2px rgba(0,0,0,0.28)",
+                  maxWidth: "100%",
+                  overflowWrap: "break-word",
+                  whiteSpace: "normal",
+                  textWrap: "balance",
+                }}
+              >
                 {taskName} • {duration} {duration === 1 ? "min" : "min"}
               </div>
             </div>
