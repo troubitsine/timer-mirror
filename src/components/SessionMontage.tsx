@@ -431,9 +431,14 @@ const SessionMontage = ({
       {/* Session info displayed at the top of the card - absolutely positioned */}
       <motion.div
         className="absolute top-3 w-full text-center"
-        initial={{ opacity: 0, y: -20 }}
-        animate={badgeVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: -20 }}
-        transition={{ duration: 0.4 }}
+        initial={{ scale: 0.8 }}
+        animate={{ scale: 1 }}
+        transition={{
+          type: "spring",
+          stiffness: 300,
+          damping: 22,
+          delay: 0.05,
+        }}
       >
         <div className="inline-flex bg-white/80 p-1 rounded-xl">
           <div

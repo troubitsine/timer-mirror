@@ -13,6 +13,7 @@ import BackgroundColorSelector, {
   BackgroundOption,
 } from "./BackgroundColorSelector";
 import Tilt from "./Tilt";
+import { delay, motion } from "framer-motion";
 
 interface SessionGridViewProps {
   screenshots?: string[];
@@ -378,13 +379,23 @@ const SessionGridView = ({
     >
       {/* Fixed size container for grid layout */}
       <div className="w-full h-full overflow-auto flex justify-center items-center">
-        {/* New wrapper with padding and shadow */}
+        {/* Tilt component without motion wrapper */}
         <Tilt
           className="w-[55%] sm:w-[35%] md:w-[29%] mb-9"
-          rotationFactor={5}
+          rotationFactor={6}
           springOptions={{ stiffness: 300, damping: 30 }}
         >
-          <div className="p-1 bg-white rounded-xl shadow-md w-full">
+          <motion.div
+            className="p-1 bg-white rounded-xl shadow-md w-full"
+            initial={{ scale: 0.8 }}
+            animate={{ scale: 1 }}
+            transition={{
+              type: "spring",
+              stiffness: 300,
+              damping: 22,
+              delay: 0.05,
+            }}
+          >
             <div className="relative">
               <FillGrid photos={allPhotos} />
             </div>
@@ -404,7 +415,7 @@ const SessionGridView = ({
                 {taskName} • {duration} {duration === 1 ? "min" : "min"}
               </div>
             </div>
-          </div>
+          </motion.div>
         </Tilt>
       </div>
 
