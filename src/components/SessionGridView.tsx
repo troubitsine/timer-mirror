@@ -421,7 +421,7 @@ const SessionGridView = ({
 
       {/* Background color selector - only show when dynamic colors are available */}
       {hasDynamicColors && (
-        <div className="absolute bottom-3 left-4 flex justify-center z-30">
+        <div className="absolute bottom-3.5 left-4 flex justify-center z-30">
         <BackgroundColorSelector
           options={backgroundOptions}
           selectedId={selectedBackgroundId}
