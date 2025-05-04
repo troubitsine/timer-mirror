@@ -423,7 +423,7 @@ const SessionMontage = ({
   return (
     <Card
       className={cn(
-        "w-full h-full relative overflow-hidden",
+        "w-full h-full relative overflow-hidden border-0",
         selectedBackground?.className,
       )}
       style={selectedBackground?.style}
@@ -610,12 +610,12 @@ const SessionMontage = ({
 
         {/* Background color selector - only show when dynamic colors are available */}
         {hasDynamicColors && (
-          <div className="absolute bottom-3 left-0 right-0 flex justify-center z-30">
+          <div className="absolute bottom-4 left-4 flex justify-center z-30">
             <BackgroundColorSelector
               options={backgroundOptions}
               selectedId={selectedBackgroundId}
               onSelect={setSelectedBackgroundId}
-              className="p-2 rounded-full bg-black/20 backdrop-blur-sm"
+              className="bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[0px] inner-stroke-white-10-sm shadow-sm rounded-full"
             />
           </div>
         )}

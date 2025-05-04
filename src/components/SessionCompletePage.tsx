@@ -38,7 +38,7 @@ const SessionCompletePage = () => {
         <div className="w-[calc(100%-20px)] lg:w-[65vw] min-w-[300px] max-w-[1800px] max-h-[1200px] mx-auto flex flex-col gap-4 sm:gap-6">
           <div className="w-full h-[70vh] sm:aspect-video relative">
             {/* Animated tabs for view selection */}
-            <div className="absolute top-4 right-3 z-30">
+            <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 z-30">
               <div className="flex items-center justify-center rounded-full bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[3px] inner-stroke-white-10-sm shadow-sm min-w-[120px] min-h-[32px]">
                 <AnimatedTabs
                   defaultValue={showGridView ? "grid" : "animation"}

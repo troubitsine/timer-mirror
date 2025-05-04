@@ -371,7 +371,7 @@ const SessionGridView = ({
   return (
     <Card
       className={cn(
-        "w-full h-full relative overflow-hidden",
+        "w-full h-full relative overflow-hidden border-0",
         selectedBackground?.className,
         className,
       )}
@@ -381,7 +381,7 @@ const SessionGridView = ({
       <div className="w-full h-full overflow-auto flex justify-center items-center">
         {/* Tilt component without motion wrapper */}
         <Tilt
-          className="w-[55%] sm:w-[35%] md:w-[29%] mb-9"
+          className="w-[55%] sm:w-[35%] md:w-[29%] mb-11"
           rotationFactor={6}
           springOptions={{ stiffness: 300, damping: 30 }}
         >
@@ -421,14 +421,14 @@ const SessionGridView = ({
 
       {/* Background color selector - only show when dynamic colors are available */}
       {hasDynamicColors && (
-        <div className="absolute bottom-3 left-0 right-0 flex justify-center z-30">
-          <BackgroundColorSelector
-            options={backgroundOptions}
-            selectedId={selectedBackgroundId}
-            onSelect={setSelectedBackgroundId}
-            className="p-2 rounded-full bg-black/20 backdrop-blur-sm"
-          />
-        </div>
+        <div className="absolute bottom-3 left-4 flex justify-center z-30">
+        <BackgroundColorSelector
+          options={backgroundOptions}
+          selectedId={selectedBackgroundId}
+          onSelect={setSelectedBackgroundId}
+          className="bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[0px] inner-stroke-white-10-sm shadow-sm rounded-full"
+        />
+      </div>
       )}
     </Card>
   );
