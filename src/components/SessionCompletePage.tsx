@@ -53,20 +53,16 @@ const SessionCompletePage = () => {
                   <button
                     data-id="animation"
                     type="button"
-                    className="px-3 pt-[1px] pb-[4px] text-black/75 transition-colors duration-300 flex items-center gap-1.5 rounded-full  min-w-[100px] min-h-[28px]"
+                    className="px-3 pt-[1px] pb-[4px] text-black/75 transition-colors duration-300 flex items-center gap-1.5 rounded-full min-h-[28px]"
                   >
-                    <span className="hidden sm:inline text-xs font-medium">
-                      Animation
-                    </span>
+                    <span className="text-xs font-medium">Animation</span>
                   </button>
                   <button
                     data-id="grid"
                     type="button"
-                    className="px-3 pt-[1px] pb-[4px] text-black/75 transition-colors duration-300 flex items-center gap-1.5 rounded-full min-w-[60px] min-h-[28px]"
+                    className="px-3 pt-[1px] pb-[4px] text-black/75 transition-colors duration-300 flex items-center gap-1.5 rounded-full min-h-[28px]"
                   >
-                    <span className="hidden sm:inline text-xs font-medium">
-                      Card
-                    </span>
+                    <span className="text-xs font-medium">Card</span>
                   </button>
                 </AnimatedTabs>
               </div>
