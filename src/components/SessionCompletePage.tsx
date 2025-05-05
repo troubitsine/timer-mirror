@@ -39,11 +39,11 @@ const SessionCompletePage = () => {
           <div className="w-full h-[70vh] sm:aspect-video relative">
             {/* Animated tabs for view selection */}
             <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 z-30">
-              <div className="flex items-center justify-center rounded-full bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[3px] inner-stroke-white-10-sm shadow-sm min-w-[120px] min-h-[32px]">
+              <div className="flex items-center justify-center rounded-full bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[3px] inner-stroke-white-20-sm shadow-sm min-w-[120px] min-h-[32px]">
                 <AnimatedTabs
                   defaultValue={showGridView ? "grid" : "animation"}
                   onValueChange={(value) => setShowGridView(value === "grid")}
-                  className="rounded-full bg-gradient-to-b from-white/20 via-neutral-400/30 to-neutral-500/30 backdrop-blur-sm shadow-sm shadow-[inset_0_0_1px_1px_rgba(255,255,255,0.25)]"
+                  className="rounded-full bg-gradient-to-b from-white/20 via-neutral-400/30 to-neutral-500/30 backdrop-blur-sm shadow-sm shadow-[inset_0_0_0_1px_rgba(255,255,255,0.32)]"
                   transition={{
                     type: "spring",
                     bounce: 0.2,
