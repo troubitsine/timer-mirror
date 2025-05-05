@@ -61,7 +61,7 @@ const OnboardingCard = ({
                   size="sm"
                   variant="secondary"
                   onClick={toggleCollapsed}
-                  className="bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-2 rounded-full inner-stroke-white-20-sm px-[11px]  py-[6px]"
+                  className="bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-2 rounded-full inner-stroke-white-20-sm px-[11px] py-[6px]"
                 >
                   {isCollapsed ? "About" : "Hide"}
                 </Button>
