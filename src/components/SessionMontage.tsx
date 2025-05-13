@@ -1,15 +1,13 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
-import { Timer, RotateCw } from "lucide-react";
+import { RotateCw } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { isMobileDevice } from "@/lib/deviceDetection";
-import BackgroundColorSelector, {
-  BackgroundOption,
-} from "./BackgroundColorSelector";
+import BackgroundColorSelector from "./BackgroundColorSelector";
 import { cn } from "@/lib/utils";
-import { Vibrant } from "node-vibrant/browser";
+import { useDynamicBackground } from "@/lib/useDynamicBackground";
 
 interface SessionMontageProps {
   screenshots?: string[];
@@ -17,8 +15,9 @@ interface SessionMontageProps {
   taskName?: string;
   duration?: number;
   onSave?: () => void;
+  initialSelectedBackgroundId?: string;
+  onBackgroundSelect?: (id: string) => void;
 }
-
 
 const SessionMontage = ({
   screenshots = [],
@@ -26,32 +25,13 @@ const SessionMontage = ({
   taskName = "Focus Session",
   duration = 25,
   onSave = () => {},
+  initialSelectedBackgroundId,
+  onBackgroundSelect,
 }: SessionMontageProps) => {
   const navigate = useNavigate();
   const isMobile = isMobileDevice();
 
-  // Plain white background for when no dynamic colors are available
-  const plainWhiteBackground: BackgroundOption = {
-    id: "white",
-    name: "White",
-    className: "bg-white",
-  };
-
-  // State for dynamic background options
-  const [backgroundOptions, setBackgroundOptions] = useState<
-    BackgroundOption[]
-  >([plainWhiteBackground]);
-
-  // Track if dynamic colors were successfully extracted
-  const [hasDynamicColors, setHasDynamicColors] = useState(false);
-
-  // State for selected background
-  const [selectedBackgroundId, setSelectedBackgroundId] = useState("white");
-
-  // Get the selected background option
-  const selectedBackground = backgroundOptions.find(
-    (option) => option.id === selectedBackgroundId,
-  );
+  // Get the last photo for color extraction
 
   // Helper function to interleave two arrays
   const interleaveArrays = (arr1: string[], arr2: string[]): string[] => {
@@ -90,162 +70,19 @@ const SessionMontage = ({
     }
   }, [screenshots, webcamPhotos, isMobile]);
 
-  // Reference to the task badge element for updating CSS variables
-  const taskBadgeRef = useRef<HTMLDivElement>(null);
-
-  // Function to extract colors from an image
-  const extractColorsFromImage = async (imageSrc: string) => {
-    try {
-      const palette = await Vibrant.from(imageSrc).getPalette();
-
-      // Create dynamic background options based on the palette
-      const dynamicOptions: BackgroundOption[] = [];
-
-      // Add gradient option using Vibrant and LightVibrant for desktop, solid color for mobile
-      if (palette.Vibrant && palette.LightVibrant) {
-        if (isMobile) {
-          // For mobile devices, use a solid Vibrant color instead of gradient
-          dynamicOptions.push({
-            id: "mobileVibrant",
-            name: "Vibrant",
-            className: `bg-[${palette.Vibrant.hex}]`,
-            style: { backgroundColor: palette.Vibrant.hex },
-          });
-        } else {
-          // For desktop, use the gradient as before
-          dynamicOptions.push({
-            id: "dynamicGradient",
-            name: "Dynamic Gradient",
-            style: {
-              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 1111 1111' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.4' numOctaves='3' stitchTiles='stitch'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0.5'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"),
-              radial-gradient(circle at 0% 99%, ${palette.Vibrant.hex} 0%, transparent 67%),
-              radial-gradient(circle at 46% 94%, ${palette.LightVibrant.hex} 0%, transparent 81%),
-              radial-gradient(circle at 93% 95%, ${palette.Vibrant.hex} 0%, transparent 66%),
-              radial-gradient(circle at 89% 8%, ${palette.LightVibrant.hex} 0%, transparent 150%)`,
-              backgroundColor: palette.Vibrant.hex,
-              backgroundBlendMode: "overlay, normal, normal, normal, normal",
-            },
-          });
-        }
-
-        // Update task badge CSS variables with vibrant colors
-        if (taskBadgeRef.current) {
-          const vibrantColor = palette.Vibrant.hex;
-          const lightVibrantColor = palette.LightVibrant.hex;
-
-          // Convert hex to rgba with opacity
-          const toRgba = (hex: string, opacity: number) => {
-            const r = parseInt(hex.slice(1, 3), 16);
-            const g = parseInt(hex.slice(3, 5), 16);
-            const b = parseInt(hex.slice(5, 7), 16);
-            return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-          };
-
-          // Set initial state colors
-          taskBadgeRef.current.style.setProperty(
-            "--color-1",
-            "rgba(24, 24, 44, 0.96)",
-          );
-          taskBadgeRef.current.style.setProperty(
-            "--color-2",
-            "rgba(24, 24, 44, 0.96)",
-          );
-          taskBadgeRef.current.style.setProperty(
-            "--color-3",
-            toRgba(vibrantColor, 0.3),
-          );
-          taskBadgeRef.current.style.setProperty(
-            "--color-4",
-            "rgba(24, 24, 44, 0.96)",
-          );
-          taskBadgeRef.current.style.setProperty(
-            "--color-5",
-            "rgba(24, 24, 44, 0.96)",
-          );
-
-          // Set border colors
-          taskBadgeRef.current.style.setProperty(
-            "--border-color-1",
-            toRgba(lightVibrantColor, 0.1),
-          );
-          taskBadgeRef.current.style.setProperty(
-            "--border-color-2",
-            toRgba(vibrantColor, 0.1),
-          );
-
-          // Set hover state colors
-          const style = document.createElement("style");
-          style.textContent = `
-            .task-badge:hover {
-              --pos-x: 0%;
-              --pos-y: 91.51%;
-              --spread-x: 120.24%;
-              --spread-y: 103.18%;
-              --color-1: ${toRgba(vibrantColor, 0.9)};
-    --color-2: ${toRgba(vibrantColor, 0.7)};
-    --color-3: ${toRgba(lightVibrantColor, 0.6)};
-    --color-4: ${toRgba(vibrantColor, 0.4)};
-    --color-5: ${toRgba(lightVibrantColor, 0.2)};
-    --border-angle: 150deg;
-    --border-color-1: ${toRgba(lightVibrantColor, 0.3)};
-    --border-color-2: ${toRgba(vibrantColor, 0.2)};
-              --stop-1: 0%;
-              --stop-2: 8.8%;
-              --stop-3: 21.44%;
-              --stop-4: 71.34%;
-              --stop-5: 85.76%;
-            }
-          `;
-          document.head.appendChild(style);
-        }
-      }
-
-      // Add solid color options
-      if (palette.LightVibrant) {
-        dynamicOptions.push({
-          id: "lightVibrant",
-          name: "Light Vibrant",
-          className: `bg-[${palette.LightVibrant.hex}]`,
-          style: { backgroundColor: palette.LightVibrant.hex },
-        });
-      }
-
-      if (palette.Muted) {
-        dynamicOptions.push({
-          id: "muted",
-          name: "Muted",
-          className: `bg-[${palette.Muted.hex}]`,
-          style: { backgroundColor: palette.Muted.hex },
-        });
-      }
-
-      if (palette.LightMuted) {
-        dynamicOptions.push({
-          id: "lightMuted",
-          name: "Light Muted",
-          className: `bg-[${palette.LightMuted.hex}]`,
-          style: { backgroundColor: palette.LightMuted.hex },
-        });
-      }
-
-      // If we have dynamic options, use them; otherwise, keep the plain white background
-      if (dynamicOptions.length > 0) {
-        setBackgroundOptions(dynamicOptions);
-        // Set the first dynamic option as selected
-        setSelectedBackgroundId(dynamicOptions[0].id);
-        // Indicate that we have dynamic colors
-        setHasDynamicColors(true);
-      } else {
-        // Reset to plain white background if no dynamic colors could be extracted
-        setBackgroundOptions([plainWhiteBackground]);
-        setSelectedBackgroundId("white");
-        setHasDynamicColors(false);
-      }
-    } catch (error) {
-      console.error("Error extracting colors from image:", error);
-      // Keep using default options if there's an error
-    }
-  };
+  // Use the dynamic background hook with initial selection and callback
+  const {
+    selectedBackground,
+    selectedBackgroundId,
+    setSelectedBackgroundId,
+    backgroundOptions,
+    hasDynamicColors,
+    taskBadgeRef,
+  } = useDynamicBackground(
+    lastPhoto,
+    initialSelectedBackgroundId,
+    onBackgroundSelect,
+  );
 
   // Animation states
   const [animationPhase, setAnimationPhase] = useState<
@@ -376,12 +213,7 @@ const SessionMontage = ({
     return () => {};
   }, [numberOfCards]);
 
-  // Extract colors from the last photo when available
-  useEffect(() => {
-    if (lastPhoto) {
-      extractColorsFromImage(lastPhoto);
-    }
-  }, [lastPhoto]);
+  // No need for extractColorsFromImage effect - handled by the hook
 
   // Calculate position data for each photo
   const photoPositions = useMemo(() => {
@@ -449,7 +281,7 @@ const SessionMontage = ({
               maxWidth: "480px",
               overflowWrap: "break-word",
               whiteSpace: "normal",
-              textWrap: "balance"
+              textWrap: "balance",
             }}
           >
             {taskName} • {duration} {duration === 1 ? "min" : "min"}
@@ -631,14 +463,14 @@ const SessionMontage = ({
           onMouseLeave={() => {}}
         >
           <Button
-  size="sm"
-  variant="secondary"
-  onClick={startAnimation}
-  className="bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/70 backdrop-blur-md flex items-center gap-1 rounded-full inner-stroke-white-20-sm sm:pl-[8px] sm:pr-[10px] py-[6px] pl-[10px] pr-[12px]"
->
-  <RotateCw className="h-4 w-4" />
-  <span className="hidden sm:inline">Replay</span>
-</Button>
+            size="sm"
+            variant="secondary"
+            onClick={startAnimation}
+            className="bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/70 backdrop-blur-md flex items-center gap-1 rounded-full inner-stroke-white-20-sm sm:pl-[8px] sm:pr-[10px] py-[6px] pl-[10px] pr-[12px]"
+          >
+            <RotateCw className="h-4 w-4" />
+            <span className="hidden sm:inline">Replay</span>
+          </Button>
         </motion.div>
       </div>
     </Card>

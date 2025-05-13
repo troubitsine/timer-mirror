@@ -13,6 +13,11 @@ const SessionCompletePage = () => {
   const navigate = useNavigate();
   const sessionData = location.state;
   const [showGridView, setShowGridView] = useState(false);
+  // Use sessionStorage to persist the selected background ID across page refreshes
+  const [selectedBackgroundId, setSelectedBackgroundId] = useState(() => {
+    const savedId = sessionStorage.getItem("selectedBackgroundId");
+    return savedId || "white";
+  });
 
   useEffect(() => {
     if (!sessionData) {
@@ -75,6 +80,8 @@ const SessionCompletePage = () => {
                 webcamPhotos={sessionData.webcamPhotos}
                 taskName={sessionData.taskName}
                 duration={sessionData.duration}
+                initialSelectedBackgroundId={selectedBackgroundId}
+                onBackgroundSelect={setSelectedBackgroundId}
               />
             ) : (
               <SessionMontage
@@ -82,6 +89,8 @@ const SessionCompletePage = () => {
                 webcamPhotos={sessionData.webcamPhotos}
                 taskName={sessionData.taskName}
                 duration={sessionData.duration}
+                initialSelectedBackgroundId={selectedBackgroundId}
+                onBackgroundSelect={setSelectedBackgroundId}
               />
             )}
           </div>

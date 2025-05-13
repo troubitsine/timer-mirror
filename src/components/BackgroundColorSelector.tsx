@@ -8,12 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export type BackgroundOption = {
-  id: string;
-  name: string;
-  style?: React.CSSProperties;
-  className?: string;
-};
+import { BackgroundOption } from "@/lib/useDynamicBackground";
 
 interface BackgroundColorSelectorProps {
   options: BackgroundOption[];
@@ -40,14 +35,14 @@ const BackgroundColorSelector = ({
             className="flex items-center gap-0.5 pl-1 pr-1 py-1 rounded-full bg-gradient-to-b from-white/20 via-neutral-400/30 to-neutral-500/30 backdrop-blur-sm inner-stroke-white-20-sm hover:bg-black/10 transition-colors focus:border-ring focus:outline-none focus:ring-[3px] focus:ring-black/20"
             aria-label="Select background color"
           >
-  <div
-    className={cn(
-      "w-5 h-5 rounded-full transition-all inner-stroke-black-5-sm",
-      
-      selectedOption.className,
-    )}
-    style={selectedOption.style}
-  />
+            <div
+              className={cn(
+                "w-5 h-5 rounded-full transition-all inner-stroke-black-5-sm",
+
+                selectedOption.className,
+              )}
+              style={selectedOption.style}
+            />
             <ChevronDown className="h-4 w-4 text-black/40" />
           </button>
         </DropdownMenuTrigger>
