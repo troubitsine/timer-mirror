@@ -40,19 +40,55 @@ const TimerCard = ({
   // Capture scheduling effect
   useEffect(() => {
     if (isRunning && sessionDuration > 0) {
+      console.log(
+        "⏱️ TimerCard: scheduleCaptures called with duration",
+        sessionDuration,
+      );
       captureCleanupRef.current = scheduleCaptures(
         sessionDuration,
         (screenshot, webcamPhoto) => {
-          setSessionData((prev) => ({
-            screenshots: [...prev.screenshots, screenshot].filter(Boolean),
-            webcamPhotos: [...prev.webcamPhotos, webcamPhoto].filter(Boolean),
-          }));
+          console.log("📸 TimerCard: capture callback received", {
+            hasScreenshot: !!screenshot,
+            screenshotLength: screenshot?.length || 0,
+            hasWebcamPhoto: !!webcamPhoto,
+            webcamPhotoLength: webcamPhoto?.length || 0,
+          });
+
+          setSessionData((prev) => {
+            const newScreenshots = [...prev.screenshots];
+            if (screenshot && screenshot.length > 100) {
+              console.log("✅ Adding valid screenshot to session data");
+              newScreenshots.push(screenshot);
+            } else if (screenshot) {
+              console.warn(
+                "⚠️ Screenshot too small, not adding to session data",
+              );
+            } else {
+              console.log("ℹ️ No screenshot provided to callback");
+            }
+
+            const newWebcamPhotos = [...prev.webcamPhotos];
+            if (webcamPhoto && webcamPhoto.length > 100) {
+              newWebcamPhotos.push(webcamPhoto);
+            }
+
+            console.log("📊 TimerCard: updated session data", {
+              screenshotsCount: newScreenshots.length,
+              webcamPhotosCount: newWebcamPhotos.length,
+            });
+
+            return {
+              screenshots: newScreenshots,
+              webcamPhotos: newWebcamPhotos,
+            };
+          });
         },
       );
     }
 
     return () => {
       if (captureCleanupRef.current) {
+        console.log("🧹 TimerCard: cleaning up capture scheduler");
         captureCleanupRef.current();
         captureCleanupRef.current = undefined;
       }
@@ -60,26 +96,49 @@ const TimerCard = ({
   }, [isRunning, sessionDuration]);
 
   const handleStart = async (duration: number) => {
+    console.log("▶️ TimerCard: handleStart called with duration", duration);
+
     if (!videoRef.current) {
-      console.error("Video element not initialized");
+      console.error("❌ TimerCard: Video element not initialized");
       return;
     }
+
+    console.log("🎥 TimerCard: Video element status before initialization", {
+      readyState: videoRef.current.readyState,
+      videoWidth: videoRef.current.videoWidth,
+      videoHeight: videoRef.current.videoHeight,
+      srcObject: !!videoRef.current.srcObject,
+    });
 
     // Initialize media capture (will handle mobile vs desktop differences)
     const { screenStream } = await initializeMediaCapture(videoRef.current);
 
-    // On mobile, we don't need to check for screen stream
-    if (!isMobile && !screenStream) {
-      console.error("Failed to initialize screen capture");
-      return;
+    // Log whether screen capture was successful
+    if (screenStream) {
+      console.log("✅ TimerCard: Screen capture initialized successfully", {
+        active: screenStream.active,
+        tracks: screenStream.getTracks().length,
+        trackSettings: screenStream.getVideoTracks()[0]?.getSettings(),
+      });
+    } else if (!isMobile) {
+      console.log(
+        "⚠️ TimerCard: Screen capture failed or was denied, continuing with webcam only",
+      );
     }
 
+    // Continue with the session regardless of screen capture status
+    // This allows the app to work even if screen capture permission is denied
     const totalDurationSec = duration * 60;
     setSessionDuration(totalDurationSec);
     setRemainingTime(totalDurationSec);
     setSessionData({ screenshots: [], webcamPhotos: [] });
     setIsRunning(true);
     onSessionStart();
+
+    console.log(
+      "▶️ TimerCard: Session started with duration",
+      totalDurationSec,
+    );
   };
 
   const handleSessionComplete = (

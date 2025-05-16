@@ -44,28 +44,48 @@ const SessionMontage = ({
     return result;
   };
 
-  // For mobile, we only use webcam photos
+  // Determine which photos to use based on device and available data
   const allPhotos = useMemo(() => {
-    if (isMobile) {
-      return [...webcamPhotos].filter(Boolean);
+    // Simple filter for valid images
+    const validScreenshots = screenshots.filter((s) => s && s.length > 0);
+    const validWebcamPhotos = webcamPhotos.filter((p) => p && p.length > 0);
+
+    console.log(
+      `Valid screenshots: ${validScreenshots.length}, Valid webcam photos: ${validWebcamPhotos.length}`,
+    );
+
+    // Check if we have valid screenshots available
+    const hasScreenshots = validScreenshots.length > 0;
+
+    if (isMobile || !hasScreenshots) {
+      // On mobile or when no valid screenshots are available, only use webcam photos
+      return [...validWebcamPhotos];
     } else {
-      return interleaveArrays(screenshots, webcamPhotos).filter(Boolean);
+      // For desktop with valid screenshots, interleave screenshots and webcam photos
+      return interleaveArrays(validScreenshots, validWebcamPhotos);
     }
   }, [screenshots, webcamPhotos, isMobile]);
 
   // Get the last photo for color extraction
   const lastPhoto = useMemo(() => {
-    if (isMobile) {
-      // On mobile, use the last webcam photo
-      return webcamPhotos.length > 0
-        ? webcamPhotos[webcamPhotos.length - 1]
+    // First, filter out any empty strings or invalid entries - simplified
+    const validScreenshots = screenshots.filter(Boolean);
+    const validWebcamPhotos = webcamPhotos.filter(Boolean);
+
+    // Check if we have valid screenshots available
+    const hasScreenshots = validScreenshots.length > 0;
+
+    if (isMobile || !hasScreenshots) {
+      // On mobile or when no valid screenshots are available, use the last webcam photo
+      return validWebcamPhotos.length > 0
+        ? validWebcamPhotos[validWebcamPhotos.length - 1]
         : null;
     } else {
-      // On desktop, prefer the last screenshot, fallback to webcam photo
-      return screenshots.length > 0
-        ? screenshots[screenshots.length - 1]
-        : webcamPhotos.length > 0
-          ? webcamPhotos[webcamPhotos.length - 1]
+      // On desktop with valid screenshots, prefer the last screenshot, fallback to webcam photo
+      return validScreenshots.length > 0
+        ? validScreenshots[validScreenshots.length - 1]
+        : validWebcamPhotos.length > 0
+          ? validWebcamPhotos[validWebcamPhotos.length - 1]
           : null;
     }
   }, [screenshots, webcamPhotos, isMobile]);
@@ -208,6 +228,11 @@ const SessionMontage = ({
 
     // Initialize photo order
     setPhotoOrder(Array.from({ length: numberOfCards }, (_, i) => i));
+  }, [numberOfCards]);
+
+  // Log screenshots array length for debugging
+  useEffect(() => {
+    console.log("[C] screenshots[] length", screenshots.length);
 
     // Cleanup function
     return () => {};

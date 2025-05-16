@@ -12,30 +12,39 @@ export function isMobileDevice(): boolean {
   const mobileRegex =
     /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i;
 
-  // Check if the device has touch capabilities
-  const hasTouchScreen =
-    "ontouchstart" in window || navigator.maxTouchPoints > 0;
+  const result = mobileRegex.test(userAgent.toLowerCase());
+  console.log("📱 isMobileDevice check:", {
+    result,
+    userAgent: userAgent.substring(0, 50) + "...",
+  });
 
-  // Check screen width (typical mobile breakpoint)
-  const isSmallScreen = window.innerWidth <= 768;
-
-  return (
-    mobileRegex.test(userAgent.toLowerCase()) ||
-    (hasTouchScreen && isSmallScreen)
-  );
+  // Only use the user agent to determine if it's a mobile device
+  // This prevents misidentifying desktop devices with touch screens and small windows
+  return result;
 }
 
 /**
  * Check if screen capture is supported on the current device
  */
 export function isScreenCaptureSupported(): boolean {
-  // Most mobile browsers don't support getDisplayMedia or have limitations
-  if (isMobileDevice()) {
-    return false;
-  }
+  // Check if the browser supports getDisplayMedia - this is the only real requirement
+  const hasMediaDevices = !!navigator.mediaDevices;
+  const hasGetDisplayMedia =
+    hasMediaDevices && "getDisplayMedia" in navigator.mediaDevices;
 
-  // Check if the browser supports getDisplayMedia
-  return (
-    !!navigator.mediaDevices && "getDisplayMedia" in navigator.mediaDevices
-  );
+  // Only check for mobile if we have the basic capability
+  const isMobile = hasGetDisplayMedia ? isMobileDevice() : true;
+
+  // Most mobile browsers don't support getDisplayMedia properly
+  const result = hasGetDisplayMedia && !isMobile;
+
+  console.log("🖥️ isScreenCaptureSupported check:", {
+    result,
+    isMobile,
+    hasMediaDevices,
+    hasGetDisplayMedia,
+    userAgent: navigator.userAgent.substring(0, 50) + "...",
+  });
+
+  return result;
 }
