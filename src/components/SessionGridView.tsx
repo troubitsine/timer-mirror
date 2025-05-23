@@ -173,10 +173,6 @@ const SessionGridView = ({
     const validScreenshots = screenshots.filter(Boolean);
     const validWebcamPhotos = webcamPhotos.filter(Boolean);
 
-    console.log(
-      `Valid screenshots: ${validScreenshots.length}, Valid webcam photos: ${validWebcamPhotos.length}`,
-    );
-
     // Check if we have valid screenshots available
     const hasScreenshots = validScreenshots.length > 0;
 

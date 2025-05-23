@@ -134,11 +134,6 @@ const TimerCard = ({
     setSessionData({ screenshots: [], webcamPhotos: [] });
     setIsRunning(true);
     onSessionStart();
-
-    console.log(
-      "▶️ TimerCard: Session started with duration",
-      totalDurationSec,
-    );
   };
 
   const handleSessionComplete = (

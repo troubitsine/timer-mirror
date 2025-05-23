@@ -48,13 +48,24 @@ export async function initializeMediaCapture(
             audio: false,
           });
         } catch (detailedErr) {
-          console.warn("⚠️ getDisplayMedia with detailed constraints failed:", detailedErr);
+          console.warn(
+            "⚠️ getDisplayMedia with detailed constraints failed:",
+            detailedErr,
+          );
           try {
             // Fallback: try again with minimal constraints
-            screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
-            console.log("✅ Fallback getDisplayMedia succeeded with minimal constraints");
+            screenStream = await navigator.mediaDevices.getDisplayMedia({
+              video: true,
+              audio: false,
+            });
+            console.log(
+              "✅ Fallback getDisplayMedia succeeded with minimal constraints",
+            );
           } catch (minimalErr) {
-            console.error("❌ Fallback getDisplayMedia also failed:", minimalErr);
+            console.error(
+              "❌ Fallback getDisplayMedia also failed:",
+              minimalErr,
+            );
             throw minimalErr; // propagate to outer catch
           }
         }
@@ -247,11 +258,15 @@ export function captureScreenshot(): Promise<string> {
 
       // Verify that we got a valid data URL
       if (dataUrl === "data:," || dataUrl.length < 100) {
-        console.error("Generated empty or invalid screenshot – attempting ImageCapture fallback");
+        console.error(
+          "Generated empty or invalid screenshot – attempting ImageCapture fallback",
+        );
 
         // ---------- NEW: ImageCapture fallback ----------
         try {
-          const track = (screenVideo.srcObject as MediaStream)?.getVideoTracks?.()[0];
+          const track = (
+            screenVideo.srcObject as MediaStream
+          )?.getVideoTracks?.()[0];
           if (track && "ImageCapture" in window) {
             // @ts-ignore – ImageCapture is not yet in the TS lib DOM types everywhere
             const imageCapture = new (window as any).ImageCapture(track);
@@ -260,9 +275,11 @@ export function captureScreenshot(): Promise<string> {
 
             const fallbackCanvas = document.createElement("canvas");
             // @ts-ignore width/height differ for VideoFrame vs ImageBitmap but both expose them
-            fallbackCanvas.width = bitmap.width || (bitmap as any).displayWidth || 1920;
+            fallbackCanvas.width =
+              bitmap.width || (bitmap as any).displayWidth || 1920;
             // @ts-ignore
-            fallbackCanvas.height = bitmap.height || (bitmap as any).displayHeight || 1080;
+            fallbackCanvas.height =
+              bitmap.height || (bitmap as any).displayHeight || 1080;
             const fCtx = fallbackCanvas.getContext("2d");
             if (fCtx) {
               // drawBitmap is available for VideoFrame, otherwise we fall back to drawImage
@@ -272,11 +289,23 @@ export function captureScreenshot(): Promise<string> {
               } else {
                 // For ImageBitmap we can use drawImage directly
                 // @ts-ignore
-                fCtx.drawImage(bitmap, 0, 0, fallbackCanvas.width, fallbackCanvas.height);
+                fCtx.drawImage(
+                  bitmap,
+                  0,
+                  0,
+                  fallbackCanvas.width,
+                  fallbackCanvas.height,
+                );
               }
-              const fallbackDataUrl = fallbackCanvas.toDataURL("image/jpeg", 0.9);
+              const fallbackDataUrl = fallbackCanvas.toDataURL(
+                "image/jpeg",
+                0.9,
+              );
               if (fallbackDataUrl && fallbackDataUrl.length > 100) {
-                console.log("✅ ImageCapture fallback successful, length:", fallbackDataUrl.length);
+                console.log(
+                  "✅ ImageCapture fallback successful, length:",
+                  fallbackDataUrl.length,
+                );
                 resolve(fallbackDataUrl);
                 return;
               }
@@ -398,29 +427,31 @@ export function scheduleCaptures(
   const captureTimeouts: NodeJS.Timeout[] = [];
 
   for (let i = 1; i <= totalCaptures; i++) {
-    const timeout = setTimeout(async () => {
-      console.log("[U] timeout fired", i);
-      try {
-        let webcamPhoto = "";
+    const timeout = setTimeout(
+      async () => {
+        console.log("[U] timeout fired", i);
         try {
-          webcamPhoto = await captureWebcam();
-        } catch (webcamError) {
-          console.error("Error capturing webcam:", webcamError);
-        }
+          let webcamPhoto = "";
+          try {
+            webcamPhoto = await captureWebcam();
+          } catch (webcamError) {
+            console.error("Error capturing webcam:", webcamError);
+          }
 
-        let screenshot = "";
-        try {
-          screenshot = await captureScreenshot();
-          console.log(`Screenshot captured: ${screenshot ? "success" : "empty"}`);
-        } catch (screenshotError) {
-          console.error("Error capturing screenshot:", screenshotError);
-        }
+          let screenshot = "";
+          try {
+            screenshot = await captureScreenshot();
+          } catch (screenshotError) {
+            console.error("Error capturing screenshot:", screenshotError);
+          }
 
-        onCapture(screenshot, webcamPhoto);
-      } catch (error) {
-        console.error("Error during capture:", error);
-      }
-    }, i * intervalSec * 1000);
+          onCapture(screenshot, webcamPhoto);
+        } catch (error) {
+          console.error("Error during capture:", error);
+        }
+      },
+      i * intervalSec * 1000,
+    );
 
     captureTimeouts.push(timeout);
   }

@@ -13,10 +13,6 @@ export function isMobileDevice(): boolean {
     /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i;
 
   const result = mobileRegex.test(userAgent.toLowerCase());
-  console.log("📱 isMobileDevice check:", {
-    result,
-    userAgent: userAgent.substring(0, 50) + "...",
-  });
 
   // Only use the user agent to determine if it's a mobile device
   // This prevents misidentifying desktop devices with touch screens and small windows
@@ -37,14 +33,6 @@ export function isScreenCaptureSupported(): boolean {
 
   // Most mobile browsers don't support getDisplayMedia properly
   const result = hasGetDisplayMedia && !isMobile;
-
-  console.log("🖥️ isScreenCaptureSupported check:", {
-    result,
-    isMobile,
-    hasMediaDevices,
-    hasGetDisplayMedia,
-    userAgent: navigator.userAgent.substring(0, 50) + "...",
-  });
 
   return result;
 }

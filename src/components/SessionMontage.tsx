@@ -230,11 +230,8 @@ const SessionMontage = ({
     setPhotoOrder(Array.from({ length: numberOfCards }, (_, i) => i));
   }, [numberOfCards]);
 
-  // Log screenshots array length for debugging
+  // Cleanup function
   useEffect(() => {
-    console.log("[C] screenshots[] length", screenshots.length);
-
-    // Cleanup function
     return () => {};
   }, [numberOfCards]);
 
@@ -280,7 +277,7 @@ const SessionMontage = ({
   return (
     <Card
       className={cn(
-        "w-full h-full relative overflow-hidden border-0",
+        "w-full h-full relative border-0",
         selectedBackground?.className,
       )}
       style={selectedBackground?.style}
@@ -455,7 +452,9 @@ const SessionMontage = ({
                         src={photo}
                         alt={`Photo ${index + 1}`}
                         loading="lazy"
-                        className="w-full h-full object-cover rounded-[11px] z-20 shadow-[0_1px_1px_rgba(0,0,0,0.03),0_0_0_1px_rgba(34,42,53,0.03),0_4px_6px_rgba(34,42,53,0.03),0_2px_3px_rgba(0,0,0,0.03)]"
+                        className="
+    w-full h-full object-cover rounded-[11px] z-30
+    shadow-[0_2px_2px_rgba(0,0,0,0.12),_0_8px_8px_rgba(0,0,0,0.012)]"
                       />
                     </div>
                   </motion.div>

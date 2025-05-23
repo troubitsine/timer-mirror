@@ -163,11 +163,9 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
                   onSessionStart={handleSessionStart}
                   onSessionEnd={handleSessionEnd}
                   onCameraPermissionGranted={() => {
-                    console.log("Camera permission granted");
                     setHasCameraPermission(true);
                   }}
                   onCameraPermissionDenied={() => {
-                    console.log("Camera permission denied");
                     setHasCameraPermission(false);
                   }}
                 />

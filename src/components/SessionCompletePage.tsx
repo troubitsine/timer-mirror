@@ -108,26 +108,6 @@ const SessionCompletePage = () => {
 
             <div className="flex flex-col sm:flex-row gap-3">
               <Button
-                variant="outline"
-                onClick={() => {
-                  console.log("📥 Download session data");
-                  // Create a combined image from the first webcam photo
-                  if (sessionData?.webcamPhotos?.length > 0) {
-                    // Create a download link
-                    const link = document.createElement("a");
-                    link.href = sessionData.webcamPhotos[0];
-                    link.download = `focus-session-${new Date().toISOString().slice(0, 10)}.jpg`;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                  }
-                }}
-                className="w-fit bg-white/80 before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/20 before:to-transparent before:rounded-full text-neutral-800/90 backdrop-blur-md flex items-center justify-center gap-2 rounded-full inner-stroke-white-20-sm hover:bg-white/70"
-              >
-                Download
-              </Button>
-
-              <Button
                 variant="default"
                 onClick={() => navigate("/")}
                 className="w-fit bg-neutral-900/75 before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/20 before:to-transparent before:rounded-full text-white/85 backdrop-blur-md flex items-center justify-center gap-2 rounded-full inner-stroke-white-20-sm hover:bg-neutral-800/75"
