@@ -13,6 +13,11 @@ const SessionCompletePage = () => {
   const navigate = useNavigate();
   const sessionData = location.state;
   const [showGridView, setShowGridView] = useState(false);
+  // Use sessionStorage to persist the selected background ID across page refreshes
+  const [selectedBackgroundId, setSelectedBackgroundId] = useState(() => {
+    const savedId = sessionStorage.getItem("selectedBackgroundId");
+    return savedId || "white";
+  });
 
   useEffect(() => {
     if (!sessionData) {
@@ -75,6 +80,8 @@ const SessionCompletePage = () => {
                 webcamPhotos={sessionData.webcamPhotos}
                 taskName={sessionData.taskName}
                 duration={sessionData.duration}
+                initialSelectedBackgroundId={selectedBackgroundId}
+                onBackgroundSelect={setSelectedBackgroundId}
               />
             ) : (
               <SessionMontage
@@ -82,6 +89,8 @@ const SessionCompletePage = () => {
                 webcamPhotos={sessionData.webcamPhotos}
                 taskName={sessionData.taskName}
                 duration={sessionData.duration}
+                initialSelectedBackgroundId={selectedBackgroundId}
+                onBackgroundSelect={setSelectedBackgroundId}
               />
             )}
           </div>
@@ -97,13 +106,15 @@ const SessionCompletePage = () => {
               </p>
             </div>
 
-            <Button
-              variant="default"
-              onClick={() => navigate("/")}
-              className="w-fit bg-neutral-900/75 before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/20 before:to-transparent before:rounded-full text-white/85 backdrop-blur-md flex items-center justify-center gap-2 rounded-full inner-stroke-white-20-sm hover:bg-neutral-800/75"
-            >
-              Start New Timer
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button
+                variant="default"
+                onClick={() => navigate("/")}
+                className="w-fit bg-neutral-900/75 before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/20 before:to-transparent before:rounded-full text-white/85 backdrop-blur-md flex items-center justify-center gap-2 rounded-full inner-stroke-white-20-sm hover:bg-neutral-800/75"
+              >
+                Start New Timer
+              </Button>
+            </div>
           </div>
         </div>
       </div>

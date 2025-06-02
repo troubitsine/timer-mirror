@@ -8,6 +8,7 @@ import { Cross2Icon } from "@radix-ui/react-icons";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePictureInPicture } from "@/lib/usePictureInPicture";
 import { captureScreenshot, captureWebcam } from "@/lib/mediaCapture";
+import { isMobileDevice } from "@/lib/deviceDetection";
 
 interface CameraFeedProps {
   onPermissionGranted?: () => void;
@@ -295,7 +296,8 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                   onClick={async () => {
                     // Capture at least 3 photos before ending
                     const capturePromises = [];
-                    const isMobile = window.innerWidth < 768;
+                    // Use user-agent based detection to avoid treating small desktop windows as mobile
+                    const isMobile = isMobileDevice();
 
                     for (let i = 0; i < 3; i++) {
                       if (isMobile) {

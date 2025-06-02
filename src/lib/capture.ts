@@ -1,71 +1,41 @@
-let screenVideo: HTMLVideoElement | null = null;
+console.log("⚡ CAPTURE helper loaded from", import.meta.url);
 
+// This file is deprecated - import from mediaCapture.ts instead
+// Re-export the functions from mediaCapture.ts for backward compatibility
+
+import {
+  captureScreenshot as captureScreenshotNew,
+  captureWebcam as captureWebcamNew,
+  initializeMediaCapture,
+  scheduleCaptures as scheduleCapturesNew,
+} from "./mediaCapture";
+
+// Re-export with original names for backward compatibility
+export const captureScreenshot = captureScreenshotNew;
+export const captureWebcam = captureWebcamNew;
+export const scheduleCaptures = scheduleCapturesNew;
+
+// Provide a compatibility function that calls initializeMediaCapture internally
 export async function initializeScreenCapture(): Promise<MediaStream | null> {
+  console.warn(
+    "initializeScreenCapture is deprecated, use initializeMediaCapture instead",
+  );
   try {
-    const stream = await navigator.mediaDevices.getDisplayMedia({
-      video: {
-        displaySurface: "monitor",
-        logicalSurface: true,
-      },
-    });
-
-    screenVideo = document.createElement("video");
-    screenVideo.style.display = "none";
-    screenVideo.srcObject = stream;
-    document.body.appendChild(screenVideo);
-
-    await screenVideo.play();
-    return stream;
+    // Create a temporary video element to maintain API compatibility
+    const tempVideo = document.createElement("video");
+    const { screenStream } = await initializeMediaCapture(tempVideo);
+    return screenStream;
   } catch (error) {
     console.error("Error initializing screen capture:", error);
     return null;
   }
 }
 
-export function captureScreenshot(): Promise<string> {
-  return new Promise((resolve, reject) => {
-    if (!screenVideo) {
-      reject("Screen capture not initialized");
-      return;
-    }
-
-    try {
-      const canvas = document.createElement("canvas");
-      canvas.width = screenVideo.videoWidth;
-      canvas.height = screenVideo.videoHeight;
-      const ctx = canvas.getContext("2d");
-      ctx?.drawImage(screenVideo, 0, 0);
-      resolve(canvas.toDataURL("image/jpeg"));
-    } catch (error) {
-      console.error("Error capturing screenshot:", error);
-      reject(error);
-    }
-  });
-}
-
+// Compatibility function
 export function cleanupScreenCapture() {
-  if (screenVideo) {
-    const stream = screenVideo.srcObject as MediaStream;
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
-    }
-    screenVideo.remove();
-    screenVideo = null;
-  }
-}
-
-export async function captureWebcam(
-  videoElement: HTMLVideoElement,
-): Promise<string> {
-  try {
-    const canvas = document.createElement("canvas");
-    canvas.width = videoElement.videoWidth;
-    canvas.height = videoElement.videoHeight;
-    const ctx = canvas.getContext("2d");
-    ctx?.drawImage(videoElement, 0, 0);
-    return canvas.toDataURL("image/jpeg");
-  } catch (error) {
-    console.error("Error capturing webcam:", error);
-    return "";
-  }
+  console.warn(
+    "cleanupScreenCapture is deprecated - cleanup is handled by mediaCapture",
+  );
+  // The actual cleanup is now handled by the return function from scheduleCaptures
+  // This is kept for backward compatibility
 }
