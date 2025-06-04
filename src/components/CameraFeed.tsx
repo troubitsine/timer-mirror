@@ -21,6 +21,7 @@ interface CameraFeedProps {
     capturedMedia?: Array<{ screenshot: string; webcamPhoto: string }>,
   ) => void;
   isMobile?: boolean;
+  skipInitialCameraRequest?: boolean;
 }
 
 const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
@@ -34,6 +35,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
       onTaskNameChange = () => {},
       onSessionComplete = () => {},
       isMobile = false,
+      skipInitialCameraRequest = false,
     },
     ref,
   ) => {
@@ -44,11 +46,14 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
     const videoRef =
       (ref as React.RefObject<HTMLVideoElement>) || localVideoRef;
     const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-    const [showPermissionDialog, setShowPermissionDialog] = useState(true);
+    const [showPermissionDialog, setShowPermissionDialog] = useState(false);
     const [isRunning, setIsRunning] = useState(false);
     const [remainingTime, setRemainingTime] = useState(0);
     const [taskName, setTaskName] = useState("");
     const [duration, setDuration] = useState(25 * 60); // Store duration in seconds
+    const [pendingStream, setPendingStream] = useState<MediaStream | null>(
+      null,
+    );
     const timerRef = useRef<NodeJS.Timeout>();
 
     // Use the PiP hook
@@ -69,18 +74,22 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
           },
         };
 
-        // Show the permission dialog again
+        // Show the permission dialog
         setShowPermissionDialog(true);
 
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          setHasPermission(true);
-          onPermissionGranted();
-        }
+        console.log("Camera stream obtained successfully");
+
+        // 1️⃣ Set permission state first to trigger video element rendering
+        setHasPermission(true);
+        setShowPermissionDialog(false);
+        setPendingStream(stream);
+        onPermissionGranted();
+        console.log("Camera started successfully, permission dialog hidden");
       } catch (err) {
         console.error("Error accessing camera:", err);
         setHasPermission(false);
+        setShowPermissionDialog(false);
         onPermissionDenied();
 
         // If permission is denied, guide the user to reset permissions
@@ -104,6 +113,15 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
       };
     }, []);
 
+    // Handle stream attachment when video element becomes available
+    useEffect(() => {
+      if (pendingStream && videoRef.current && !videoRef.current.srcObject) {
+        console.log("Attaching pending stream to video element");
+        videoRef.current.srcObject = pendingStream;
+        setPendingStream(null);
+      }
+    }, [pendingStream, hasPermission]);
+
     // Handle timer completion
     useEffect(() => {
       if (remainingTime === 0 && isRunning) {
@@ -119,23 +137,47 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
       // Check if browser supports getUserMedia
       if (!navigator.mediaDevices?.getUserMedia) {
         setHasPermission(false);
+        setShowPermissionDialog(false);
         return;
       }
 
-      // Request camera permissions
-      navigator.mediaDevices
-        .getUserMedia({
-          video: {
-            facingMode: "user", // Use front camera on mobile devices
-          },
-        })
-        .then(() => {
-          setHasPermission(true);
-          startCamera();
-        })
-        .catch(() => {
-          setHasPermission(false);
-        });
+      // Only request camera permissions if not skipping initial request
+      if (!skipInitialCameraRequest) {
+        console.log("Requesting initial camera permissions...");
+
+        // Show the permission dialog first
+        setShowPermissionDialog(true);
+
+        // Request camera permissions
+        navigator.mediaDevices
+          .getUserMedia({
+            video: {
+              facingMode: "user", // Use front camera on mobile devices
+            },
+          })
+          .then((stream) => {
+            console.log("Initial camera permission granted, updating state...");
+
+            // 1️⃣ Set permission state first to trigger video element rendering
+            setHasPermission(true);
+            setShowPermissionDialog(false);
+            setPendingStream(stream);
+            onPermissionGranted();
+            console.log(
+              "States updated: hasPermission=true, showPermissionDialog=false",
+            );
+          })
+          .catch((err) => {
+            console.error("Initial camera permission denied:", err);
+            setHasPermission(false);
+            setShowPermissionDialog(false);
+            onPermissionDenied();
+          });
+      } else {
+        console.log("Skipping initial camera request");
+        // If we're skipping the initial request, make sure dialog is hidden
+        setShowPermissionDialog(false);
+      }
 
       // Cleanup function
       return () => {
@@ -145,8 +187,11 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
           ).getTracks();
           tracks.forEach((track) => track.stop());
         }
+        if (pendingStream) {
+          pendingStream.getTracks().forEach((track) => track.stop());
+        }
       };
-    }, []);
+    }, [skipInitialCameraRequest, onPermissionGranted, onPermissionDenied]);
 
     // Predefined duration options - adjust for mobile
     const durationOptions = isMobile
@@ -405,25 +450,56 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
             <CameraOff className="h-12 w-12 text-muted-foreground" />
             <p className="text-muted-foreground">Camera access is required</p>
             <Button
-              onClick={() => {
-                // Try to start the camera
-                startCamera();
+              onClick={async () => {
+                console.log("Enable Camera button clicked");
 
-                // If the browser has a permissions API, suggest using it
+                // Check permission status first if available
                 if (navigator.permissions && navigator.permissions.query) {
-                  navigator.permissions
-                    .query({ name: "camera" as PermissionName })
-                    .then((permissionStatus) => {
-                      if (permissionStatus.state === "denied") {
-                        alert(
-                          "Camera permission is blocked. Please reset permissions in your browser settings and refresh the page.",
+                  try {
+                    const permissionStatus = await navigator.permissions.query({
+                      name: "camera" as PermissionName,
+                    });
+                    console.log(
+                      "Current camera permission status:",
+                      permissionStatus.state,
+                    );
+
+                    if (permissionStatus.state === "denied") {
+                      alert(
+                        "Camera permission is blocked. Please reset permissions in your browser settings and refresh the page.",
+                      );
+                      return;
+                    }
+
+                    // If permission is already granted, update state directly
+                    if (permissionStatus.state === "granted") {
+                      try {
+                        const stream =
+                          await navigator.mediaDevices.getUserMedia({
+                            video: {
+                              facingMode: "user",
+                            },
+                          });
+
+                        // Set permission state first, then handle stream attachment
+                        setHasPermission(true);
+                        setPendingStream(stream);
+                        onPermissionGranted();
+                        return;
+                      } catch (err) {
+                        console.error(
+                          "Error accessing camera despite permission:",
+                          err,
                         );
                       }
-                    })
-                    .catch((err) =>
-                      console.error("Error checking permission status:", err),
-                    );
+                    }
+                  } catch (err) {
+                    console.error("Error checking permission status:", err);
+                  }
                 }
+
+                // Try to start the camera
+                await startCamera();
               }}
             >
               Enable Camera
@@ -431,9 +507,9 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
           </div>
         )}
 
-        <AlertDialog open={!hasPermission && showPermissionDialog}>
+        <AlertDialog open={showPermissionDialog}>
           <AnimatePresence>
-            {!hasPermission && showPermissionDialog && (
+            {showPermissionDialog && (
               <motion.div
                 initial={{ opacity: 1, scale: 1, y: 0 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -463,7 +539,13 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                             <Button
                               size="sm"
                               variant="secondary"
-                              onClick={() => setShowPermissionDialog(false)}
+                              onClick={() => {
+                                setShowPermissionDialog(false);
+                                // If we already have permission, make sure UI reflects that
+                                if (videoRef.current?.srcObject) {
+                                  setHasPermission(true);
+                                }
+                              }}
                               className="bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-2 rounded-full inner-stroke-white-20-sm p-2"
                             >
                               <Cross2Icon className="h-4 w-4" />

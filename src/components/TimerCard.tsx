@@ -17,6 +17,7 @@ interface TimerCardProps {
   ) => void;
   onCameraPermissionGranted?: () => void;
   onCameraPermissionDenied?: () => void;
+  skipInitialCameraRequest?: boolean;
 }
 
 const TimerCard = ({
@@ -24,6 +25,7 @@ const TimerCard = ({
   onSessionEnd = () => {},
   onCameraPermissionGranted = () => {},
   onCameraPermissionDenied = () => {},
+  skipInitialCameraRequest = false,
 }: TimerCardProps) => {
   const [isRunning, setIsRunning] = useState(false);
   const [remainingTime, setRemainingTime] = useState(0);
@@ -167,6 +169,7 @@ const TimerCard = ({
           onStart={handleStart}
           onSessionComplete={handleSessionComplete}
           isMobile={isMobile}
+          skipInitialCameraRequest={skipInitialCameraRequest}
         />
       </div>
     </Card>
