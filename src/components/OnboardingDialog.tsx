@@ -27,25 +27,19 @@ const OnboardingDialog = ({ open, onOpenChange }: OnboardingDialogProps) => {
       title: "Welcome to Focus Reel",
       description:
         "Focus Reel helps you stay concentrated by showing your reflection as you work. Let's get you started!",
-      image: "/onboarding/step-1-illustration.png",
+      image: "/images/tempo-image-20250605T012025359Z.png",
     },
     {
       title: "Camera Permission Required",
       description:
         "We need access to your camera to show your reflection during focus sessions. This helps increase accountability and concentration.",
-      image: "/onboarding/step-1-illustration.png",
+      image: "/images/tempo-image-20250605T012058421Z.png",
     },
     {
       title: "Capture Your Progress",
       description:
         "Focus Reel automatically captures moments from your work sessions to create a visual summary of your productivity.",
-      image: "/onboarding/step-2-illustration.png",
-    },
-    {
-      title: "Ready to Focus?",
-      description:
-        "You're all set! Start your first focus session and see how visual accountability can boost your productivity.",
-      image: "/onboarding/step-3-illustration.png",
+      image: "/images/tempo-image-20250605T012116251Z.png",
     },
   ];
 
@@ -76,7 +70,7 @@ const OnboardingDialog = ({ open, onOpenChange }: OnboardingDialogProps) => {
           transition={{ duration: 0.3 }}
         >
           {/* Close button */}
-          <div className="absolute right-2 top-2 z-10">
+          <div className="absolute right-3 top-3 z-10">
             <DialogClose asChild>
               <Button
                 size="sm"
@@ -89,11 +83,11 @@ const OnboardingDialog = ({ open, onOpenChange }: OnboardingDialogProps) => {
           </div>
 
           {/* Image container */}
-          <div className="w-full max-w-[180px] flex h-24 justify-center items-center mx-auto mb-4">
+          <div className="w-full mx-auto aspect-video bg-neutral-800/50 rounded-xl border border-white/10 mb-4">
             <img
               src={stepContent[step - 1].image}
               alt={`Step ${step} illustration`}
-              className="max-w-full max-h-full object-contain"
+              className="w-full h-full object-cover rounded-lg"
             />
           </div>
 
@@ -109,7 +103,7 @@ const OnboardingDialog = ({ open, onOpenChange }: OnboardingDialogProps) => {
             </DialogHeader>
 
             {/* Progress indicators and navigation */}
-            <div className="flex flex-col justify-between gap-4">
+            <div className="flex flex-row justify-between gap-4">
               {/* Progress dots */}
               <div className="flex justify-center space-x-1.5">
                 {[...Array(totalSteps)].map((_, index) => (
