@@ -60,17 +60,17 @@ const OnboardingDialog = ({ open, onOpenChange }: OnboardingDialogProps) => {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="p-0 border-none overflow-hidden max-w-[500px] w-full mx-4 bg-transparent">
+      <DialogContent className="p-0 border-none overflow-hidden max-w-[500px] w-full mx-4 bg-transparent rounded-[18px]">
         <motion.div
-          className="p-2 bg-neutral-700/70
-           before:absolute before:inset-0 before:bg-gradient-to-br before:from-neutral-400/40 before:to-transparent before:rounded-xl before:pointer-events-none
-           backdrop-blur-md rounded-xl relative"
+          className="p-1.5 bg-neutral-700/70
+           before:absolute before:inset-0 before:bg-gradient-to-br before:from-neutral-400/40 before:to-transparent before:rounded-[18px] before:pointer-events-none
+           backdrop-blur-md rounded-[18px] relative"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
         >
           {/* Close button */}
-          <div className="absolute right-3 top-3 z-10">
+          <div className="absolute right-[11px] top-[11px] z-10">
             <DialogClose asChild>
               <Button
                 size="sm"
@@ -83,7 +83,7 @@ const OnboardingDialog = ({ open, onOpenChange }: OnboardingDialogProps) => {
           </div>
 
           {/* Image container */}
-          <div className="w-full mx-auto aspect-video bg-neutral-800/50 rounded-xl border border-white/10 mb-4">
+          <div className="w-full mx-auto aspect-video bg-gradient-to-b from-neutral-700/60 via-neutral-700-70 to-neutral-800/80 rounded-[15px] inner-stroke-white-20-sm mb-4">
             <img
               src={stepContent[step - 1].image}
               alt={`Step ${step} illustration`}
