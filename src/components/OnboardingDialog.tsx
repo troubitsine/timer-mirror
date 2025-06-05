@@ -60,7 +60,7 @@ const OnboardingDialog = ({ open, onOpenChange }: OnboardingDialogProps) => {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="p-0 border-none overflow-hidden max-w-[560px] w-full mx-4 bg-transparent">
+      <DialogContent className="p-0 border-none overflow-hidden max-w-[500px] w-full mx-4 bg-transparent">
         <motion.div
           className="p-2 bg-neutral-700/70
            before:absolute before:inset-0 before:bg-gradient-to-br before:from-neutral-400/40 before:to-transparent before:rounded-xl before:pointer-events-none
