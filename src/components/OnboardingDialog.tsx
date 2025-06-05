@@ -27,13 +27,13 @@ const OnboardingDialog = ({ open, onOpenChange }: OnboardingDialogProps) => {
       title: "Welcome to Focus Reel",
       description:
         "Focus Reel helps you stay concentrated by showing your reflection as you work. Let's get you started!",
-      image: "/images/tempo-image-20250605T012025359Z.png",
+      image: "/images/tempo-image-20250605T013630511Z.png",
     },
     {
       title: "Camera Permission Required",
       description:
         "We need access to your camera to show your reflection during focus sessions. This helps increase accountability and concentration.",
-      image: "/images/tempo-image-20250605T012058421Z.png",
+      image: "/images/tempo-image-20250605T014049131Z.png",
     },
     {
       title: "Capture Your Progress",
