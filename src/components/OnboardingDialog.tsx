@@ -75,7 +75,7 @@ const OnboardingDialog = ({ open, onOpenChange }: OnboardingDialogProps) => {
         <motion.div
           className="p-1.5 bg-neutral-700/70
            before:absolute before:inset-0 before:bg-gradient-to-br before:from-neutral-400/40 before:to-transparent before:rounded-[18px] before:pointer-events-none
-           backdrop-blur-md rounded-[18px] relative"
+           backdrop-blur-md rounded-[18px] relative flex flex-col"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
@@ -93,8 +93,8 @@ const OnboardingDialog = ({ open, onOpenChange }: OnboardingDialogProps) => {
             </DialogClose>
           </div>
 
-          {/* Image container */}
-          <div className="w-full mx-auto aspect-video bg-gradient-to-b from-neutral-700/60 via-neutral-700-70 to-neutral-800/80 rounded-[15px] inner-stroke-white-20-sm mb-4">
+          {/* Image container with fixed height */}
+          <div className="w-full mx-auto h-[250px] bg-gradient-to-b from-neutral-700/60 via-neutral-700-70 to-neutral-800/80 rounded-[15px] inner-stroke-white-20-sm mb-3 flex-shrink-0">
             <img
               src={stepContent[step - 1].image}
               alt={`Step ${step} illustration`}
@@ -102,19 +102,23 @@ const OnboardingDialog = ({ open, onOpenChange }: OnboardingDialogProps) => {
             />
           </div>
 
-          {/* Content */}
-          <div className="space-y-4 pl-3 pr-2 pb-1.5">
+          {/* Content with flex layout to push navigation to bottom */}
+          <div className="flex flex-col flex-grow justify-between pl-3 pr-2 pb-1.5">
             <DialogHeader className="text-center">
               <DialogTitle className="text-lg font-semibold text-white/85 z-10">
                 {stepContent[step - 1].title}
               </DialogTitle>
-              <DialogDescription className="text-white/75 text-sm text-pretty z-10">
-                {stepContent[step - 1].description}
-              </DialogDescription>
+              <div className="h-[120px] overflow-auto">
+                {" "}
+                {/* Fixed height for description */}
+                <DialogDescription className="text-white/75 text-sm text-pretty z-10">
+                  {stepContent[step - 1].description}
+                </DialogDescription>
+              </div>
             </DialogHeader>
 
-            {/* Progress indicators and navigation */}
-            <div className="flex flex-row justify-between items-center gap-2">
+            {/* Progress indicators and navigation - always at bottom */}
+            <div className="flex flex-row justify-between items-center gap-2 mt-1 mb-0.5">
               {/* Progress dots */}
               <div className="flex justify-center space-x-1.5 z-10">
                 {[...Array(totalSteps)].map((_, index) => (
@@ -123,7 +127,7 @@ const OnboardingDialog = ({ open, onOpenChange }: OnboardingDialogProps) => {
                     onClick={() => setStep(index + 1)}
                     aria-label={`Go to step ${index + 1}`}
                     className={cn(
-                      "h-1.5 w-1.5 rounded-full transition-all duration-200 cursor-pointer hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-transparent",
+                      "h-1.5 w-1.5 rounded-full transition-all duration-200 cursor-pointer hover:scale-110 focus:outline-none focus:ring-1 focus:ring-white/20 focus:ring-offset-1 focus:ring-offset-transparent",
                       index + 1 === step
                         ? "bg-white/90 scale-110"
                         : "bg-white/30 hover:bg-white/50",
@@ -145,7 +149,7 @@ const OnboardingDialog = ({ open, onOpenChange }: OnboardingDialogProps) => {
                 </DialogClose>
                 {step < totalSteps ? (
                   <Button
-                    className="group bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-0 rounded-full inner-stroke-white-20-sm pr-[14px] pr-[11px] py-[2px]"
+                    className="group bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-0 rounded-full inner-stroke-white-20-sm pr-[14px] pl-[11px] py-[2px]"
                     type="button"
                     onClick={handleContinue}
                   >
