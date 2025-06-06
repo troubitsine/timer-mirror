@@ -26,19 +26,30 @@ const OnboardingDialog = ({ open, onOpenChange }: OnboardingDialogProps) => {
     {
       title: "Welcome to Focus Reel",
       description:
-        "Focus Reel helps you stay concentrated by showing your reflection as you work. Let's get you started!",
+        "Focus Reel is a productivity timer designed to help you concentrate. Studies show that seeing your own reflection increases self-awareness and accountability, helping you stay focused and minimize distractions as you work.",
       image: "/images/tempo-image-20250605T013630511Z.png",
     },
     {
-      title: "Camera Permission Required",
+      title: "Privacy First",
       description:
-        "We need access to your camera to show your reflection during focus sessions. This helps increase accountability and concentration.",
+        "Focus Reel never stores your data. Your recordings are automatically deleted as soon as you close the browser window.",
       image: "/images/tempo-image-20250605T014049131Z.png",
     },
     {
-      title: "Capture Your Progress",
-      description:
-        "Focus Reel automatically captures moments from your work sessions to create a visual summary of your productivity.",
+      title: "How it works",
+      description: (
+        <ol className="list-decimal list-outside space-y-1 pl-4">
+          <li>Allow camera permissions to see your reflection as you work.</li>
+          <li>
+            Start your timer and allow screen sharing so Focus Reel can capture
+            moments from your session.
+          </li>
+          <li>
+            Celebrate your progress with a personalized montage highlighting
+            your productive moments.
+          </li>
+        </ol>
+      ),
       image: "/images/tempo-image-20250605T012116251Z.png",
     },
   ];
@@ -92,53 +103,55 @@ const OnboardingDialog = ({ open, onOpenChange }: OnboardingDialogProps) => {
           </div>
 
           {/* Content */}
-          <div className="space-y-4 px-2 pb-2">
+          <div className="space-y-4 pl-3 pr-2 pb-1.5">
             <DialogHeader className="text-center">
-              <DialogTitle className="text-lg font-semibold text-white/85">
+              <DialogTitle className="text-lg font-semibold text-white/85 z-10">
                 {stepContent[step - 1].title}
               </DialogTitle>
-              <DialogDescription className="text-white/75 text-sm text-balance">
+              <DialogDescription className="text-white/75 text-sm text-pretty z-10">
                 {stepContent[step - 1].description}
               </DialogDescription>
             </DialogHeader>
 
             {/* Progress indicators and navigation */}
-            <div className="flex flex-row justify-between gap-4">
+            <div className="flex flex-row justify-between items-center gap-2">
               {/* Progress dots */}
-              <div className="flex justify-center space-x-1.5">
+              <div className="flex justify-center space-x-1.5 z-10">
                 {[...Array(totalSteps)].map((_, index) => (
-                  <div
+                  <button
                     key={index}
+                    onClick={() => setStep(index + 1)}
+                    aria-label={`Go to step ${index + 1}`}
                     className={cn(
-                      "h-1.5 w-1.5 rounded-full transition-all duration-200",
+                      "h-1.5 w-1.5 rounded-full transition-all duration-200 cursor-pointer hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-transparent",
                       index + 1 === step
-                        ? "bg-white/90 scale-125"
-                        : "bg-white/30",
+                        ? "bg-white/90 scale-110"
+                        : "bg-white/30 hover:bg-white/50",
                     )}
                   />
                 ))}
               </div>
 
               {/* Navigation buttons */}
-              <DialogFooter className="flex-row justify-between gap-2">
+              <DialogFooter className="flex-row justify-between gap-0 z-10">
                 <DialogClose asChild>
                   <Button
                     type="button"
                     variant="ghost"
-                    className="text-white/70 hover:text-white/90 hover:bg-white/10"
+                    className="text-white/70 background-blur-md rounded-full hover:bg-white/20 hover:text-white/80 hover:inner-stroke-white-10-sm"
                   >
                     Skip
                   </Button>
                 </DialogClose>
                 {step < totalSteps ? (
                   <Button
-                    className="group bg-white/75 hover:bg-white/85 text-black/75 hover:text-black/85 backdrop-blur-md rounded-full inner-stroke-white-20-sm"
+                    className="group bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-0 rounded-full inner-stroke-white-20-sm pr-[14px] pr-[11px] py-[2px]"
                     type="button"
                     onClick={handleContinue}
                   >
                     Next
                     <ArrowRight
-                      className="-me-1 ms-2 opacity-60 transition-transform group-hover:translate-x-0.5"
+                      className="-me-1 ms-0.5 opacity-60 transition-transform duration-200 ease group-hover:translate-x-0.5"
                       size={16}
                       strokeWidth={2}
                       aria-hidden="true"
