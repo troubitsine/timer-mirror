@@ -193,12 +193,7 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
           )}
 
           {!showMontage && (
-            <OnboardingCard
-              initialCollapsed={
-                localStorage.getItem("onboardingCollapsed") === "true"
-              }
-              hasCameraPermission={hasCameraPermission}
-            />
+            <OnboardingCard hasCameraPermission={hasCameraPermission} />
           )}
 
           <AnimatePresence mode="wait">

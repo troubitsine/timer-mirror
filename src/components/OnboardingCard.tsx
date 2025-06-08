@@ -6,28 +6,20 @@ import { CheckIcon } from "@radix-ui/react-icons";
 
 interface OnboardingCardProps {
   className?: string;
-  initialCollapsed?: boolean;
   hasCameraPermission?: boolean;
 }
 
 const OnboardingCard = ({
   className = "",
-  initialCollapsed,
   hasCameraPermission = false,
 }: OnboardingCardProps) => {
-  // Initialize with initialCollapsed if provided, otherwise check localStorage
-  const [isCollapsed, setIsCollapsed] = useState(() => {
-    if (initialCollapsed !== undefined) return initialCollapsed;
-    const savedState = localStorage.getItem("onboardingCollapsed");
-    return savedState === "true";
-  });
+  // Always start collapsed by default
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const isMobile = isMobileDevice();
 
-  // Save collapsed state to localStorage
+  // Toggle collapsed state
   const toggleCollapsed = () => {
-    const newState = !isCollapsed;
-    setIsCollapsed(newState);
-    localStorage.setItem("onboardingCollapsed", String(newState));
+    setIsCollapsed(!isCollapsed);
   };
 
   // We now render on mobile too
@@ -86,11 +78,14 @@ const OnboardingCard = ({
           transition={{ duration: 0.3, bounce: 5 }}
         >
           <div>
-            <p className="text-white/80 text-xs mb-5 text-balance mx-auto text-center max-w-[90%]">
+            <p className="text-white/80 text-xs mb-5 text-pretty mx-auto text-center max-w-[90%]">
               Focus Reel is a productivity timer designed to help you
               concentrate. Studies show that seeing your own reflection
               increases self-awareness and accountability, helping you stay
-              focused and minimize distractions as you work.
+              focused and minimize distractions as you work. Focus Reel
+              prioritizes your privacy—no personal data is stored, and all
+              session information is automatically deleted when you start a new
+              timer.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

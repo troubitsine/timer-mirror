@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +21,21 @@ interface OnboardingDialogProps {
 
 const OnboardingDialog = ({ open, onOpenChange }: OnboardingDialogProps) => {
   const [step, setStep] = useState(1);
+
+  // Preload images when component mounts
+  useEffect(() => {
+    const imageUrls = [
+      "/images/tempo-image-20250608T191642707Z.png",
+      "/images/tempo-image-20250608T191505524Z.png",
+      "/images/tempo-image-20250605T012116251Z.png",
+    ];
+
+    // Preload all images to cache them in the browser
+    imageUrls.forEach((url) => {
+      const img = new Image();
+      img.src = url;
+    });
+  }, []);
 
   const stepContent = [
     {
