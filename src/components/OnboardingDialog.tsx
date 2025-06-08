@@ -38,7 +38,7 @@ const OnboardingDialog = ({ open, onOpenChange }: OnboardingDialogProps) => {
     {
       title: "How it works",
       description: (
-        <ol className="list-decimal list-outside space-y-1 pl-4">
+        <ol className="list-decimal list-outside space-y-1 pl-5 sm:pl-4">
           <li>Allow camera permissions to see your reflection as you work.</li>
           <li>
             Start your timer and allow screen sharing so Focus Reel can capture
@@ -71,14 +71,14 @@ const OnboardingDialog = ({ open, onOpenChange }: OnboardingDialogProps) => {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="p-0 border-none overflow-hidden max-w-[500px] w-full mx-4 bg-transparent rounded-[18px]">
+      <DialogContent className="fixed left-3 right-3 top-[24vh] translate-x-0 translate-y-0 sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 p-0 border-none overflow-hidden w-auto max-w-full sm:max-w-[500px] sm:w-full mx-0 sm:mx-4 bg- transparent rounded-[18px] pb-[env(safe-area-inset-bottom)] sm:pb-0">
         <motion.div
           className="p-1.5 bg-neutral-700/70
-           before:absolute before:inset-0 before:bg-gradient-to-br before:from-neutral-400/40 before:to-transparent before:rounded-[18px] before:pointer-events-none
-           backdrop-blur-md rounded-[18px] relative flex flex-col"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3 }}
+           before:absolute before:inset-0 before:bg-gradient-to-br before:from-neutral-400/40 before:to-transparent sm:before:rounded-[18px] before:pointer-events-none
+           backdrop-blur-md rounded-t-[18px] relative flex flex-col"
+          initial={{ opacity: 0, y: 100 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
         >
           {/* Close button */}
           <div className="absolute right-[11px] top-[11px] z-10">
@@ -93,32 +93,30 @@ const OnboardingDialog = ({ open, onOpenChange }: OnboardingDialogProps) => {
             </DialogClose>
           </div>
 
-          {/* Image container with fixed height */}
-          <div className="w-full mx-auto h-[250px] bg-gradient-to-b from-neutral-700/60 via-neutral-700-70 to-neutral-800/80 rounded-[15px] inner-stroke-white-20-sm mb-3 flex-shrink-0">
+          {/* Image container with conservative height */}
+          <div className="w-full mx-auto h-[210px] sm:h-[220px] bg-gradient-to-b from-neutral-700/60 via-neutral-700-70 to-neutral-800/80 rounded-[15px] inner-stroke-white-20-sm mb-2 sm:mb-3 flex-shrink-0">
             <img
               src={stepContent[step - 1].image}
               alt={`Step ${step} illustration`}
-              className="w-full h-full object-cover rounded-lg"
+              className="w-full h-full object-contain sm:object-cover rounded-lg"
             />
           </div>
 
           {/* Content with flex layout to push navigation to bottom */}
-          <div className="flex flex-col flex-grow justify-between pl-3 pr-2 pb-1.5">
-            <DialogHeader className="text-center">
-              <DialogTitle className="text-lg font-semibold text-white/85 z-10">
+          <div className="flex flex-col justify-between pl-2 pr-1.5 pb-1.5 flex-1">
+            <DialogHeader className="flex flex-col mb-0 text-left">
+              <DialogTitle className="text-lg font-semibold text-white/85 z-10 flex-shrink-0 text-left">
                 {stepContent[step - 1].title}
               </DialogTitle>
-              <div className="h-[120px] overflow-auto">
-                {" "}
-                {/* Fixed height for description */}
-                <DialogDescription className="text-white/75 text-sm text-pretty z-10">
+              <div className="h-[160px] sm:h-[130px] overflow-y-auto">
+                <DialogDescription className="text-white/75 text-sm text-pretty z-10 text-left">
                   {stepContent[step - 1].description}
                 </DialogDescription>
               </div>
             </DialogHeader>
 
             {/* Progress indicators and navigation - always at bottom */}
-            <div className="flex flex-row justify-between items-center gap-2 mt-1 mb-0.5">
+            <div className="flex flex-row justify-between items-center gap-2 mt-2 flex-shrink-0">
               {/* Progress dots */}
               <div className="flex justify-center space-x-1.5 z-10">
                 {[...Array(totalSteps)].map((_, index) => (
@@ -137,26 +135,26 @@ const OnboardingDialog = ({ open, onOpenChange }: OnboardingDialogProps) => {
               </div>
 
               {/* Navigation buttons */}
-              <DialogFooter className="flex-row justify-between gap-0 z-10">
+              <DialogFooter className="flex-row justify-between gap-1 sm:gap-0 z-10">
                 <DialogClose asChild>
                   <Button
                     type="button"
                     variant="ghost"
-                    className="text-white/70 background-blur-md rounded-full hover:bg-white/20 hover:text-white/80 hover:inner-stroke-white-10-sm"
+                    className="text-[13px] text-white/70 background-blur-md rounded-full hover:bg-white/20 hover:text-white/80 hover:inner-stroke-white-10-sm px-4 py-2"
                   >
                     Skip
                   </Button>
                 </DialogClose>
                 {step < totalSteps ? (
                   <Button
-                    className="group bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-0 rounded-full inner-stroke-white-20-sm pr-[14px] pl-[11px] py-[2px]"
+                    className="group bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-0 rounded-full inner-stroke-white-20-sm  py-1 pr-[14px] pl-[12px] py-[2px] text-[13px]"
                     type="button"
                     onClick={handleContinue}
                   >
                     Next
                     <ArrowRight
                       className="-me-1 ms-0.5 opacity-60 transition-transform duration-200 ease group-hover:translate-x-0.5"
-                      size={16}
+                      size={14}
                       strokeWidth={2}
                       aria-hidden="true"
                     />
@@ -165,7 +163,7 @@ const OnboardingDialog = ({ open, onOpenChange }: OnboardingDialogProps) => {
                   <DialogClose asChild>
                     <Button
                       type="button"
-                      className="bg-white/75 hover:bg-white/85 text-black/75 hover:text-black/85 backdrop-blur-md rounded-full inner-stroke-white-20-sm"
+                      className="bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center rounded-full inner-stroke-white-20-sm px-[12px] py-[2px] text-[13px]"
                     >
                       Get Started
                     </Button>
