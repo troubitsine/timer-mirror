@@ -534,37 +534,6 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                      backdrop-blur-md rounded-xl"
                   >
                     <div className="flex flex-col items-center relative">
-                      <div className="absolute right-0 top-0">
-                        <motion.div
-                          layout
-                          transition={{
-                            type: "spring",
-                            stiffness: 500,
-                            damping: 30,
-                          }}
-                        >
-                          <motion.div
-                            whileTap={{ scale: 0.95 }}
-                            transition={{ duration: 0.1 }}
-                          >
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              onClick={() => {
-                                setShowPermissionDialog(false);
-                                // If we already have permission, make sure UI reflects that
-                                if (videoRef.current?.srcObject) {
-                                  setHasPermission(true);
-                                }
-                              }}
-                              className="bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-2 rounded-full inner-stroke-white-20-sm p-2"
-                            >
-                              <Cross2Icon className="h-4 w-4" />
-                            </Button>
-                          </motion.div>
-                        </motion.div>
-                      </div>
-
                       <div className="w-full max-w-[180px] flex h-24 justify-center items-center">
                         <img
                           src="/onboarding/step-1-illustration.png"
