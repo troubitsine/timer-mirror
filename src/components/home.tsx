@@ -156,7 +156,7 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
       <div className="absolute inset-0 overflow-hidden">
         {!showMontage && (
           <>
-            <div className="absolute inset-0 w-full h-full">
+            <div className="absolute inset-0 w-full h-full bg-neutral-900">
               <video
                 ref={videoRef}
                 autoPlay
@@ -176,7 +176,7 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
             />
           </>
         )}
-        {showMontage && <div className="absolute inset-0 bg-stone-50" />}
+        {showMontage && <div className="absolute inset-0 bg-neutral-800" />}
       </div>
       {/* Content overlay */}
       <div className="relative z-10 w-full min-h-screen p-1 sm:p-8 flex items-center pt-6 pb-12 sm:pb-32">
