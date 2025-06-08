@@ -27,13 +27,13 @@ const OnboardingDialog = ({ open, onOpenChange }: OnboardingDialogProps) => {
       title: "Welcome to Focus Reel",
       description:
         "Focus Reel is a productivity timer designed to help you concentrate. Studies show that seeing your own reflection increases self-awareness and accountability, helping you stay focused and minimize distractions as you work.",
-      image: "/images/tempo-image-20250605T013630511Z.png",
+      image: "/images/tempo-image-20250608T191642707Z.png",
     },
     {
       title: "Privacy First",
       description:
         "Focus Reel never stores your data. Your recordings are automatically deleted as soon as you close the browser window.",
-      image: "/images/tempo-image-20250605T014049131Z.png",
+      image: "/images/tempo-image-20250608T191505524Z.png",
     },
     {
       title: "How it works",
