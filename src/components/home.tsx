@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import TimerCard from "./TimerCard";
 import SessionMontage from "./SessionMontage";
 import OnboardingCard from "./OnboardingCard";
+import OnboardingDialog from "./OnboardingDialog";
 import { motion, AnimatePresence } from "framer-motion";
 import { isMobileDevice } from "@/lib/deviceDetection";
 
@@ -14,6 +15,20 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const isMobile = isMobileDevice();
 
+  const [showMontage, setShowMontage] = useState(false);
+  const [sessionData, setSessionData] = useState({
+    screenshots: [],
+    webcamPhotos: [],
+    taskName: "",
+    duration: 0,
+  });
+  const [hasCameraPermission, setHasCameraPermission] = useState(false);
+  const [showOnboardingDialog, setShowOnboardingDialog] = useState(() => {
+    // Check if user has seen onboarding before
+    return localStorage.getItem("hasSeenOnboarding") !== "true";
+  });
+  const [shouldInitializeCamera, setShouldInitializeCamera] = useState(false);
+
   // Reset state when component mounts
   useEffect(() => {
     setShowMontage(false);
@@ -24,25 +39,36 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
       duration: 0,
     });
 
-    // Read the collapsed state from localStorage once on mount
-    const savedCollapsedState =
-      localStorage.getItem("onboardingCollapsed") === "true";
+    // Check if user has seen onboarding before
+    const hasSeenOnboarding =
+      localStorage.getItem("hasSeenOnboarding") === "true";
 
-    // Initialize camera
-    if (navigator.mediaDevices?.getUserMedia) {
-      navigator.mediaDevices
-        .getUserMedia({
-          video: {
-            facingMode: "user", // Use front camera on mobile devices
-          },
-        })
-        .then((stream) => {
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream;
+    // Check if camera permissions are already granted
+    const checkCameraPermissions = async () => {
+      try {
+        if (navigator.permissions && navigator.permissions.query) {
+          const result = await navigator.permissions.query({
+            name: "camera" as PermissionName,
+          });
+
+          if (result.state === "granted") {
+            // If camera permissions are already granted
+            setHasCameraPermission(true);
+
+            // Only initialize camera immediately if user has seen onboarding
+            if (hasSeenOnboarding) {
+              setShouldInitializeCamera(true);
+            }
+          } else if (result.state === "denied") {
+            setHasCameraPermission(false);
           }
-        })
-        .catch((err) => console.error("Camera error:", err));
-    }
+        }
+      } catch (err) {
+        console.error("Error checking camera permissions:", err);
+      }
+    };
+
+    checkCameraPermissions();
 
     // Cleanup
     return () => {
@@ -53,14 +79,27 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
     };
   }, []);
 
-  const [showMontage, setShowMontage] = useState(false);
-  const [sessionData, setSessionData] = useState({
-    screenshots: [],
-    webcamPhotos: [],
-    taskName: "",
-    duration: 0,
-  });
-  const [hasCameraPermission, setHasCameraPermission] = useState(false);
+  // Initialize camera only after user has interacted with onboarding
+  useEffect(() => {
+    if (shouldInitializeCamera && navigator.mediaDevices?.getUserMedia) {
+      navigator.mediaDevices
+        .getUserMedia({
+          video: {
+            facingMode: "user", // Use front camera on mobile devices
+          },
+        })
+        .then((stream) => {
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+            setHasCameraPermission(true);
+          }
+        })
+        .catch((err) => {
+          console.error("Camera error:", err);
+          setHasCameraPermission(false);
+        });
+    }
+  }, [shouldInitializeCamera]);
 
   const handleSessionStart = () => {
     setShowMontage(false);
@@ -98,13 +137,26 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
     }
   };
 
+  const handleOnboardingClose = () => {
+    setShowOnboardingDialog(false);
+    localStorage.setItem("hasSeenOnboarding", "true");
+
+    // Only now initialize the camera after onboarding is closed
+    setShouldInitializeCamera(true);
+  };
+
   return (
     <div className="min-h-screen w-full relative overflow-hidden">
+      {/* Onboarding Dialog */}
+      <OnboardingDialog
+        open={showOnboardingDialog}
+        onOpenChange={handleOnboardingClose}
+      />
       {/* Background video with overflow hidden container */}
       <div className="absolute inset-0 overflow-hidden">
         {!showMontage && (
           <>
-            <div className="absolute inset-0 w-full h-full">
+            <div className="absolute inset-0 w-full h-full bg-neutral-900">
               <video
                 ref={videoRef}
                 autoPlay
@@ -124,7 +176,7 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
             />
           </>
         )}
-        {showMontage && <div className="absolute inset-0 bg-stone-50" />}
+        {showMontage && <div className="absolute inset-0 bg-neutral-800" />}
       </div>
       {/* Content overlay */}
       <div className="relative z-10 w-full min-h-screen p-1 sm:p-8 flex items-center pt-6 pb-12 sm:pb-32">
@@ -141,12 +193,7 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
           )}
 
           {!showMontage && (
-            <OnboardingCard
-              initialCollapsed={
-                localStorage.getItem("onboardingCollapsed") === "true"
-              }
-              hasCameraPermission={hasCameraPermission}
-            />
+            <OnboardingCard hasCameraPermission={hasCameraPermission} />
           )}
 
           <AnimatePresence mode="wait">
@@ -168,6 +215,7 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
                   onCameraPermissionDenied={() => {
                     setHasCameraPermission(false);
                   }}
+                  skipInitialCameraRequest={showOnboardingDialog}
                 />
               </motion.div>
             ) : (
