@@ -124,9 +124,15 @@ const OnboardingDialog = ({ open, onOpenChange }: OnboardingDialogProps) => {
                 {stepContent[step - 1].title}
               </DialogTitle>
               <div className="h-[160px] sm:h-[130px] overflow-y-auto">
-                <DialogDescription className="text-white/75 text-sm text-pretty z-10 text-left">
-                  {stepContent[step - 1].description}
-                </DialogDescription>
+                {typeof stepContent[step - 1].description === "string" ? (
+                  <DialogDescription className="text-white/75 text-sm text-pretty z-10 text-left">
+                    {stepContent[step - 1].description}
+                  </DialogDescription>
+                ) : (
+                  <div className="text-white/75 text-sm text-pretty z-10 text-left">
+                    {stepContent[step - 1].description}
+                  </div>
+                )}
               </div>
             </DialogHeader>
 

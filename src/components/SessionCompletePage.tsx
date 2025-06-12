@@ -7,6 +7,7 @@ import { Button } from "./ui/button";
 import { Grid2X2, Layers } from "lucide-react";
 import { motion } from "framer-motion";
 import AnimatedTabs from "./ui/animated-tabs";
+import ShareSessionButton from "./ShareSessionButton";
 
 const SessionCompletePage = () => {
   const location = useLocation();
@@ -42,6 +43,16 @@ const SessionCompletePage = () => {
       <div className="relative z-10 w-full min-h-screen p-2 sm:p-8 flex sm:items-start pt-4 pb-12 sm:pb-32">
         <div className="w-[calc(100%-20px)] lg:w-[65vw] min-w-[300px] max-w-[1800px] max-h-[1200px] mx-auto flex flex-col gap-4 sm:gap-6">
           <div className="w-full h-[70vh] sm:aspect-video relative">
+            {/* Share button positioned at the top-right */}
+            <div className="absolute top-3 right-3 z-30">
+              <ShareSessionButton
+                taskName={sessionData.taskName}
+                duration={sessionData.duration}
+                screenshots={sessionData.screenshots}
+                webcamPhotos={sessionData.webcamPhotos}
+              />
+            </div>
+
             {/* Animated tabs for view selection */}
             <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 z-30">
               <div className="flex items-center justify-center rounded-full bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[3px] inner-stroke-white-20-sm shadow-sm min-w-[120px] min-h-[32px]">
