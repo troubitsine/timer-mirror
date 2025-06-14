@@ -14,8 +14,8 @@ import {
 import BackgroundColorSelector from "./BackgroundColorSelector";
 import AnimatedTabs from "./ui/animated-tabs";
 import { useDynamicBackground } from "@/lib/useDynamicBackground";
-import SessionMontage from "./SessionMontage";
-import SessionGridView from "./SessionGridView";
+import ShareSessionMontage from "./ShareSessionMontage";
+import ShareSessionGridView from "./ShareSessionGridView";
 import { cn } from "@/lib/utils";
 
 interface ShareSessionButtonProps {
@@ -214,23 +214,27 @@ const ShareSessionButton = ({
                 >
                   {/* Session preview based on view mode */}
                   {viewMode === "stack" ? (
-                    <SessionMontage
+                    <ShareSessionMontage
                       screenshots={screenshots}
                       webcamPhotos={webcamPhotos}
                       taskName={taskName}
                       duration={duration}
-                      initialSelectedBackgroundId={selectedBackgroundId}
+                      initialSelectedBackgroundId={currentBackgroundId}
                       onBackgroundSelect={setCurrentBackgroundId}
+                      selectedBackgroundId={currentBackgroundId}
+                      setSelectedBackgroundId={setCurrentBackgroundId}
                       hideControls={true}
                     />
                   ) : (
-                    <SessionGridView
+                    <ShareSessionGridView
                       screenshots={screenshots}
                       webcamPhotos={webcamPhotos}
                       taskName={taskName}
                       duration={duration}
-                      initialSelectedBackgroundId={selectedBackgroundId}
+                      initialSelectedBackgroundId={currentBackgroundId}
                       onBackgroundSelect={setCurrentBackgroundId}
+                      selectedBackgroundId={currentBackgroundId}
+                      setSelectedBackgroundId={setCurrentBackgroundId}
                       className="rounded-xl"
                     />
                   )}
