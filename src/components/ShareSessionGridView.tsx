@@ -23,6 +23,7 @@ interface ShareSessionGridViewProps {
   onBackgroundSelect?: (id: string) => void;
   selectedBackgroundId?: string;
   setSelectedBackgroundId?: (id: string) => void;
+  aspectRatio?: "16:9" | "1:1" | "9:16";
 }
 
 // Configuration for the grid layout
@@ -172,6 +173,7 @@ const ShareSessionGridView = ({
   onBackgroundSelect,
   selectedBackgroundId: externalSelectedBackgroundId,
   setSelectedBackgroundId: externalSetSelectedBackgroundId,
+  aspectRatio = "16:9",
 }: ShareSessionGridViewProps) => {
   const isMobile = isMobileDevice();
 
@@ -265,12 +267,22 @@ const ShareSessionGridView = ({
       <div className="w-full h-full overflow-auto flex justify-center items-center">
         {/* Tilt component without motion wrapper */}
         <Tilt
-          className="w-[55%] sm:w-[35%] md:w-[29%] mb-11"
+          className="mb-2 flex justify-center items-center"
           rotationFactor={6}
           springOptions={{ stiffness: 300, damping: 30 }}
         >
           <motion.div
             className="p-1 bg-white rounded-xl shadow-md w-full"
+            style={{
+              width:
+                aspectRatio === "16:9"
+                  ? "70%"
+                  : aspectRatio === "1:1"
+                    ? "68%"
+                    : aspectRatio === "9:16"
+                      ? "85%"
+                      : "50%", // fallback for any other aspect ratios
+            }}
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
             transition={{
@@ -294,6 +306,9 @@ const ShareSessionGridView = ({
                   overflowWrap: "break-word",
                   whiteSpace: "normal",
                   textWrap: "balance",
+                  fontSize: "0.7rem",
+                  lineHeight: "1.15",
+                  padding: "6px 12px",
                 }}
               >
                 {taskName} • {duration} {duration === 1 ? "min" : "min"}

@@ -237,6 +237,7 @@ const ShareSessionButton = ({
                       selectedBackgroundId={currentBackgroundId}
                       setSelectedBackgroundId={setCurrentBackgroundId}
                       className="rounded-xl"
+                      aspectRatio={aspectRatio}
                     />
                   )}
                 </div>
