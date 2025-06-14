@@ -224,6 +224,7 @@ const ShareSessionButton = ({
                       selectedBackgroundId={currentBackgroundId}
                       setSelectedBackgroundId={setCurrentBackgroundId}
                       hideControls={true}
+                      aspectRatio={aspectRatio}
                     />
                   ) : (
                     <ShareSessionGridView
