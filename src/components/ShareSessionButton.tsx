@@ -105,18 +105,13 @@ const ShareSessionButton = ({
     setIsGeneratingImage(true);
 
     try {
-      // Use html2canvas to capture the preview element
-      const html2canvas = (await import("html2canvas")).default;
-      const canvas = await html2canvas(previewRef.current, {
+      // Use html-to-image to capture the preview element
+      const { toPng } = await import("html-to-image");
+      const dataUrl = await toPng(previewRef.current, {
         backgroundColor: null,
-        scale: 2, // Higher resolution
-        logging: false,
-        allowTaint: true,
-        useCORS: true,
+        pixelRatio: 2, // Higher resolution
+        cacheBust: true,
       });
-
-      // Convert canvas to data URL
-      const dataUrl = canvas.toDataURL("image/png");
 
       // Create download link
       const link = document.createElement("a");
@@ -130,12 +125,12 @@ const ShareSessionButton = ({
     }
   };
 
-  // Load html2canvas script when dialog opens
+  // Load html-to-image script when dialog opens
   useEffect(() => {
     if (isDialogOpen) {
-      // Preload html2canvas
-      import("html2canvas").catch((err) => {
-        console.error("Failed to load html2canvas:", err);
+      // Preload html-to-image
+      import("html-to-image").catch((err) => {
+        console.error("Failed to load html-to-image:", err);
       });
     }
   }, [isDialogOpen]);

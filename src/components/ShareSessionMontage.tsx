@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { RotateCw } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, useAnimation } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { isMobileDevice } from "@/lib/deviceDetection";
 import BackgroundColorSelector from "./BackgroundColorSelector";
@@ -120,81 +120,143 @@ const ShareSessionMontage = ({
     }
   }, [externalSelectedBackgroundId]);
 
-  // Animation states - start directly in pile state
-  const [animationPhase, setAnimationPhase] = useState<
-    "initial" | "pile" | "fadeOut"
-  >("pile");
-  const [isHovering, setIsHovering] = useState(false);
-  const [badgeVisible, setBadgeVisible] = useState(true);
-
-  // State to track the order of photos for the shuffle effect
-  const [photoOrder, setPhotoOrder] = useState<number[]>([]);
-  const [isShuffling, setIsShuffling] = useState(false);
+  // Animation config
+  const H_X_STEP = 4; // horizontal distance between stacked cards
 
   // Calculate number of cards based on available photos
   const numberOfCards = Math.min(allPhotos.length, 12); // Limit to 12 cards max
 
-  // Generate random rotations for the pile effect
-  const randomRotations = useMemo(
-    () =>
-      Array.from({ length: numberOfCards }).map((_, index) => {
-        const randomRotation = Math.random() * 16 - 8; // Random rotation between -8 and 8 degrees
-        const rotate = index % 2 === 0 ? randomRotation : -randomRotation; // Alternate sign
-        return {
-          rotate: rotate,
-          x: Math.random() * 20 - 10, // Small random x offset
-          y: Math.random() * 20 - 10, // Small random y offset
-        };
-      }),
-    [numberOfCards],
+  // Card dimensions based on aspect ratio and device type
+  // Calculate card width as a percentage of container width
+  const widthPercentage = { "16:9": 0.45, "1:1": 0.7, "9:16": 0.75 }[
+    aspectRatio
+  ];
+  // Use a percentage of the container width instead of a fixed value
+  const CARD_W_PERCENT = Math.round(widthPercentage * 100);
+  // Apply 4:3 ratio on desktop and 4:5 on mobile
+  const CARD_AR = isMobile ? "4 / 5" : "4 / 3";
+
+  // Calculate the base X position to center the stack horizontally
+  const HR_BASE_X = -((numberOfCards - 1) * H_X_STEP) / 2;
+
+  const randRot = () => (Math.random() - 0.5) * 8;
+
+  // Initialize cards with positions, rotations, and their own image source
+  const [cards, setCards] = useState(() =>
+    Array.from({ length: numberOfCards }, (_, i) => ({
+      id: i + 1,
+      src: allPhotos[i % allPhotos.length], // each card keeps its own photo
+      pos: i, // 0 = top of the stack
+      z: numberOfCards - i, // higher z = on top
+      rot: randRot(),
+    })),
   );
+
+  const [movingId, setMovingId] = useState<number | null>(null);
+  const controls = useAnimation();
+  const [badgeVisible, setBadgeVisible] = useState(true);
+
+  // --- Pose helpers ---------------------------------------------------
+  const basePose = (c: any) => ({
+    x: HR_BASE_X + c.pos * H_X_STEP,
+    y: 0, // Changed from -10 to 0 for true centering
+    rotate: c.rot,
+    zIndex: c.z,
+  });
+
+  const liftPose = (c: any) => ({
+    ...basePose(c),
+    y: -24, // Adjusted from -34
+    rotate: c.rot + 6,
+    zIndex: 200,
+    scale: 0.96,
+    opacity: 1,
+    transition: { type: "spring", stiffness: 320, damping: 32 },
+  });
+
+  const peelPose = (c: any) => ({
+    ...basePose(c),
+    x: basePose(c).x + 120,
+    y: 20,
+    rotate: c.rot + 18,
+    zIndex: 0,
+    scale: 0.9,
+    opacity: 1,
+    transition: { type: "spring", stiffness: 260, damping: 22 },
+  });
+
+  const backPose = (len: number) => ({
+    x: HR_BASE_X + (len - 1) * H_X_STEP,
+    y: -10, // Adjusted from -20
+    rotate: 0,
+    scale: 1,
+    opacity: 1,
+    zIndex: 1,
+    transition: { type: "spring", stiffness: 300, damping: 22 },
+  });
+
+  // --- Shuffle cycle --------------------------------------------------
+  const shuffle = useCallback(async () => {
+    const top = cards.find((c) => c.pos === 0);
+    if (!top) return;
+
+    setMovingId(top.id);
+    await controls.start(liftPose(top));
+    await controls.start(peelPose(top));
+    await controls.start(backPose(cards.length));
+
+    // Re-order array ---------------------------------------------------
+    setCards((prev) => {
+      const next = prev.map((o) => ({ ...o }));
+      next.forEach((c) => {
+        if (c.id !== top.id) {
+          c.pos -= 1;
+          c.z += 1;
+        }
+      });
+      const moving = next.find((c) => c.id === top.id);
+      if (moving) {
+        moving.pos = next.length - 1;
+        moving.z = 1;
+        moving.rot = randRot();
+      }
+      return next;
+    });
+
+    setMovingId(null);
+  }, [cards, controls]);
 
   // Start the animation sequence
   const startAnimation = () => {
-    // First fade out the current pile to the center
-    if (animationPhase === "pile") {
-      // Create a temporary animation phase for the fade out
-      const tempPhase = "fadeOut";
-      setAnimationPhase(tempPhase as any);
+    // Reset the cards to their initial positions
+    setCards(
+      Array.from({ length: numberOfCards }, (_, i) => ({
+        id: i + 1,
+        src: allPhotos[i % allPhotos.length], // each card keeps its own photo
+        pos: i,
+        z: numberOfCards - i,
+        rot: randRot(),
+      })),
+    );
 
-      // Wait for fade out animation to complete - further reduced time for even faster transition
-      setTimeout(() => {
-        // Then reset to initial state
-        setAnimationPhase("initial");
-        setIsHovering(false);
-
-        // Show badge if not already visible
-        if (!badgeVisible) {
-          setBadgeVisible(true);
-        }
-
-        // Go directly to pile animation after a short delay
-        setTimeout(() => {
-          setAnimationPhase("pile");
-        }, 300); // Short delay for snappier transition
-      }, 200); // Further reduced time for fade out animation
-    } else {
-      // If not already in pile phase, just start the normal animation sequence
-      setAnimationPhase("initial");
-      setIsHovering(false);
-
-      // Show badge if not already visible
-      if (!badgeVisible) {
-        setBadgeVisible(true);
-      }
-
-      // Go directly to pile animation after a short delay
-      setTimeout(() => {
-        setAnimationPhase("pile");
-      }, 500); // Delay to allow badge to appear first but be snappier
+    // Show badge if not already visible
+    if (!badgeVisible) {
+      setBadgeVisible(true);
     }
   };
 
-  // Initialize photo order on first load without starting animation
+  // Initialize cards on photo change
   useEffect(() => {
-    // Initialize photo order
-    setPhotoOrder(Array.from({ length: numberOfCards }, (_, i) => i));
-  }, [numberOfCards]);
+    setCards(
+      Array.from({ length: numberOfCards }, (_, i) => ({
+        id: i + 1,
+        src: allPhotos[i % allPhotos.length], // each card keeps its own photo
+        pos: i,
+        z: numberOfCards - i,
+        rot: randRot(),
+      })),
+    );
+  }, [numberOfCards, allPhotos]);
 
   // Cleanup function
   useEffect(() => {
@@ -211,7 +273,7 @@ const ShareSessionMontage = ({
     >
       {/* Session info displayed at the top of the card - absolutely positioned */}
       <motion.div
-        className="absolute top-3 w-full text-center"
+        className="absolute top-3 w-full text-center z-20"
         initial={{ scale: 0.8 }}
         animate={{ scale: 1 }}
         transition={{
@@ -238,193 +300,90 @@ const ShareSessionMontage = ({
         </div>
       </motion.div>
 
-      <div className="flex flex-col h-full items-center justify-center">
+      {/* Main content container - now using absolute positioning for true centering */}
+      <div className="absolute inset-0 flex items-center justify-center">
         <div
-          className="h-[260px] w-full max-w-[500px] flex items-center justify-center mb-5 mt-16"
-          style={{ height: aspectRatio === "9:16" ? "300px" : "260px" }}
+          className="relative w-full max-w-full"
+          style={{ maxHeight: "calc(100% - 80px)" }}
         >
-          {/* Spiral animation */}
-          {numberOfCards > 0 && (
-            <motion.div
-              className={`relative h-full w-full flex items-center justify-center ${
-                animationPhase === "pile" ? "cursor-pointer" : ""
-              }`}
-              style={{ transformOrigin: "center" }}
-              whileHover={
-                animationPhase === "pile" && !isShuffling ? { scale: 1.15 } : {}
-              }
-              onMouseEnter={() =>
-                animationPhase === "pile" && setIsHovering(true)
-              }
-              onMouseLeave={() => setIsHovering(false)}
-              onClick={() => {
-                if (animationPhase === "pile" && !isShuffling) {
-                  // Shuffle the cards - move the top card to the bottom
-                  setIsShuffling(true);
-                  setTimeout(() => {
-                    setPhotoOrder((prev) => {
-                      const newOrder = [...prev];
-                      const topCard = newOrder.shift();
-                      if (topCard !== undefined) newOrder.push(topCard);
-                      return newOrder;
-                    });
-                    setIsShuffling(false);
-                  }, 500); // Wait for animation to complete
-                }
-              }}
-            >
-              {Array.from({ length: numberOfCards }).map((_, index) => {
-                // Get the actual index from the photoOrder array to determine which photo to show
-                const orderIndex =
-                  photoOrder[index] !== undefined ? photoOrder[index] : index;
-
-                // Use the actual photo from allPhotos
-                const photo = allPhotos[orderIndex % allPhotos.length];
-
-                // Get random rotation for pile effect
-                const {
-                  rotate,
-                  x: pileOffsetX,
-                  y: pileOffsetY,
-                } = randomRotations[index];
-
-                // Determine if this is the top card being shuffled
-                const isTopCard = index === 0 && isShuffling;
-
-                return (
-                  <motion.div
-                    key={`photo-${orderIndex}`}
-                    className="absolute left-1/2 top-1/2"
-                    style={{
-                      zIndex:
-                        animationPhase === "pile" ? numberOfCards - index : 1,
-                    }}
-                    initial={{
-                      x: 0,
-                      y: 0,
-                      scale: 0.8,
-                      opacity: 0,
-                      rotate: rotate,
-                      zIndex: numberOfCards - index,
-                    }}
-                    animate={
-                      animationPhase === "initial"
-                        ? {}
-                        : animationPhase === "fadeOut"
-                          ? {
-                              // Fade out to center animation - faster and more dramatic
-                              x: -50,
-                              y: -50,
-                              scale: 0.4, // Smaller scale for more dramatic effect
-                              opacity: 0,
-                              rotate: 0,
-                              zIndex: numberOfCards - index,
-                            }
-                          : isTopCard
-                            ? {
-                                // Top card being shuffled animation - moves down faster
-                                x: -35,
-                                y: 60, // Increased distance for more dramatic effect
-                                scale: 0.5, // Smaller scale for more dramatic effect
-                                opacity: 0,
-                                rotate: rotate * 1.2, // More rotation for more dramatic effect
-                                zIndex: numberOfCards + 1,
-                              }
-                            : index === 0 && !isShuffling
-                              ? {
-                                  // New top card - scale up by 8%
-                                  x: 0, // Center horizontally
-                                  y: 0, // Center vertically
-                                  scale: 1.06, // Scale up by 8% for more emphasis
-                                  opacity: 1,
-                                  rotate: rotate,
-                                  zIndex: numberOfCards,
-                                }
-                              : {
-                                  // pile phase for other cards
-                                  x: 0, // Center horizontally
-                                  y: 0, // Center vertically
-                                  scale: 1,
-                                  opacity: 1,
-                                  rotate: rotate,
-                                  zIndex: numberOfCards - index,
-                                }
-                    }
-                    // Match the task badge animation for initial appearance
-                    transition={{
-                      type: "spring",
-                      stiffness: 300,
-                      damping: 22,
-                      delay: index * 0.05, // Stagger the cards slightly
-                      duration: animationPhase === "fadeOut" ? 0.15 : 0.4,
-                      ease:
-                        animationPhase === "fadeOut" ? "circOut" : undefined,
-                    }}
-                  >
-                    <div
-                      className="-translate-x-1/2 -translate-y-1/2 bg-white rounded-[15px] p-[5px] inner-stroke-black-5-sm"
+          <div className="relative w-full mx-auto">
+            {/* Photo stack animation */}
+            {numberOfCards > 0 && (
+              <motion.div
+                className="relative h-full w-full flex items-center justify-center"
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.98 }}
+                onTap={shuffle}
+              >
+                {/* Card stack */}
+                {cards.map((card, index) => {
+                  return (
+                    <motion.div
+                      key={`photo-${card.id}`}
+                      className="absolute"
                       style={{
-                        width:
-                          aspectRatio === "16:9"
-                            ? "95%"
-                            : aspectRatio === "1:1"
-                              ? "130%"
-                              : aspectRatio === "9:16"
-                                ? "145%"
-                                : "80%", // fallback for any other aspect ratios
-                        maxHeight: isMobile ? "70%" : "60%",
-                        aspectRatio: isMobile ? "3/4" : "4/3",
+                        width: `${CARD_W_PERCENT}%`,
+                        aspectRatio: CARD_AR,
+                        left: 0,
+                        top: 12,
+                        bottom: 0,
+                        right: 0,
+                        margin: "auto",
                       }}
+                      initial={basePose(card)}
+                      animate={card.id === movingId ? controls : basePose(card)}
                     >
-                      <img
-                        src={photo}
-                        alt={`Photo ${index + 1}`}
-                        loading="lazy"
-                        className="w-full h-full object-cover rounded-[11px] z-30 shadow-[0_2px_2px_rgba(0,0,0,0.12),_0_8px_8px_rgba(0,0,0,0.012)]"
-                      />
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </motion.div>
-          )}
-        </div>
-
-        {/* Background color selector - only show when dynamic colors are available and controls aren't hidden */}
-        {hasDynamicColors && !hideControls && (
-          <div className="absolute bottom-3.5 left-4 flex justify-center z-30">
-            <BackgroundColorSelector
-              options={backgroundOptions}
-              selectedId={selectedBackgroundId}
-              onSelect={setSelectedBackgroundId}
-              className="bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[0px] inner-stroke-white-10-sm shadow-sm rounded-full"
-            />
+                      <div className="w-full h-full bg-white p-[5px] rounded-[15px] inner-stroke-black-5-sm">
+                        <img
+                          src={card.src}
+                          alt={`Photo ${card.id}`}
+                          loading="lazy"
+                          className="w-full h-full object-cover rounded-[11px] z-30 shadow-[0_2px_2px_rgba(0,0,0,0.12),_0_8px_8px_rgba(0,0,0,0.012)]"
+                        />
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </motion.div>
+            )}
           </div>
-        )}
-
-        {/* Replay button - only show when controls aren't hidden */}
-        {!hideControls && (
-          <motion.div
-            className="absolute bottom-4 right-3 z-30"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
-            whileTap={{ scale: 0.95 }}
-            onMouseEnter={() => {}}
-            onMouseLeave={() => {}}
-          >
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={startAnimation}
-              className="bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/70 backdrop-blur-md flex items-center gap-1 rounded-full inner-stroke-white-20-sm sm:pl-[8px] sm:pr-[10px] py-[6px] pl-[10px] pr-[12px]"
-            >
-              <RotateCw className="h-4 w-4" />
-              <span className="hidden sm:inline">Replay</span>
-            </Button>
-          </motion.div>
-        )}
+        </div>
       </div>
+
+      {/* Background color selector - only show when dynamic colors are available and controls aren't hidden */}
+      {hasDynamicColors && !hideControls && (
+        <div className="absolute bottom-3.5 left-4 flex justify-center z-30">
+          <BackgroundColorSelector
+            options={backgroundOptions}
+            selectedId={selectedBackgroundId}
+            onSelect={setSelectedBackgroundId}
+            className="bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[0px] inner-stroke-white-10-sm shadow-sm rounded-full"
+          />
+        </div>
+      )}
+
+      {/* Replay button - only show when controls aren't hidden */}
+      {!hideControls && (
+        <motion.div
+          className="absolute bottom-4 right-3 z-30"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+          whileTap={{ scale: 0.95 }}
+          onMouseEnter={() => {}}
+          onMouseLeave={() => {}}
+        >
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={startAnimation}
+            className="bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/70 backdrop-blur-md flex items-center gap-1 rounded-full inner-stroke-white-20-sm sm:pl-[8px] sm:pr-[10px] py-[6px] pl-[10px] pr-[12px]"
+          >
+            <RotateCw className="h-4 w-4" />
+            <span className="hidden sm:inline">Replay</span>
+          </Button>
+        </motion.div>
+      )}
     </Card>
   );
 };
