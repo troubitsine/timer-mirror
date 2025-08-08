@@ -101,25 +101,24 @@ const ShareSessionButton = ({
   // Handle download functionality
   const handleDownload = async () => {
     if (!previewRef.current) return;
-
     setIsGeneratingImage(true);
 
     try {
-      // Use html-to-image to capture the preview element
       const { toPng } = await import("html-to-image");
       const dataUrl = await toPng(previewRef.current, {
         backgroundColor: null,
-        pixelRatio: 2, // Higher resolution
+        pixelRatio: 6,
         cacheBust: true,
+        // Override the style on the clone only - no flicker
+        style: { borderRadius: "0px" },
       });
 
-      // Create download link
       const link = document.createElement("a");
       link.download = `${taskName.replace(/\s+/g, "-").toLowerCase()}-${duration}min.png`;
       link.href = dataUrl;
       link.click();
-    } catch (error) {
-      console.error("Error generating image:", error);
+    } catch (err) {
+      console.error("Error generating image:", err);
     } finally {
       setIsGeneratingImage(false);
     }

@@ -333,12 +333,24 @@ const ShareSessionMontage = ({
                       initial={basePose(card)}
                       animate={card.id === movingId ? controls : basePose(card)}
                     >
-                      <div className="w-full h-full bg-white p-[5px] rounded-[15px] inner-stroke-black-5-sm">
+                      <div
+                        className={cn(
+                          "overflow-hidden w-full h-full bg-white inner-stroke-black-5-sm",
+                          aspectRatio === "9:16"
+                            ? "p-[3px] rounded-[10px]"
+                            : "p-[5px] rounded-[15px]",
+                        )}
+                      >
                         <img
                           src={card.src}
                           alt={`Photo ${card.id}`}
                           loading="lazy"
-                          className="w-full h-full object-cover rounded-[11px] z-30 shadow-[0_2px_2px_rgba(0,0,0,0.12),_0_8px_8px_rgba(0,0,0,0.012)]"
+                          className={cn(
+                            "w-full h-full object-cover z-30 shadow-[0_1px_2px_rgba(0,0,0,0.14),_0_8px_8px_rgba(0,0,0,0.04)]",
+                            aspectRatio === "9:16"
+                              ? "rounded-[7px]"
+                              : "rounded-[11px]",
+                          )}
                         />
                       </div>
                     </motion.div>
