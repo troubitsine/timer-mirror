@@ -177,6 +177,10 @@ const ShareSessionGridView = ({
 }: ShareSessionGridViewProps) => {
   const isMobile = isMobileDevice();
 
+  // Card dimensions based on aspect ratio - matching ShareSessionMontage logic
+  const widthPercentage = { "16:9": 0.7, "1:1": 0.68, "9:16": 0.85 }[aspectRatio];
+  const CARD_W_PERCENT = Math.round(widthPercentage * 100);
+
   // Combine photos based on device type
   const allPhotos = useMemo(() => {
     // Simple filter for valid images
@@ -274,14 +278,7 @@ const ShareSessionGridView = ({
           <motion.div
             className="p-1 bg-white rounded-xl shadow-md w-full"
             style={{
-              width:
-                aspectRatio === "16:9"
-                  ? "70%"
-                  : aspectRatio === "1:1"
-                    ? "68%"
-                    : aspectRatio === "9:16"
-                      ? "85%"
-                      : "50%", // fallback for any other aspect ratios
+              width: `${CARD_W_PERCENT}%`,
             }}
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
