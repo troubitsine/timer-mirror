@@ -4,6 +4,7 @@ import React, {
   useMemo,
   useState,
   useEffect,
+  useCallback,
 } from "react";
 import { Card } from "./ui/card";
 import { cn } from "@/lib/utils";
@@ -177,9 +178,42 @@ const ShareSessionGridView = ({
 }: ShareSessionGridViewProps) => {
   const isMobile = isMobileDevice();
 
-  // Card dimensions based on aspect ratio - matching ShareSessionMontage logic
-  const widthPercentage = { "16:9": 0.7, "1:1": 0.68, "9:16": 0.85 }[aspectRatio];
-  const CARD_W_PERCENT = Math.round(widthPercentage * 100);
+  // Keep your aspect→width preference per ratio (tuned for 9:16)
+  const WIDTH_PCT: Record<
+    NonNullable<ShareSessionGridViewProps["aspectRatio"]>,
+    number
+  > = {
+    "16:9": 0.7,
+    "1:1": 0.68,
+    "9:16": 0.76, // ↓ from 0.85 so portrait doesn't press the edges
+  };
+
+  // Minimum presence (as a fraction of container height)
+  const MIN_CARD_H_RATIO: Record<
+    NonNullable<ShareSessionGridViewProps["aspectRatio"]>,
+    number
+  > = {
+    "16:9": 0.42,
+    "1:1": 0.44,
+    "9:16": 0.5, // a bit larger so tall cards don't look spindly
+  };
+
+  // Transform clearance (px) so Tilt never clips (used as padding on the wrapper)
+  const TILT_BLEED_PX: Record<
+    NonNullable<ShareSessionGridViewProps["aspectRatio"]>,
+    number
+  > = {
+    "16:9": 12,
+    "1:1": 14,
+    "9:16": 18, // more headroom for taller cards
+  };
+
+  const widthPercentage = WIDTH_PCT[aspectRatio];
+  const tiltBleed = TILT_BLEED_PX[aspectRatio];
+
+  // NEW: refs to measure the available container and compute a bounded width
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [cardWidthPx, setCardWidthPx] = useState<number | undefined>(undefined);
 
   // Combine photos based on device type
   const allPhotos = useMemo(() => {
@@ -258,6 +292,80 @@ const ShareSessionGridView = ({
     }
   }, [externalSelectedBackgroundId]);
 
+  // ---- NEW: Size logic based on container height with min/max rules ----
+  const recomputeCardWidth = useCallback(() => {
+    const container = wrapperRef.current;
+    if (!container) return;
+
+    // Usable space (we already padded wrapper by tiltBleed)
+    const cW = container.clientWidth - tiltBleed * 2;
+    const cH = container.clientHeight - tiltBleed * 2;
+
+    // Live badge height (wrap-aware)
+    const badgeH =
+      (taskBadgeRef?.current as HTMLElement | null)?.offsetHeight ?? 0;
+
+    // Vertical chrome inside the card: p-1 top+bottom (8) + mt-1 (4) + tiny buffer
+    const EXTRA_VERTICAL = 20;
+
+    // Preferred width from the width policy (still capped by usable width below)
+    const preferred = Math.round(cW * widthPercentage);
+
+    // Height-bound width: gridH = w * FRAME_RATIO, totalH = gridH + badgeH + extras
+    const maxWidthByHeight = Math.floor(
+      (cH - badgeH - EXTRA_VERTICAL) / FRAME_RATIO,
+    );
+
+    // Minimum presence (fraction of container height), tuned per aspect & device
+    const minRatio = isMobile
+      ? Math.max(0, MIN_CARD_H_RATIO[aspectRatio] - 0.04)
+      : MIN_CARD_H_RATIO[aspectRatio];
+
+    const minHeightTarget = Math.max(0, Math.round(cH * minRatio));
+    const minWidthByHeight = Math.ceil(
+      Math.max(0, minHeightTarget - badgeH - EXTRA_VERTICAL) / FRAME_RATIO,
+    );
+
+    // Absolute px bounds
+    const MIN_PX = 260;
+    const lower = Math.max(MIN_PX, minWidthByHeight);
+    // Upper bound must obey BOTH height and the usable width
+    const upper = Math.max(120, Math.min(maxWidthByHeight, cW));
+
+    const clamp = (v: number, lo: number, hi: number) =>
+      Math.min(Math.max(v, lo), hi);
+
+    let nextWidth: number;
+    if (upper < lower) {
+      nextWidth = Math.max(120, upper); // tight space → fit to the smaller cap
+    } else {
+      nextWidth = clamp(preferred, lower, upper);
+    }
+
+    setCardWidthPx(
+      Number.isFinite(nextWidth) ? Math.max(120, nextWidth) : undefined,
+    );
+  }, [widthPercentage, isMobile, taskBadgeRef, aspectRatio, tiltBleed]);
+
+  // Recompute on:
+  // - mount, resize of the wrapper, taskName changes (affects badge height),
+  // - photo set changes (rarely changes height but keep it safe)
+  useLayoutEffect(() => {
+    recomputeCardWidth();
+    const ro = new ResizeObserver(recomputeCardWidth);
+    if (wrapperRef.current) ro.observe(wrapperRef.current);
+    const badgeEl = (taskBadgeRef?.current as HTMLElement | null) ?? undefined;
+    let bro: ResizeObserver | undefined;
+    if (badgeEl) {
+      bro = new ResizeObserver(recomputeCardWidth);
+      bro.observe(badgeEl);
+    }
+    return () => {
+      ro.disconnect();
+      bro?.disconnect();
+    };
+  }, [recomputeCardWidth, taskName, allPhotos.length]);
+
   return (
     <Card
       className={cn(
@@ -268,7 +376,11 @@ const ShareSessionGridView = ({
       style={selectedBackground?.style}
     >
       {/* Fixed size container for grid layout */}
-      <div className="w-full h-full overflow-auto flex justify-center items-center">
+      <div
+        ref={wrapperRef}
+        className="w-full h-full overflow-hidden flex justify-center items-center"
+        style={{ padding: `${tiltBleed}px` }} // ← gives transforms some air
+      >
         {/* Tilt component without motion wrapper */}
         <Tilt
           className="mb-2 flex justify-center items-center"
@@ -278,7 +390,8 @@ const ShareSessionGridView = ({
           <motion.div
             className="p-1 bg-white rounded-xl shadow-md w-full"
             style={{
-              width: `${CARD_W_PERCENT}%`,
+              width: cardWidthPx ? `${cardWidthPx}px` : undefined,
+              maxHeight: "100%",
             }}
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
