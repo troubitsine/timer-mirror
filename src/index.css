@@ -6,6 +6,7 @@
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
+    --page-background: #ffffff;
 
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
@@ -38,6 +39,7 @@
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
+    --page-background: #171717;
 
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
@@ -64,6 +66,26 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
   }
+}
+
+/* iOS Safari specific styles */
+html {
+  background-color: var(--page-background);
+  min-height: 100vh;
+}
+
+body {
+  background-color: var(--page-background);
+  min-height: 100vh;
+}
+
+/* Route-specific background colors */
+html.home-route {
+  --page-background: #171717;
+}
+
+html.complete-route {
+  --page-background: #fafaf9;
 }
 
 @layer base {
