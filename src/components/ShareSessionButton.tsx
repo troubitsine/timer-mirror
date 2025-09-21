@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Button } from "./ui/button";
 import { Share2, Download } from "lucide-react";
 import { Cross2Icon } from "@radix-ui/react-icons";
@@ -41,6 +41,12 @@ const ShareSessionButton = ({
   const [viewMode, setViewMode] = useState<ViewMode>("stack");
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
+  const dialogBodyRef = useRef<HTMLDivElement>(null);
+  const [measuredWidth, setMeasuredWidth] = useState(0);
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+  const [viewportWidth, setViewportWidth] = useState<number | null>(null);
+  const [chromeHeight, setChromeHeight] = useState(0);
 
   // Use sessionStorage to persist the selected background ID across page refreshes
   const [selectedBackgroundId, setSelectedBackgroundId] = useState(() => {
@@ -71,31 +77,6 @@ const ShareSessionButton = ({
 
   const handleShare = async () => {
     setIsDialogOpen(true);
-  };
-
-  // Calculate aspect ratio dimensions
-  const getAspectRatioDimensions = () => {
-    // Base dimensions for each aspect ratio
-    let dimensions = {
-      width: 0,
-      height: 0,
-    };
-
-    switch (aspectRatio) {
-      case "16:9":
-        dimensions = { width: 16, height: 9 };
-        break;
-      case "1:1":
-        dimensions = { width: 1, height: 1 };
-        break;
-      case "9:16":
-        dimensions = { width: 9, height: 16 };
-        break;
-      default:
-        dimensions = { width: 16, height: 9 };
-    }
-
-    return dimensions;
   };
 
   // Handle download functionality
@@ -133,6 +114,213 @@ const ShareSessionButton = ({
       });
     }
   }, [isDialogOpen]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const updateViewportMetrics = () => {
+      setViewportHeight(window.innerHeight);
+      setViewportWidth(window.innerWidth);
+    };
+
+    updateViewportMetrics();
+    window.addEventListener("resize", updateViewportMetrics);
+
+    return () => {
+      window.removeEventListener("resize", updateViewportMetrics);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isDialogOpen) {
+      setMeasuredWidth(0);
+      return;
+    }
+
+    const boundsElement = dialogBodyRef.current;
+    if (!boundsElement) {
+      return;
+    }
+
+    const computeInnerWidth = (rawWidth: number) => {
+      const styles = window.getComputedStyle(boundsElement);
+      const paddingLeft = Number.parseFloat(styles.paddingLeft || "0");
+      const paddingRight = Number.parseFloat(styles.paddingRight || "0");
+      const totalPadding = (Number.isFinite(paddingLeft) ? paddingLeft : 0) +
+        (Number.isFinite(paddingRight) ? paddingRight : 0);
+
+      return Math.max(0, rawWidth - totalPadding);
+    };
+
+    const updateMeasuredWidth = () => {
+      const rectWidth = boundsElement.getBoundingClientRect().width;
+      setMeasuredWidth(computeInnerWidth(rectWidth || 0));
+    };
+
+    if (typeof ResizeObserver === "undefined") {
+      updateMeasuredWidth();
+      window.addEventListener("resize", updateMeasuredWidth);
+
+      return () => {
+        window.removeEventListener("resize", updateMeasuredWidth);
+      };
+    }
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        setMeasuredWidth(computeInnerWidth(entry.contentRect.width));
+      }
+    });
+
+    observer.observe(boundsElement);
+    updateMeasuredWidth();
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [isDialogOpen]);
+
+  useEffect(() => {
+    if (!isDialogOpen) {
+      setChromeHeight(0);
+      return;
+    }
+
+    const bodyElement = dialogBodyRef.current;
+    const previewContainerElement = previewContainerRef.current;
+
+    if (!bodyElement || !previewContainerElement) {
+      return;
+    }
+
+    const calculateChromeHeight = () => {
+      const styles = window.getComputedStyle(bodyElement);
+      const paddingTop = Number.parseFloat(styles.paddingTop || "0");
+      const paddingBottom = Number.parseFloat(styles.paddingBottom || "0");
+      const verticalPadding = (Number.isFinite(paddingTop) ? paddingTop : 0) +
+        (Number.isFinite(paddingBottom) ? paddingBottom : 0);
+
+      const totalChrome = bodyElement.scrollHeight -
+        previewContainerElement.offsetHeight -
+        verticalPadding;
+
+      setChromeHeight(Math.max(0, totalChrome));
+    };
+
+    calculateChromeHeight();
+
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", calculateChromeHeight);
+
+      return () => {
+        window.removeEventListener("resize", calculateChromeHeight);
+      };
+    }
+
+    const observer = new ResizeObserver(() => {
+      calculateChromeHeight();
+    });
+
+    observer.observe(bodyElement);
+    observer.observe(previewContainerElement);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [
+    isDialogOpen,
+    aspectRatio,
+    viewMode,
+    measuredWidth,
+    viewportHeight,
+    viewportWidth,
+    hasDynamicColors,
+  ]);
+
+  const previewDimensions = useMemo(() => {
+    const fallbackWidth = 600;
+    const horizontalGutters = 24 + 32;
+    const viewportBudget = viewportWidth
+      ? Math.max(0, viewportWidth - horizontalGutters)
+      : Infinity;
+    const availableWidth = Math.max(
+      0,
+      Math.min(measuredWidth || fallbackWidth, viewportBudget, 650),
+    );
+    const normalizedAvailableWidth = Number.isFinite(availableWidth)
+      ? Math.max(availableWidth, 0)
+      : fallbackWidth;
+
+    const maxPreviewHeight = viewportHeight
+      ? Math.max(
+        0,
+        Math.min(viewportHeight * 0.5, viewportHeight * 0.9 - chromeHeight),
+      )
+      : Infinity;
+    const baselineHeight = (normalizedAvailableWidth * 9) / 16;
+
+    let height = baselineHeight;
+    let widthForSixteenByNine = normalizedAvailableWidth;
+
+    if (Number.isFinite(maxPreviewHeight) && baselineHeight > maxPreviewHeight) {
+      height = maxPreviewHeight as number;
+      widthForSixteenByNine = Math.min(
+        (height * 16) / 9,
+        normalizedAvailableWidth,
+      );
+    }
+
+    if (!Number.isFinite(height) || height <= 0) {
+      height = (fallbackWidth * 9) / 16;
+      widthForSixteenByNine = fallbackWidth;
+    }
+
+    const clampWidth = (value: number) => {
+      if (!Number.isFinite(value)) {
+        return widthForSixteenByNine;
+      }
+
+      return Math.min(Math.max(value, 0), normalizedAvailableWidth);
+    };
+
+    const widthByAspect: Record<AspectRatio, number> = {
+      "16:9": clampWidth(widthForSixteenByNine),
+      "1:1": clampWidth(height),
+      "9:16": clampWidth((height * 9) / 16),
+    };
+
+    const width = widthByAspect[aspectRatio] ?? widthByAspect["16:9"];
+    const normalizedHeight = Number.isFinite(height) && height > 0
+      ? height
+      : (fallbackWidth * 9) / 16;
+
+    return {
+      width,
+      height: normalizedHeight,
+      maxPreviewHeight: Number.isFinite(maxPreviewHeight)
+        ? (maxPreviewHeight as number)
+        : undefined,
+    };
+  }, [aspectRatio, measuredWidth, viewportHeight, viewportWidth, chromeHeight]);
+
+  const previewStyle = useMemo(() => {
+    const { width, height, maxPreviewHeight } = previewDimensions;
+
+    const style: React.CSSProperties = {
+      width: `${width}px`,
+      height: `${height}px`,
+      maxWidth: "100%",
+    };
+
+    if (typeof maxPreviewHeight === "number") {
+      style.maxHeight = `${maxPreviewHeight}px`;
+    }
+
+    return style;
+  }, [previewDimensions]);
 
   return (
     <>
@@ -172,156 +360,148 @@ const ShareSessionButton = ({
               </DialogTitle>
             </DialogHeader>
 
-            <div className="flex flex-col gap-4 py-4 px-4">
+            <div
+              ref={dialogBodyRef}
+              className="flex flex-col gap-4 py-4"
+            >
               {/* Preview container with aspect ratio wrapper */}
-              <div
-                className="relative mx-auto overflow-hidden max-h-[50vh]"
-                style={(() => {
-                  const { width, height } = getAspectRatioDimensions();
-                  const maxHeight = window.innerHeight * 0.5; // 50vh
-                  const containerWidth = aspectRatio === "9:16" ? 300 : 600;
-
-                  // Calculate the height based on the aspect ratio and available width
-                  let calculatedHeight = (containerWidth * height) / width;
-                  let calculatedWidth = containerWidth;
-
-                  // If the calculated height exceeds the max height, recalculate width
-                  if (calculatedHeight > maxHeight) {
-                    calculatedHeight = maxHeight;
-                    calculatedWidth = (maxHeight * width) / height;
-                  }
-
-                  return {
-                    width: `${calculatedWidth}px`,
-                    height: `${calculatedHeight}px`,
-                    maxWidth: "100%",
-                  };
-                })()}
-              >
+              <div className="w-full">
                 <div
-                  ref={previewRef}
-                  className={cn(
-                    "w-full h-full relative overflow-hidden rounded-xl",
-                    selectedBackground?.className,
-                  )}
-                  style={selectedBackground?.style}
+                  ref={previewContainerRef}
+                  className="relative mx-auto overflow-hidden"
+                  style={previewStyle}
                 >
-                  {/* Session preview based on view mode */}
-                  {viewMode === "stack" ? (
-                    <ShareSessionMontage
-                      screenshots={screenshots}
-                      webcamPhotos={webcamPhotos}
-                      taskName={taskName}
-                      duration={duration}
-                      initialSelectedBackgroundId={currentBackgroundId}
-                      onBackgroundSelect={setCurrentBackgroundId}
-                      selectedBackgroundId={currentBackgroundId}
-                      setSelectedBackgroundId={setCurrentBackgroundId}
-                      hideControls={true}
-                      aspectRatio={aspectRatio}
-                    />
-                  ) : (
-                    <ShareSessionGridView
-                      screenshots={screenshots}
-                      webcamPhotos={webcamPhotos}
-                      taskName={taskName}
-                      duration={duration}
-                      initialSelectedBackgroundId={currentBackgroundId}
-                      onBackgroundSelect={setCurrentBackgroundId}
-                      selectedBackgroundId={currentBackgroundId}
-                      setSelectedBackgroundId={setCurrentBackgroundId}
-                      className="rounded-xl"
-                      aspectRatio={aspectRatio}
-                    />
-                  )}
+                  <div
+                    ref={previewRef}
+                    className={cn(
+                      "w-full h-full relative overflow-hidden rounded-xl",
+                      selectedBackground?.className,
+                    )}
+                    style={selectedBackground?.style}
+                  >
+                    {/* Session preview based on view mode */}
+                    {viewMode === "stack" ? (
+                      <ShareSessionMontage
+                        screenshots={screenshots}
+                        webcamPhotos={webcamPhotos}
+                        taskName={taskName}
+                        duration={duration}
+                        initialSelectedBackgroundId={currentBackgroundId}
+                        onBackgroundSelect={setCurrentBackgroundId}
+                        selectedBackgroundId={currentBackgroundId}
+                        setSelectedBackgroundId={setCurrentBackgroundId}
+                        hideControls={true}
+                        aspectRatio={aspectRatio}
+                      />
+                    ) : (
+                      <ShareSessionGridView
+                        screenshots={screenshots}
+                        webcamPhotos={webcamPhotos}
+                        taskName={taskName}
+                        duration={duration}
+                        initialSelectedBackgroundId={currentBackgroundId}
+                        onBackgroundSelect={setCurrentBackgroundId}
+                        selectedBackgroundId={currentBackgroundId}
+                        setSelectedBackgroundId={setCurrentBackgroundId}
+                        className="rounded-xl"
+                        aspectRatio={aspectRatio}
+                      />
+                    )}
+                  </div>
                 </div>
               </div>
 
               {/* Customization controls */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
+              <div className="flex flex-wrap items-center justify-center gap-3 sm:grid sm:grid-cols-3 sm:gap-4 mt-2">
                 {/* Background selector */}
                 {hasDynamicColors && (
-                  <div className="flex flex-col items-center gap-2">
-                    <span className="text-xs text-white/70">Background</span>
-                    <BackgroundColorSelector
-                      options={backgroundOptions}
-                      selectedId={currentBackgroundId}
-                      onSelect={setCurrentBackgroundId}
-                      className="bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[0px] inner-stroke-white-10-sm shadow-sm rounded-full"
-                    />
+                  <div className="flex flex-1 min-w-[140px] justify-center">
+                    <div className="flex flex-col items-center gap-2">
+                      <span className="text-xs text-white/70">Background</span>
+                      <BackgroundColorSelector
+                        options={backgroundOptions}
+                        selectedId={currentBackgroundId}
+                        onSelect={setCurrentBackgroundId}
+                        className="bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[0px] inner-stroke-white-10-sm shadow-sm rounded-full"
+                      />
+                    </div>
                   </div>
                 )}
 
                 {/* Aspect ratio selector */}
-                <div className="flex flex-col items-center gap-2">
-                  <span className="text-xs text-white/70">Aspect Ratio</span>
-                  <div className="flex items-center justify-center rounded-full bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[3px] inner-stroke-white-20-sm shadow-sm min-w-[120px] min-h-[32px]">
-                    <AnimatedTabs
-                      defaultValue={aspectRatio}
-                      onValueChange={(value) =>
-                        setAspectRatio(value as AspectRatio)
-                      }
-                      className="rounded-full bg-gradient-to-b from-white/20 via-neutral-400/30 to-neutral-500/30 backdrop-blur-sm shadow-sm shadow-[inset_0_0_0_1px_rgba(255,255,255,0.32)]"
-                      transition={{
-                        type: "spring",
-                        bounce: 0.2,
-                        duration: 0.3,
-                      }}
-                    >
-                      <button
-                        data-id="16:9"
-                        type="button"
-                        className="px-3 pt-[1px] pb-[4px] text-black/75 transition-colors duration-300 flex items-center gap-1.5 rounded-full min-h-[28px]"
+                <div className="flex flex-1 min-w-[140px] justify-center">
+                  <div className="flex flex-col items-center gap-2">
+                    <span className="text-xs text-white/70">Aspect Ratio</span>
+                    <div className="flex items-center justify-center rounded-full bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[3px] inner-stroke-white-20-sm shadow-sm min-w-[120px] min-h-[32px]">
+                      <AnimatedTabs
+                        defaultValue={aspectRatio}
+                        onValueChange={(value) =>
+                          setAspectRatio(value as AspectRatio)
+                        }
+                        className="rounded-full bg-gradient-to-b from-white/20 via-neutral-400/30 to-neutral-500/30 backdrop-blur-sm shadow-sm shadow-[inset_0_0_0_1px_rgba(255,255,255,0.32)]"
+                        transition={{
+                          type: "spring",
+                          bounce: 0.2,
+                          duration: 0.3,
+                        }}
                       >
-                        <span className="text-xs font-medium">16:9</span>
-                      </button>
-                      <button
-                        data-id="1:1"
-                        type="button"
-                        className="px-3 pt-[1px] pb-[4px] text-black/75 transition-colors duration-300 flex items-center gap-1.5 rounded-full min-h-[28px]"
-                      >
-                        <span className="text-xs font-medium">1:1</span>
-                      </button>
-                      <button
-                        data-id="9:16"
-                        type="button"
-                        className="px-3 pt-[1px] pb-[4px] text-black/75 transition-colors duration-300 flex items-center gap-1.5 rounded-full min-h-[28px]"
-                      >
-                        <span className="text-xs font-medium">9:16</span>
-                      </button>
-                    </AnimatedTabs>
+                        <button
+                          data-id="16:9"
+                          type="button"
+                          className="px-3 pt-[1px] pb-[4px] text-black/75 transition-colors duration-300 flex items-center gap-1.5 rounded-full min-h-[28px]"
+                        >
+                          <span className="text-xs font-medium">16:9</span>
+                        </button>
+                        <button
+                          data-id="1:1"
+                          type="button"
+                          className="px-3 pt-[1px] pb-[4px] text-black/75 transition-colors duration-300 flex items-center gap-1.5 rounded-full min-h-[28px]"
+                        >
+                          <span className="text-xs font-medium">1:1</span>
+                        </button>
+                        <button
+                          data-id="9:16"
+                          type="button"
+                          className="px-3 pt-[1px] pb-[4px] text-black/75 transition-colors duration-300 flex items-center gap-1.5 rounded-full min-h-[28px]"
+                        >
+                          <span className="text-xs font-medium">9:16</span>
+                        </button>
+                      </AnimatedTabs>
+                    </div>
                   </div>
                 </div>
 
                 {/* View mode selector */}
-                <div className="flex flex-col items-center gap-2">
-                  <span className="text-xs text-white/70">View Style</span>
-                  <div className="flex items-center justify-center rounded-full bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[3px] inner-stroke-white-20-sm shadow-sm min-w-[120px] min-h-[32px]">
-                    <AnimatedTabs
-                      defaultValue={viewMode}
-                      onValueChange={(value) => setViewMode(value as ViewMode)}
-                      className="rounded-full bg-gradient-to-b from-white/20 via-neutral-400/30 to-neutral-500/30 backdrop-blur-sm shadow-sm shadow-[inset_0_0_0_1px_rgba(255,255,255,0.32)]"
-                      transition={{
-                        type: "spring",
-                        bounce: 0.2,
-                        duration: 0.3,
-                      }}
-                    >
-                      <button
-                        data-id="stack"
-                        type="button"
-                        className="px-3 pt-[1px] pb-[4px] text-black/75 transition-colors duration-300 flex items-center gap-1.5 rounded-full min-h-[28px]"
+                <div className="flex flex-1 min-w-[140px] justify-center">
+                  <div className="flex flex-col items-center gap-2">
+                    <span className="text-xs text-white/70">View Style</span>
+                    <div className="flex items-center justify-center rounded-full bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[3px] inner-stroke-white-20-sm shadow-sm min-w-[120px] min-h-[32px]">
+                      <AnimatedTabs
+                        defaultValue={viewMode}
+                        onValueChange={(value) => setViewMode(value as ViewMode)}
+                        className="rounded-full bg-gradient-to-b from-white/20 via-neutral-400/30 to-neutral-500/30 backdrop-blur-sm shadow-sm shadow-[inset_0_0_0_1px_rgba(255,255,255,0.32)]"
+                        transition={{
+                          type: "spring",
+                          bounce: 0.2,
+                          duration: 0.3,
+                        }}
                       >
-                        <span className="text-xs font-medium">Stack</span>
-                      </button>
-                      <button
-                        data-id="card"
-                        type="button"
-                        className="px-3 pt-[1px] pb-[4px] text-black/75 transition-colors duration-300 flex items-center gap-1.5 rounded-full min-h-[28px]"
-                      >
-                        <span className="text-xs font-medium">Card</span>
-                      </button>
-                    </AnimatedTabs>
+                        <button
+                          data-id="stack"
+                          type="button"
+                          className="px-3 pt-[1px] pb-[4px] text-black/75 transition-colors duration-300 flex items-center gap-1.5 rounded-full min-h-[28px]"
+                        >
+                          <span className="text-xs font-medium">Stack</span>
+                        </button>
+                        <button
+                          data-id="card"
+                          type="button"
+                          className="px-3 pt-[1px] pb-[4px] text-black/75 transition-colors duration-300 flex items-center gap-1.5 rounded-full min-h-[28px]"
+                        >
+                          <span className="text-xs font-medium">Card</span>
+                        </button>
+                      </AnimatedTabs>
+                    </div>
                   </div>
                 </div>
               </div>
