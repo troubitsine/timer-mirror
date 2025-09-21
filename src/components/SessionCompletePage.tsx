@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import SessionMontage from "./SessionMontage";
 import SessionGridView from "./SessionGridView";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { track } from "@vercel/analytics";
 import { Button } from "./ui/button";
 import { Grid2X2, Layers } from "lucide-react";
@@ -14,6 +14,7 @@ const SessionCompletePage = () => {
   const navigate = useNavigate();
   const sessionData = location.state;
   const [showGridView, setShowGridView] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
   // Use sessionStorage to persist the selected background ID across page refreshes
   const [selectedBackgroundId, setSelectedBackgroundId] = useState(() => {
     const savedId = sessionStorage.getItem("selectedBackgroundId");
@@ -50,6 +51,7 @@ const SessionCompletePage = () => {
                 duration={sessionData.duration}
                 screenshots={sessionData.screenshots}
                 webcamPhotos={sessionData.webcamPhotos}
+                exportRef={exportRef}
               />
             </div>
 
@@ -93,6 +95,7 @@ const SessionCompletePage = () => {
                 duration={sessionData.duration}
                 initialSelectedBackgroundId={selectedBackgroundId}
                 onBackgroundSelect={setSelectedBackgroundId}
+                exportRef={exportRef}
               />
             ) : (
               <SessionMontage
@@ -102,6 +105,7 @@ const SessionCompletePage = () => {
                 duration={sessionData.duration}
                 initialSelectedBackgroundId={selectedBackgroundId}
                 onBackgroundSelect={setSelectedBackgroundId}
+                exportRef={exportRef}
               />
             )}
           </div>

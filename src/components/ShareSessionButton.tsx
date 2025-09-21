@@ -17,6 +17,14 @@ import { useDynamicBackground } from "@/lib/useDynamicBackground";
 import ShareSessionMontage from "./ShareSessionMontage";
 import ShareSessionGridView from "./ShareSessionGridView";
 import { cn } from "@/lib/utils";
+import { exportSessionImage } from "@/lib/exportSessionImage";
+import {
+  EXPORT_BACKGROUND_COLOR,
+  EXPORT_PIXEL_RATIO,
+  EXPORT_SHARE_TEXT,
+  EXPORT_SHARE_TITLE,
+} from "@/lib/exportConfig";
+import { isMobileDevice } from "@/lib/deviceDetection";
 
 interface ShareSessionButtonProps {
   taskName: string;
@@ -24,6 +32,7 @@ interface ShareSessionButtonProps {
   className?: string;
   screenshots?: string[];
   webcamPhotos?: string[];
+  exportRef?: React.RefObject<HTMLDivElement>;
 }
 
 type AspectRatio = "16:9" | "1:1" | "9:16";
@@ -35,6 +44,7 @@ const ShareSessionButton = ({
   className = "",
   screenshots = [],
   webcamPhotos = [],
+  exportRef,
 }: ShareSessionButtonProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>("16:9");
@@ -75,7 +85,69 @@ const ShareSessionButton = ({
     setSelectedBackgroundId,
   );
 
+  const isMobile =
+    typeof window !== "undefined" ? isMobileDevice() : false;
+
   const handleShare = async () => {
+    if (isMobile) {
+      const targetNode = exportRef?.current;
+      if (!targetNode) {
+        console.warn("ShareSessionButton: export target unavailable");
+        return;
+      }
+
+      setIsGeneratingImage(true);
+
+      const trimmedTask = taskName?.trim();
+      const durationLabel = `${duration} minute${duration === 1 ? "" : "s"}`;
+      const shareTitle = trimmedTask
+        ? `${EXPORT_SHARE_TITLE}: ${trimmedTask}`
+        : EXPORT_SHARE_TITLE;
+      const shareText = `${
+        trimmedTask ? `${trimmedTask} • ${durationLabel}` : durationLabel
+      } · ${EXPORT_SHARE_TEXT}`;
+
+      const openFallback = (blob: Blob) => {
+        const objectUrl = URL.createObjectURL(blob);
+        window.open(objectUrl, "_blank", "noopener,noreferrer");
+        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 4000);
+      };
+
+      try {
+        const { blob, file } = await exportSessionImage(targetNode, {
+          pixelRatio: EXPORT_PIXEL_RATIO,
+          backgroundColor: EXPORT_BACKGROUND_COLOR,
+        });
+
+        const data: ShareData = {
+          files: [file],
+          title: shareTitle,
+          text: shareText,
+        };
+
+        if (navigator.share) {
+          if (!navigator.canShare || navigator.canShare({ files: [file] })) {
+            try {
+              await navigator.share(data);
+              return;
+            } catch (err) {
+              if (err instanceof DOMException && err.name === "AbortError") {
+                return; // user cancelled, no fallback
+              }
+              console.warn("ShareSessionButton: navigator.share failed", err);
+            }
+          }
+        }
+
+        openFallback(blob);
+      } catch (error) {
+        console.error("ShareSessionButton: mobile share failed", error);
+      } finally {
+        setIsGeneratingImage(false);
+      }
+      return;
+    }
+
     setIsDialogOpen(true);
   };
 
@@ -328,6 +400,7 @@ const ShareSessionButton = ({
         onClick={handleShare}
         variant="secondary"
         size="sm"
+        disabled={isMobile && isGeneratingImage}
         className={`bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/70 backdrop-blur-md flex items-center gap-1 rounded-full inner-stroke-white-20-sm sm:pl-[8px] sm:pr-[10px] py-[6px] pl-[10px] pr-[12px] ${className}`}
       >
         <Share2 className="h-4 w-4" />

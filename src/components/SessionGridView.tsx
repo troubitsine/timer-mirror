@@ -15,6 +15,7 @@ interface SessionGridViewProps {
   className?: string;
   initialSelectedBackgroundId?: string;
   onBackgroundSelect?: (id: string) => void;
+  exportRef?: React.RefObject<HTMLDivElement>;
 }
 
 // Configuration for the grid layout
@@ -162,6 +163,7 @@ const SessionGridView = ({
   className,
   initialSelectedBackgroundId,
   onBackgroundSelect,
+  exportRef,
 }: SessionGridViewProps) => {
   const isMobile = isMobileDevice();
 
@@ -238,6 +240,7 @@ const SessionGridView = ({
 
   return (
     <Card
+      ref={exportRef ?? undefined}
       className={cn(
         "w-full h-full relative overflow-hidden border-0",
         selectedBackground?.className,
@@ -289,7 +292,10 @@ const SessionGridView = ({
 
       {/* Background color selector - only show when dynamic colors are available */}
       {hasDynamicColors && (
-        <div className="absolute bottom-3.5 left-4 flex justify-center z-30">
+        <div
+          className="absolute bottom-3.5 left-4 flex justify-center z-30"
+          data-export-exclude="true"
+        >
           <BackgroundColorSelector
             options={backgroundOptions}
             selectedId={selectedBackgroundId}

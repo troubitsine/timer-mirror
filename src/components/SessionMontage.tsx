@@ -18,6 +18,7 @@ interface SessionMontageProps {
   initialSelectedBackgroundId?: string;
   onBackgroundSelect?: (id: string) => void;
   hideControls?: boolean;
+  exportRef?: React.RefObject<HTMLDivElement>;
 }
 
 const SessionMontage = ({
@@ -29,6 +30,7 @@ const SessionMontage = ({
   initialSelectedBackgroundId,
   onBackgroundSelect,
   hideControls = false,
+  exportRef,
 }: SessionMontageProps) => {
   const navigate = useNavigate();
   const isMobile = isMobileDevice();
@@ -278,6 +280,7 @@ const SessionMontage = ({
 
   return (
     <Card
+      ref={exportRef ?? undefined}
       className={cn(
         "w-full h-full relative border-0",
         selectedBackground?.className,
@@ -468,7 +471,10 @@ const SessionMontage = ({
 
         {/* Background color selector - only show when dynamic colors are available and controls aren't hidden */}
         {hasDynamicColors && !hideControls && (
-          <div className="absolute bottom-3.5 left-4 flex justify-center z-30">
+          <div
+            className="absolute bottom-3.5 left-4 flex justify-center z-30"
+            data-export-exclude="true"
+          >
             <BackgroundColorSelector
               options={backgroundOptions}
               selectedId={selectedBackgroundId}
@@ -488,6 +494,7 @@ const SessionMontage = ({
             whileTap={{ scale: 0.95 }}
             onMouseEnter={() => {}}
             onMouseLeave={() => {}}
+            data-export-exclude="true"
           >
             <Button
               size="sm"
