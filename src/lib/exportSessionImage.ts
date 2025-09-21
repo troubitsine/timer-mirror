@@ -48,7 +48,6 @@ export async function exportSessionImage(
   const backgroundColor = options.backgroundColor ?? EXPORT_BACKGROUND_COLOR;
 
   const baseOptions = {
-    cacheBust: true,
     pixelRatio,
     backgroundColor,
     filter,

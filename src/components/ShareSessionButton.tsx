@@ -161,7 +161,6 @@ const ShareSessionButton = ({
       const dataUrl = await toPng(previewRef.current, {
         backgroundColor: null,
         pixelRatio: 6,
-        cacheBust: true,
         // Override the style on the clone only - no flicker
         style: { borderRadius: "0px" },
       });
