@@ -157,9 +157,34 @@ const ShareSessionButton = ({
     setIsGeneratingImage(true);
 
     try {
+      const ensureImagesDecoded = async (root: HTMLElement) => {
+        const images = Array.from(root.querySelectorAll("img"));
+        if (images.length === 0) return;
+
+        await Promise.all(
+          images.map((img) => {
+            if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+            if ("decode" in img) {
+              return (img as HTMLImageElement & {
+                decode?: () => Promise<void>;
+              })
+                .decode?.()
+                .catch(() => undefined);
+            }
+
+            return new Promise<void>((resolve) => {
+              const image = img as HTMLImageElement;
+              image.onload = () => resolve();
+              image.onerror = () => resolve();
+            });
+          }),
+        );
+      };
+
+      await ensureImagesDecoded(previewRef.current);
+
       const { toPng } = await import("html-to-image");
       const dataUrl = await toPng(previewRef.current, {
-        backgroundColor: null,
         pixelRatio: 6,
         // Override the style on the clone only - no flicker
         style: { borderRadius: "0px" },
