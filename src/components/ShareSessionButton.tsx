@@ -19,7 +19,6 @@ import ShareSessionGridView from "./ShareSessionGridView";
 import { cn } from "@/lib/utils";
 import { exportSessionImage } from "@/lib/exportSessionImage";
 import {
-  EXPORT_BACKGROUND_COLOR,
   EXPORT_PIXEL_RATIO,
   EXPORT_SHARE_TEXT,
   EXPORT_SHARE_TITLE,
@@ -116,7 +115,6 @@ const ShareSessionButton = ({
       try {
         const { blob, file } = await exportSessionImage(targetNode, {
           pixelRatio: EXPORT_PIXEL_RATIO,
-          backgroundColor: EXPORT_BACKGROUND_COLOR,
         });
 
         const data: ShareData = {
@@ -152,35 +150,49 @@ const ShareSessionButton = ({
   };
 
   // Handle download functionality
+  const forceInlineImageLoad = (root: HTMLElement) => {
+    const images = Array.from(root.querySelectorAll("img"));
+    images.forEach((img) => {
+      const image = img as HTMLImageElement & { loading?: string };
+      if (image.loading === "lazy") {
+        image.loading = "eager";
+      }
+      if ("decoding" in image) {
+        image.decoding = "sync";
+      }
+    });
+  };
+
+  const ensureImagesDecoded = async (root: HTMLElement) => {
+    const images = Array.from(root.querySelectorAll("img"));
+    if (images.length === 0) return;
+
+    await Promise.all(
+      images.map((img) => {
+        if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+        if ("decode" in img) {
+          return (img as HTMLImageElement & {
+            decode?: () => Promise<void>;
+          })
+            .decode?.()
+            .catch(() => undefined);
+        }
+
+        return new Promise<void>((resolve) => {
+          const image = img as HTMLImageElement;
+          image.onload = () => resolve();
+          image.onerror = () => resolve();
+        });
+      }),
+    );
+  };
+
   const handleDownload = async () => {
     if (!previewRef.current) return;
     setIsGeneratingImage(true);
 
     try {
-      const ensureImagesDecoded = async (root: HTMLElement) => {
-        const images = Array.from(root.querySelectorAll("img"));
-        if (images.length === 0) return;
-
-        await Promise.all(
-          images.map((img) => {
-            if (img.complete && img.naturalWidth > 0) return Promise.resolve();
-            if ("decode" in img) {
-              return (img as HTMLImageElement & {
-                decode?: () => Promise<void>;
-              })
-                .decode?.()
-                .catch(() => undefined);
-            }
-
-            return new Promise<void>((resolve) => {
-              const image = img as HTMLImageElement;
-              image.onload = () => resolve();
-              image.onerror = () => resolve();
-            });
-          }),
-        );
-      };
-
+      forceInlineImageLoad(previewRef.current);
       await ensureImagesDecoded(previewRef.current);
 
       const { toPng } = await import("html-to-image");

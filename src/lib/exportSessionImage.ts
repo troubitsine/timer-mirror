@@ -34,6 +34,19 @@ const filter = (node: HTMLElement): boolean => {
   return node.dataset?.[EXPORT_EXCLUDE_FLAG] !== "true";
 };
 
+function forceInlineImageLoad(root: HTMLElement) {
+  const images = Array.from(root.querySelectorAll("img"));
+  images.forEach((img) => {
+    const image = img as HTMLImageElement & { loading?: string };
+    if (image.loading === "lazy") {
+      image.loading = "eager";
+    }
+    if ("decoding" in image) {
+      image.decoding = "sync";
+    }
+  });
+}
+
 const isTransparent = (color: string | null) => {
   if (!color) return true;
   if (color === "transparent") return true;
@@ -84,10 +97,15 @@ export async function exportSessionImage(
   const pixelRatio = options.pixelRatio ?? EXPORT_PIXEL_RATIO;
   const providedBackground = options.backgroundColor ?? EXPORT_BACKGROUND_COLOR;
 
+  forceInlineImageLoad(node);
   await ensureImagesDecoded(node);
 
   let backgroundColor: string | undefined = providedBackground;
-  if (!providedBackground) {
+  if (!backgroundColor || backgroundColor === "transparent") {
+    backgroundColor = undefined;
+  }
+
+  if (!backgroundColor) {
     const computed = window.getComputedStyle(node);
     const computedBackground = computed.backgroundColor;
     backgroundColor = isTransparent(computedBackground)
@@ -103,10 +121,14 @@ export async function exportSessionImage(
 
   let blob = await toBlob(node, baseOptions);
 
-  if (!blob) {
+  if (!blob || blob.size === 0) {
     const dataUrl = await toPng(node, baseOptions);
     const response = await fetch(dataUrl);
     blob = await response.blob();
+
+    if (!blob || blob.size === 0) {
+      throw new Error("exportSessionImage: empty blob generated");
+    }
   }
 
   const type = blob.type && blob.type.length > 0 ? blob.type : "image/png";

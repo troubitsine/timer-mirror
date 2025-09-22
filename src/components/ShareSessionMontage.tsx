@@ -110,6 +110,8 @@ const ShareSessionMontage = ({
     onBackgroundSelect,
   );
 
+  const exportBackgroundStyle = { ...(selectedBackground?.style ?? {}) };
+
   // Use external selectedBackgroundId and setSelectedBackgroundId if provided
   useEffect(() => {
     if (
@@ -269,8 +271,18 @@ const ShareSessionMontage = ({
         "w-full h-full relative border-0",
         selectedBackground?.className,
       )}
-      style={selectedBackground?.style}
+      style={exportBackgroundStyle}
     >
+      {selectedBackground?.className ? (
+        <div
+          aria-hidden="true"
+          className={cn(
+            "absolute inset-0 pointer-events-none",
+            selectedBackground.className,
+          )}
+          style={exportBackgroundStyle}
+        />
+      ) : null}
       {/* Session info displayed at the top of the card - absolutely positioned */}
       <motion.div
         className="absolute top-3 w-full text-center z-20"
@@ -344,7 +356,8 @@ const ShareSessionMontage = ({
                         <img
                           src={card.src}
                           alt={`Photo ${card.id}`}
-                          loading="lazy"
+                          loading="eager"
+                          decoding="async"
                           className={cn(
                             "w-full h-full object-cover z-30 shadow-[0_1px_2px_rgba(0,0,0,0.14),_0_8px_8px_rgba(0,0,0,0.04)]",
                             aspectRatio === "9:16"

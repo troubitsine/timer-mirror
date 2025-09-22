@@ -154,7 +154,8 @@ function FillGrid({ photos }: FillGridProps) {
                 src={photos[i]}
                 alt={`Photo ${i + 1}`}
                 className="w-full h-full object-cover"
-                loading="lazy"
+                loading="eager"
+                decoding="async"
               />
             </div>
           </div>
@@ -366,6 +367,8 @@ const ShareSessionGridView = ({
     };
   }, [recomputeCardWidth, taskName, allPhotos.length]);
 
+  const exportBackgroundStyle = { ...(selectedBackground?.style ?? {}) };
+
   return (
     <Card
       className={cn(
@@ -373,8 +376,18 @@ const ShareSessionGridView = ({
         selectedBackground?.className,
         className,
       )}
-      style={selectedBackground?.style}
+      style={exportBackgroundStyle}
     >
+      {selectedBackground?.className ? (
+        <div
+          aria-hidden="true"
+          className={cn(
+            "absolute inset-0 pointer-events-none",
+            selectedBackground.className,
+          )}
+          style={exportBackgroundStyle}
+        />
+      ) : null}
       {/* Fixed size container for grid layout */}
       <div
         ref={wrapperRef}

@@ -108,6 +108,8 @@ const SessionMontage = ({
     onBackgroundSelect,
   );
 
+  const exportBackgroundStyle = { ...(selectedBackground?.style ?? {}) };
+
   // Animation states
   const [animationPhase, setAnimationPhase] = useState<
     "initial" | "spread" | "pile" | "fadeOut"
@@ -285,8 +287,18 @@ const SessionMontage = ({
         "w-full h-full relative border-0",
         selectedBackground?.className,
       )}
-      style={selectedBackground?.style}
+      style={exportBackgroundStyle}
     >
+      {selectedBackground?.className ? (
+        <div
+          aria-hidden="true"
+          className={cn(
+            "absolute inset-0 pointer-events-none",
+            selectedBackground.className,
+          )}
+          style={exportBackgroundStyle}
+        />
+      ) : null}
       {/* Session info displayed at the top of the card - absolutely positioned */}
       <motion.div
         className="absolute top-3 w-full text-center"
@@ -456,7 +468,8 @@ const SessionMontage = ({
                       <img
                         src={photo}
                         alt={`Photo ${index + 1}`}
-                        loading="lazy"
+                        loading="eager"
+                        decoding="async"
                         className="
     w-full h-full object-cover rounded-[11px] z-30
     shadow-[0_2px_2px_rgba(0,0,0,0.12),_0_8px_8px_rgba(0,0,0,0.012)]"
