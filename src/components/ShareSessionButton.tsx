@@ -17,11 +17,12 @@ import { useDynamicBackground } from "@/lib/useDynamicBackground";
 import ShareSessionMontage from "./ShareSessionMontage";
 import ShareSessionGridView from "./ShareSessionGridView";
 import { cn } from "@/lib/utils";
-import { exportSessionImage } from "@/lib/exportSessionImage";
+import { exportSessionImage, pngBlobToJpegBlob } from "@/lib/exportSessionImage";
 import {
   EXPORT_PIXEL_RATIO,
   EXPORT_SHARE_TEXT,
   EXPORT_SHARE_TITLE,
+  EXPORT_SHARE_FILENAME,
 } from "@/lib/exportConfig";
 import { isMobileDevice } from "@/lib/deviceDetection";
 
@@ -113,18 +114,39 @@ const ShareSessionButton = ({
       };
 
       try {
-        const { blob, file } = await exportSessionImage(targetNode, {
+        const { blob: pngBlob, file: pngFile } = await exportSessionImage(targetNode, {
           pixelRatio: EXPORT_PIXEL_RATIO,
         });
 
+        let shareBlob: Blob = pngBlob;
+        let shareFile: File = pngFile;
+
+        try {
+          const computedStyles = window.getComputedStyle(targetNode);
+          const jpegBlob = await pngBlobToJpegBlob(
+            pngBlob,
+            computedStyles?.backgroundColor,
+          );
+          shareBlob = jpegBlob;
+          shareFile = new File([jpegBlob], EXPORT_SHARE_FILENAME, {
+            type: "image/jpeg",
+            lastModified: Date.now(),
+          });
+        } catch (conversionError) {
+          console.warn(
+            "ShareSessionButton: JPEG conversion failed, falling back to PNG",
+            conversionError,
+          );
+        }
+
         const data: ShareData = {
-          files: [file],
+          files: [shareFile],
           title: shareTitle,
           text: shareText,
         };
 
         if (navigator.share) {
-          if (!navigator.canShare || navigator.canShare({ files: [file] })) {
+          if (!navigator.canShare || navigator.canShare({ files: [shareFile] })) {
             try {
               await navigator.share(data);
               return;
@@ -137,7 +159,7 @@ const ShareSessionButton = ({
           }
         }
 
-        openFallback(blob);
+        openFallback(shareBlob);
       } catch (error) {
         console.error("ShareSessionButton: mobile share failed", error);
       } finally {

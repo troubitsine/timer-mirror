@@ -245,7 +245,7 @@ const SessionGridView = ({
     <Card
       ref={exportRef ?? undefined}
       className={cn(
-        "w-full h-full relative overflow-hidden border-0",
+        "w-full h-full relative overflow-hidden border-0 rounded-[18px]",
         selectedBackground?.className,
         className,
       )}
@@ -255,7 +255,7 @@ const SessionGridView = ({
         <div
           aria-hidden="true"
           className={cn(
-            "absolute inset-0 pointer-events-none",
+            "absolute inset-0 pointer-events-none rounded-[inherit]",
             selectedBackground.className,
           )}
           style={exportBackgroundStyle}
@@ -270,7 +270,7 @@ const SessionGridView = ({
           springOptions={{ stiffness: 300, damping: 30 }}
         >
           <motion.div
-            className="p-1 bg-white rounded-xl shadow-md w-full"
+            className="p-1 bg-white rounded-xl w-full"
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
             transition={{

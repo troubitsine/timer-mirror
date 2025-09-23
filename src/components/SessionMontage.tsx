@@ -284,7 +284,7 @@ const SessionMontage = ({
     <Card
       ref={exportRef ?? undefined}
       className={cn(
-        "w-full h-full relative border-0",
+        "w-full h-full relative border-0 overflow-hidden rounded-[18px]",
         selectedBackground?.className,
       )}
       style={exportBackgroundStyle}
@@ -293,7 +293,7 @@ const SessionMontage = ({
         <div
           aria-hidden="true"
           className={cn(
-            "absolute inset-0 pointer-events-none",
+            "absolute inset-0 pointer-events-none rounded-[inherit]",
             selectedBackground.className,
           )}
           style={exportBackgroundStyle}
@@ -471,8 +471,7 @@ const SessionMontage = ({
                         loading="eager"
                         decoding="async"
                         className="
-    w-full h-full object-cover rounded-[11px] z-30
-    shadow-[0_2px_2px_rgba(0,0,0,0.12),_0_8px_8px_rgba(0,0,0,0.012)]"
+    w-full h-full object-cover rounded-[11px] z-30"
                       />
                     </div>
                   </motion.div>

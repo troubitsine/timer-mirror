@@ -4,6 +4,7 @@ import {
   EXPORT_BACKGROUND_COLOR,
   EXPORT_FILENAME,
   EXPORT_PIXEL_RATIO,
+  EXPORT_SHARE_JPEG_QUALITY,
 } from "./exportConfig";
 
 const EXPORT_EXCLUDE_FLAG = "exportExclude";
@@ -117,6 +118,10 @@ export async function exportSessionImage(
     pixelRatio,
     backgroundColor,
     filter,
+    style: {
+      borderRadius: "0px",
+      overflow: "visible",
+    },
   };
 
   let blob = await toBlob(node, baseOptions);
@@ -135,4 +140,71 @@ export async function exportSessionImage(
   const file = new File([blob], EXPORT_FILENAME, { type });
 
   return { blob, file };
+}
+
+export async function pngBlobToJpegBlob(
+  pngBlob: Blob,
+  backgroundColor?: string | null,
+  quality: number = EXPORT_SHARE_JPEG_QUALITY,
+): Promise<Blob> {
+  if (!pngBlob || pngBlob.size === 0) {
+    throw new Error("pngBlobToJpegBlob: source blob is empty");
+  }
+
+  const fillColor = !backgroundColor || isTransparent(backgroundColor)
+    ? "#ffffff"
+    : backgroundColor;
+
+  const objectUrl = URL.createObjectURL(pngBlob);
+
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("pngBlobToJpegBlob: failed to load image"));
+      img.src = objectUrl;
+    });
+
+    const width = image.naturalWidth || image.width;
+    const height = image.naturalHeight || image.height;
+
+    if (!width || !height) {
+      throw new Error("pngBlobToJpegBlob: unable to determine image dimensions");
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      throw new Error("pngBlobToJpegBlob: failed to acquire 2d context");
+    }
+
+    context.fillStyle = fillColor;
+    context.fillRect(0, 0, width, height);
+    context.drawImage(image, 0, 0, width, height);
+
+    const jpegBlob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (result) => {
+          if (result) {
+            resolve(result);
+          } else {
+            reject(new Error("pngBlobToJpegBlob: canvas.toBlob returned null"));
+          }
+        },
+        "image/jpeg",
+        quality,
+      );
+    });
+
+    if (!jpegBlob || jpegBlob.size === 0) {
+      throw new Error("pngBlobToJpegBlob: produced blob is empty");
+    }
+
+    return jpegBlob;
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
 }
