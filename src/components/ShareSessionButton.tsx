@@ -17,12 +17,16 @@ import { useDynamicBackground } from "@/lib/useDynamicBackground";
 import ShareSessionMontage from "./ShareSessionMontage";
 import ShareSessionGridView from "./ShareSessionGridView";
 import { cn } from "@/lib/utils";
-import { exportSessionImage, pngBlobToJpegBlob } from "@/lib/exportSessionImage";
+import {
+  blobToTypedFile,
+  exportSessionImage,
+  generateShareFilename,
+  pngBlobToJpegBlob,
+} from "@/lib/exportSessionImage";
 import {
   EXPORT_PIXEL_RATIO,
   EXPORT_SHARE_TEXT,
   EXPORT_SHARE_TITLE,
-  EXPORT_SHARE_FILENAME,
 } from "@/lib/exportConfig";
 import { isMobileDevice } from "@/lib/deviceDetection";
 
@@ -128,15 +132,15 @@ const ShareSessionButton = ({
             computedStyles?.backgroundColor,
           );
           shareBlob = jpegBlob;
-          shareFile = new File([jpegBlob], EXPORT_SHARE_FILENAME, {
-            type: "image/jpeg",
-            lastModified: Date.now(),
-          });
+          const jpegFilename = generateShareFilename("jpg");
+          shareFile = await blobToTypedFile(jpegBlob, jpegFilename);
         } catch (conversionError) {
           console.warn(
             "ShareSessionButton: JPEG conversion failed, falling back to PNG",
             conversionError,
           );
+          const pngFilename = generateShareFilename("png");
+          shareFile = await blobToTypedFile(pngBlob, pngFilename);
         }
 
         const data: ShareData = {

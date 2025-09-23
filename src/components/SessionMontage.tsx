@@ -471,7 +471,7 @@ const SessionMontage = ({
                         loading="eager"
                         decoding="async"
                         className="
-    w-full h-full object-cover rounded-[11px] z-30"
+    w-full h-full object-cover inner-stroke-black-10-xs rounded-[11px] z-30"
                       />
                     </div>
                   </motion.div>

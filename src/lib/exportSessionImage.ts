@@ -208,3 +208,20 @@ export async function pngBlobToJpegBlob(
     URL.revokeObjectURL(objectUrl);
   }
 }
+
+export function generateShareFilename(extension: "png" | "jpg"): string {
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  return `timer-mirror-session-${stamp}.${extension}`;
+}
+
+export async function blobToTypedFile(
+  blob: Blob,
+  filename: string,
+): Promise<File> {
+  const buffer = await blob.arrayBuffer();
+  const typedBuffer = new Uint8Array(buffer);
+  return new File([typedBuffer], filename, {
+    type: blob.type || "application/octet-stream",
+    lastModified: Date.now(),
+  });
+}
