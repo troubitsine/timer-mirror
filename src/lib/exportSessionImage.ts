@@ -137,7 +137,7 @@ export async function exportSessionImage(
   }
 
   const type = blob.type && blob.type.length > 0 ? blob.type : "image/png";
-  const file = new File([blob], EXPORT_FILENAME, { type });
+  const file = fileFromBlob(blob, EXPORT_FILENAME, type);
 
   return { blob, file };
 }
@@ -209,7 +209,12 @@ export async function pngBlobToJpegBlob(
   }
 }
 
-export function generateShareFilename(extension: "png" | "jpg"): string {
+export function fileFromBlob(blob: Blob, filename: string, typeOverride?: string): File {
+  const type = typeOverride || blob.type || "application/octet-stream";
+  return new File([blob], filename, { type, lastModified: Date.now() });
+}
+
+export function generateShareFilename(extension: "png" | "jpg" | "jpeg"): string {
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
   return `timer-mirror-session-${stamp}.${extension}`;
 }

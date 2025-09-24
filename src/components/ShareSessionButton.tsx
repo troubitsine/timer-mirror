@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import {
   blobToTypedFile,
   exportSessionImage,
+  fileFromBlob,
   generateShareFilename,
   pngBlobToJpegBlob,
 } from "@/lib/exportSessionImage";
@@ -118,12 +119,12 @@ const ShareSessionButton = ({
       };
 
       try {
-        const { blob: pngBlob, file: pngFile } = await exportSessionImage(targetNode, {
+        const { blob: pngBlob } = await exportSessionImage(targetNode, {
           pixelRatio: EXPORT_PIXEL_RATIO,
         });
 
         let shareBlob: Blob = pngBlob;
-        let shareFile: File = pngFile;
+        let shareFile: File;
 
         try {
           const computedStyles = window.getComputedStyle(targetNode);
@@ -132,22 +133,24 @@ const ShareSessionButton = ({
             computedStyles?.backgroundColor,
           );
           shareBlob = jpegBlob;
-          const jpegFilename = generateShareFilename("jpg");
-          shareFile = await blobToTypedFile(jpegBlob, jpegFilename);
+          const jpegFilename = generateShareFilename("jpeg");
+          shareFile = fileFromBlob(jpegBlob, jpegFilename, "image/jpeg");
         } catch (conversionError) {
           console.warn(
             "ShareSessionButton: JPEG conversion failed, falling back to PNG",
             conversionError,
           );
           const pngFilename = generateShareFilename("png");
-          shareFile = await blobToTypedFile(pngBlob, pngFilename);
+          shareFile = fileFromBlob(pngBlob, pngFilename, "image/png");
         }
 
-        const data: ShareData = {
-          files: [shareFile],
-          title: shareTitle,
-          text: shareText,
-        };
+        // iOS-specific check
+        const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+
+        // Build ShareData based on platform
+        const data: ShareData = isIOS
+          ? { files: [shareFile] }
+          : { files: [shareFile], title: shareTitle, text: shareText };
 
         if (navigator.share) {
           if (!navigator.canShare || navigator.canShare({ files: [shareFile] })) {
