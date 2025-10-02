@@ -214,9 +214,60 @@ export function fileFromBlob(blob: Blob, filename: string, typeOverride?: string
   return new File([blob], filename, { type, lastModified: Date.now() });
 }
 
-export function generateShareFilename(extension: "png" | "jpg" | "jpeg"): string {
-  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-  return `timer-mirror-session-${stamp}.${extension}`;
+type ShareFilenameOptions = {
+  taskName?: string;
+  durationMinutes?: number;
+  timestamp?: Date;
+};
+
+const sanitizeTaskNameForFilename = (taskName?: string) => {
+    const trimmed = taskName?.trim().toLowerCase();
+    if (!trimmed) {
+      return null;
+    }
+
+    const normalized = trimmed
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "");
+
+    const sanitized = normalized
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/-{2,}/g, "-")
+      .replace(/^-+|-+$/g, "");
+
+    return sanitized.length > 0 ? sanitized : null;
+  };
+
+const formatDurationSegment = (durationMinutes?: number) => {
+    if (!Number.isFinite(durationMinutes) || !durationMinutes) {
+      return null;
+    }
+
+    const roundedMinutes = Math.max(1, Math.round(durationMinutes));
+    return `${roundedMinutes}min`;
+  };
+
+const formatDateSegment = (date: Date) => {
+    return date.toISOString().split("T")[0];
+  };
+
+export function generateShareFilename(
+  extension: "png" | "jpg" | "jpeg",
+  options: ShareFilenameOptions = {},
+): string {
+  const { taskName, durationMinutes, timestamp } = options;
+
+  const taskSegment = sanitizeTaskNameForFilename(taskName) ?? "session";
+  const durationSegment = formatDurationSegment(durationMinutes);
+  const dateSegment = formatDateSegment(timestamp ?? new Date());
+
+  const segments = [taskSegment];
+  if (durationSegment) {
+    segments.push(durationSegment);
+  }
+  segments.push(dateSegment);
+
+  return `${segments.join("-")}.${extension}`;
 }
 
 export async function blobToTypedFile(
@@ -229,4 +280,70 @@ export async function blobToTypedFile(
     type: blob.type || "application/octet-stream",
     lastModified: Date.now(),
   });
+}
+
+type StorageManagerWithOpfs = StorageManager & {
+  getDirectory?: () => Promise<FileSystemDirectoryHandle>;
+};
+
+type PersistedOpfsFile = {
+  file: File;
+  cleanup: () => Promise<void>;
+};
+
+const SHARE_CACHE_DIRECTORY = "share-cache";
+
+export async function persistBlobToOpfs(
+  blob: Blob,
+  filename: string,
+): Promise<PersistedOpfsFile | null> {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const storage = navigator.storage as StorageManagerWithOpfs | undefined;
+  if (!storage?.getDirectory) {
+    return null;
+  }
+
+  try {
+    const rootHandle = await storage.getDirectory();
+    const cacheHandle = await rootHandle.getDirectoryHandle(SHARE_CACHE_DIRECTORY, {
+      create: true,
+    });
+
+    const uniqueDirectoryName =
+      (crypto as Crypto & { randomUUID?: () => string }).randomUUID?.() ??
+      Date.now().toString(36);
+
+    const folderHandle = await cacheHandle.getDirectoryHandle(uniqueDirectoryName, {
+      create: true,
+    });
+
+    const fileHandle = await folderHandle.getFileHandle(filename, { create: true });
+    const writable = await fileHandle.createWritable();
+    await writable.write(blob);
+    await writable.close();
+
+    const file = await fileHandle.getFile();
+
+    const cleanup = async () => {
+      try {
+        await folderHandle.removeEntry(filename);
+      } catch (cleanupError) {
+        console.warn("persistBlobToOpfs: cleanup failed", cleanupError);
+      }
+
+      try {
+        await cacheHandle.removeEntry(uniqueDirectoryName, { recursive: true });
+      } catch (cleanupError) {
+        console.warn("persistBlobToOpfs: folder cleanup failed", cleanupError);
+      }
+    };
+
+    return { file, cleanup };
+  } catch (error) {
+    console.warn("persistBlobToOpfs: failed to persist blob", error);
+    return null;
+  }
 }

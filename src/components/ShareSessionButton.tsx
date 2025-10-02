@@ -22,6 +22,7 @@ import {
   exportSessionImage,
   fileFromBlob,
   generateShareFilename,
+  persistBlobToOpfs,
   pngBlobToJpegBlob,
 } from "@/lib/exportSessionImage";
 import {
@@ -62,6 +63,7 @@ const ShareSessionButton = ({
   const [viewportHeight, setViewportHeight] = useState<number | null>(null);
   const [viewportWidth, setViewportWidth] = useState<number | null>(null);
   const [chromeHeight, setChromeHeight] = useState(0);
+  const isMountedRef = useRef(true);
 
   // Use sessionStorage to persist the selected background ID across page refreshes
   const [selectedBackgroundId, setSelectedBackgroundId] = useState(() => {
@@ -92,6 +94,7 @@ const ShareSessionButton = ({
 
   const isMobile =
     typeof window !== "undefined" ? isMobileDevice() : false;
+  const foregroundScale = isMobile ? 1 : 0.67;
 
   const handleShare = async () => {
     if (isMobile) {
@@ -118,6 +121,8 @@ const ShareSessionButton = ({
         window.setTimeout(() => URL.revokeObjectURL(objectUrl), 4000);
       };
 
+      let cleanupPersistedFile: (() => Promise<void>) | null = null;
+
       try {
         const { blob: pngBlob } = await exportSessionImage(targetNode, {
           pixelRatio: EXPORT_PIXEL_RATIO,
@@ -133,14 +138,20 @@ const ShareSessionButton = ({
             computedStyles?.backgroundColor,
           );
           shareBlob = jpegBlob;
-          const jpegFilename = generateShareFilename("jpeg");
+          const jpegFilename = generateShareFilename("jpeg", {
+            taskName,
+            durationMinutes: duration,
+          });
           shareFile = fileFromBlob(jpegBlob, jpegFilename, "image/jpeg");
         } catch (conversionError) {
           console.warn(
             "ShareSessionButton: JPEG conversion failed, falling back to PNG",
             conversionError,
           );
-          const pngFilename = generateShareFilename("png");
+          const pngFilename = generateShareFilename("png", {
+            taskName,
+            durationMinutes: duration,
+          });
           shareFile = fileFromBlob(pngBlob, pngFilename, "image/png");
         }
 
@@ -148,12 +159,24 @@ const ShareSessionButton = ({
         const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
 
         // Build ShareData based on platform
+        const shareFiles: File[] = [shareFile];
+
+        if (isIOS) {
+          // iOS Safari only shows share previews for files persisted to disk,
+          // so we persist the blob in OPFS and swap in the resulting File.
+          const persisted = await persistBlobToOpfs(shareBlob, shareFile.name);
+          if (persisted) {
+            shareFiles.splice(0, shareFiles.length, persisted.file);
+            cleanupPersistedFile = persisted.cleanup;
+          }
+        }
+
         const data: ShareData = isIOS
-          ? { files: [shareFile] }
-          : { files: [shareFile], title: shareTitle, text: shareText };
+          ? { files: shareFiles }
+          : { files: shareFiles, title: shareTitle, text: shareText };
 
         if (navigator.share) {
-          if (!navigator.canShare || navigator.canShare({ files: [shareFile] })) {
+          if (!navigator.canShare || navigator.canShare({ files: shareFiles })) {
             try {
               await navigator.share(data);
               return;
@@ -170,7 +193,12 @@ const ShareSessionButton = ({
       } catch (error) {
         console.error("ShareSessionButton: mobile share failed", error);
       } finally {
-        setIsGeneratingImage(false);
+        if (cleanupPersistedFile) {
+          await cleanupPersistedFile();
+        }
+        if (isMountedRef.current) {
+          setIsGeneratingImage(false);
+        }
       }
       return;
     }
@@ -217,15 +245,18 @@ const ShareSessionButton = ({
   };
 
   const handleDownload = async () => {
-    if (!previewRef.current) return;
+    const previewRoot = previewRef.current;
+    if (!previewRoot) return;
     setIsGeneratingImage(true);
 
     try {
-      forceInlineImageLoad(previewRef.current);
-      await ensureImagesDecoded(previewRef.current);
+      forceInlineImageLoad(previewRoot);
+      await ensureImagesDecoded(previewRoot);
+      previewRoot.dataset.exporting = "true";
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
 
       const { toPng } = await import("html-to-image");
-      const dataUrl = await toPng(previewRef.current, {
+      const dataUrl = await toPng(previewRoot, {
         pixelRatio: 6,
         // Override the style on the clone only - no flicker
         style: { borderRadius: "0px" },
@@ -238,7 +269,12 @@ const ShareSessionButton = ({
     } catch (err) {
       console.error("Error generating image:", err);
     } finally {
-      setIsGeneratingImage(false);
+      if (previewRoot) {
+        delete previewRoot.dataset.exporting;
+      }
+      if (isMountedRef.current) {
+        setIsGeneratingImage(false);
+      }
     }
   };
 
@@ -377,6 +413,14 @@ const ShareSessionButton = ({
     hasDynamicColors,
   ]);
 
+  useEffect(() => {
+    isMountedRef.current = true;
+
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   const previewDimensions = useMemo(() => {
     const fallbackWidth = 600;
     const horizontalGutters = 24 + 32;
@@ -511,6 +555,7 @@ const ShareSessionButton = ({
                 >
                   <div
                     ref={previewRef}
+                    data-share-export-root
                     className={cn(
                       "w-full h-full relative overflow-hidden rounded-xl",
                       selectedBackground?.className,
@@ -545,6 +590,27 @@ const ShareSessionButton = ({
                         aspectRatio={aspectRatio}
                       />
                     )}
+                    <div
+                      data-share-watermark
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-x-0 bottom-6 flex justify-center z-40"
+                    >
+                      <div className="inline-flex">
+                        <div
+                          className="bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-2 rounded-full inner-stroke-white-20-sm px-4 py-1"
+                          style={{
+                            transform: `scale(${foregroundScale})`,
+                            transformOrigin: "bottom center",
+                            maxWidth: "480px",
+                            overflowWrap: "break-word",
+                            whiteSpace: "normal",
+                            textWrap: "balance",
+                          }}
+                        >
+                          focus-reel.app
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

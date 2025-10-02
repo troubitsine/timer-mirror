@@ -38,6 +38,7 @@ const ShareSessionMontage = ({
 }: ShareSessionMontageProps) => {
   const navigate = useNavigate();
   const isMobile = isMobileDevice();
+  const foregroundScale = isMobile ? 1 : 0.67;
 
   // Helper function to interleave two arrays
   const interleaveArrays = (arr1: string[], arr2: string[]): string[] => {
@@ -284,33 +285,44 @@ const ShareSessionMontage = ({
         />
       ) : null}
       {/* Session info displayed at the top of the card - absolutely positioned */}
-      <motion.div
+      <div
         className="absolute top-3 w-full text-center z-20"
-        initial={{ scale: 0.8 }}
-        animate={{ scale: 1 }}
-        transition={{
-          type: "spring",
-          stiffness: 300,
-          damping: 22,
-          delay: 0.05,
-        }}
+        style={
+          !isMobile
+            ? {
+                transform: `scale(${foregroundScale})`,
+                transformOrigin: "top center",
+              }
+            : undefined
+        }
       >
-        <div className="inline-flex bg-white/80 p-1 rounded-xl mx-2">
-          <div
-            ref={taskBadgeRef}
-            className="task-badge text-neutral-50/90 inner-stroke-white-20-sm"
-            style={{
-              textShadow: "1px 1.5px 2px rgba(0,0,0,0.28)",
-              maxWidth: "480px",
-              overflowWrap: "break-word",
-              whiteSpace: "normal",
-              textWrap: "balance",
-            }}
-          >
-            {taskName} • {duration} {duration === 1 ? "min" : "min"}
+        <motion.div
+          initial={{ scale: 0.8 }}
+          animate={{ scale: 1 }}
+          transition={{
+            type: "spring",
+            stiffness: 300,
+            damping: 22,
+            delay: 0.05,
+          }}
+        >
+          <div className="inline-flex bg-white/80 p-1 rounded-xl mx-2">
+            <div
+              ref={taskBadgeRef}
+              className="task-badge text-neutral-50/90 inner-stroke-white-20-sm"
+              style={{
+                textShadow: "1px 1.5px 2px rgba(0,0,0,0.28)",
+                maxWidth: "480px",
+                overflowWrap: "break-word",
+                whiteSpace: "normal",
+                textWrap: "balance",
+              }}
+            >
+              {taskName} • {duration} {duration === 1 ? "min" : "min"}
+            </div>
           </div>
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
 
       {/* Main content container - now using absolute positioning for true centering */}
       <div className="absolute inset-0 flex items-center justify-center">
@@ -321,55 +333,67 @@ const ShareSessionMontage = ({
           <div className="relative w-full mx-auto">
             {/* Photo stack animation */}
             {numberOfCards > 0 && (
-              <motion.div
+              <div
                 className="relative h-full w-full flex items-center justify-center"
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.98 }}
-                onTap={shuffle}
+                style={
+                  !isMobile
+                    ? {
+                        transform: `scale(${foregroundScale})`,
+                        transformOrigin: "center",
+                      }
+                    : undefined
+                }
               >
-                {/* Card stack */}
-                {cards.map((card, index) => {
-                  return (
-                    <motion.div
-                      key={`photo-${card.id}`}
-                      className="absolute"
-                      style={{
-                        width: `${CARD_W_PERCENT}%`,
-                        aspectRatio: CARD_AR,
-                        left: 0,
-                        top: 12,
-                        bottom: 0,
-                        right: 0,
-                        margin: "auto",
-                      }}
-                      initial={basePose(card)}
-                      animate={card.id === movingId ? controls : basePose(card)}
-                    >
-                      <div
-                        className={cn(
-                          "overflow-hidden w-full h-full bg-white inner-stroke-black-5-sm",
-                          aspectRatio === "9:16"
-                            ? "p-[3px] rounded-[10px]"
-                            : "p-[5px] rounded-[15px]",
-                        )}
+                <motion.div
+                  className="relative h-full w-full flex items-center justify-center"
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.98 }}
+                  onTap={shuffle}
+                >
+                  {/* Card stack */}
+                  {cards.map((card, index) => {
+                    return (
+                      <motion.div
+                        key={`photo-${card.id}`}
+                        className="absolute"
+                        style={{
+                          width: `${CARD_W_PERCENT}%`,
+                          aspectRatio: CARD_AR,
+                          left: 0,
+                          top: 12,
+                          bottom: 0,
+                          right: 0,
+                          margin: "auto",
+                        }}
+                        initial={basePose(card)}
+                        animate={card.id === movingId ? controls : basePose(card)}
                       >
-                        <img
-                          src={card.src}
-                          alt={`Photo ${card.id}`}
-                          loading="eager"
-                          decoding="async"
+                        <div
                           className={cn(
-                            "w-full h-full object-cover z-30 shadow-[0_1px_2px_rgba(0,0,0,0.14),_0_8px_8px_rgba(0,0,0,0.04)]",
+                            "overflow-hidden w-full h-full bg-white inner-stroke-black-5-sm",
                             aspectRatio === "9:16"
-                              ? "rounded-[7px]"
-                              : "rounded-[11px]",
+                              ? "p-[3px] rounded-[10px]"
+                              : "p-[5px] rounded-[15px]",
                           )}
-                        />
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </motion.div>
+                        >
+                          <img
+                            src={card.src}
+                            alt={`Photo ${card.id}`}
+                            loading="eager"
+                            decoding="async"
+                            className={cn(
+                              "w-full h-full object-cover z-30 shadow-[0_1px_2px_rgba(0,0,0,0.14),_0_8px_8px_rgba(0,0,0,0.04)]",
+                              aspectRatio === "9:16"
+                                ? "rounded-[7px]"
+                                : "rounded-[11px]",
+                            )}
+                          />
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </motion.div>
+              </div>
             )}
           </div>
         </div>

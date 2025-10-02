@@ -178,6 +178,7 @@ const ShareSessionGridView = ({
   aspectRatio = "16:9",
 }: ShareSessionGridViewProps) => {
   const isMobile = isMobileDevice();
+  const foregroundScale = isMobile ? 1 : 0.67;
 
   // Keep your aspect→width preference per ratio (tuned for 9:16)
   const WIDTH_PCT: Record<
@@ -395,50 +396,62 @@ const ShareSessionGridView = ({
         style={{ padding: `${tiltBleed}px` }} // ← gives transforms some air
       >
         {/* Tilt component without motion wrapper */}
-        <Tilt
+        <div
           className="mb-2 flex justify-center items-center"
-          rotationFactor={6}
-          springOptions={{ stiffness: 300, damping: 30 }}
+          style={
+            !isMobile
+              ? {
+                  transform: `scale(${foregroundScale})`,
+                  transformOrigin: "center",
+                }
+              : undefined
+          }
         >
-          <motion.div
-            className="p-1 bg-white rounded-xl shadow-md w-full"
-            style={{
-              width: cardWidthPx ? `${cardWidthPx}px` : undefined,
-              maxHeight: "100%",
-            }}
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
-            transition={{
-              type: "spring",
-              stiffness: 300,
-              damping: 22,
-              delay: 0.05,
-            }}
+          <Tilt
+            className="flex justify-center items-center"
+            rotationFactor={6}
+            springOptions={{ stiffness: 300, damping: 30 }}
           >
-            <div className="relative">
-              <FillGrid photos={allPhotos} />
-            </div>
-            {/* Session info displayed at the bottom of the card */}
-            <div className="w-full text-center mt-1">
-              <div
-                ref={taskBadgeRef}
-                className="task-badge text-neutral-50/90 inner-stroke-white-20-sm pointer-events-none"
-                style={{
-                  textShadow: "1px 1.5px 2px rgba(0,0,0,0.28)",
-                  maxWidth: "100%",
-                  overflowWrap: "break-word",
-                  whiteSpace: "normal",
-                  textWrap: "balance",
-                  fontSize: "0.7rem",
-                  lineHeight: "1.15",
-                  padding: "6px 12px",
-                }}
-              >
-                {taskName} • {duration} {duration === 1 ? "min" : "min"}
+            <motion.div
+              className="p-1 bg-white rounded-xl shadow-md w-full"
+              style={{
+                width: cardWidthPx ? `${cardWidthPx}px` : undefined,
+                maxHeight: "100%",
+              }}
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              transition={{
+                type: "spring",
+                stiffness: 300,
+                damping: 22,
+                delay: 0.05,
+              }}
+            >
+              <div className="relative">
+                <FillGrid photos={allPhotos} />
               </div>
-            </div>
-          </motion.div>
-        </Tilt>
+              {/* Session info displayed at the bottom of the card */}
+              <div className="w-full text-center mt-1">
+                <div
+                  ref={taskBadgeRef}
+                  className="task-badge text-neutral-50/90 inner-stroke-white-20-sm pointer-events-none"
+                  style={{
+                    textShadow: "1px 1.5px 2px rgba(0,0,0,0.28)",
+                    maxWidth: "100%",
+                    overflowWrap: "break-word",
+                    whiteSpace: "normal",
+                    textWrap: "balance",
+                    fontSize: "0.7rem",
+                    lineHeight: "1.15",
+                    padding: "6px 12px",
+                  }}
+                >
+                  {taskName} • {duration} {duration === 1 ? "min" : "min"}
+                </div>
+              </div>
+            </motion.div>
+          </Tilt>
+        </div>
       </div>
 
       {/* Background color selector removed to avoid duplication */}

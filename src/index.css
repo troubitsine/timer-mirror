@@ -329,3 +329,13 @@ html.complete-route {
     );
   }
 }
+
+@layer components {
+  [data-share-export-root] [data-share-watermark] {
+    @apply hidden;
+  }
+
+  [data-share-export-root][data-exporting="true"] [data-share-watermark] {
+    @apply flex;
+  }
+}
