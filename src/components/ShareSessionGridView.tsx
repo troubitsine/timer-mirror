@@ -372,6 +372,7 @@ const ShareSessionGridView = ({
 
   return (
     <Card
+      data-share-surface="backdrop"
       className={cn(
         "w-full h-full relative overflow-hidden border-0",
         selectedBackground?.className,
@@ -381,6 +382,7 @@ const ShareSessionGridView = ({
     >
       {selectedBackground?.className ? (
         <div
+          data-share-surface="backdrop"
           aria-hidden="true"
           className={cn(
             "absolute inset-0 pointer-events-none",

@@ -268,6 +268,7 @@ const ShareSessionMontage = ({
 
   return (
     <Card
+      data-share-surface="backdrop"
       className={cn(
         "w-full h-full relative border-0",
         selectedBackground?.className,
@@ -276,6 +277,7 @@ const ShareSessionMontage = ({
     >
       {selectedBackground?.className ? (
         <div
+          data-share-surface="backdrop"
           aria-hidden="true"
           className={cn(
             "absolute inset-0 pointer-events-none",

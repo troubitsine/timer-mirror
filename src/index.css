@@ -338,4 +338,24 @@ html.complete-route {
   [data-share-export-root][data-exporting="true"] [data-share-watermark] {
     @apply flex;
   }
+
+  [data-share-export-root][data-exporting="true"][data-export-surface="gradient"],
+  [data-share-export-root][data-exporting="true"][data-export-surface="gradient"]::before,
+  [data-share-export-root][data-exporting="true"][data-export-surface="gradient"]::after {
+    border-radius: 0 !important;
+    mask-image: none !important;
+    -webkit-mask-image: none !important;
+  }
+
+  [data-share-export-root][data-exporting="true"][data-export-surface="gradient"]
+    [data-share-surface="backdrop"],
+  [data-share-export-root][data-exporting="true"][data-export-surface="gradient"]
+    [data-share-surface="backdrop"]::before,
+  [data-share-export-root][data-exporting="true"][data-export-surface="gradient"]
+    [data-share-surface="backdrop"]::after {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    mask-image: none !important;
+    -webkit-mask-image: none !important;
+  }
 }

@@ -248,18 +248,60 @@ const ShareSessionButton = ({
     const previewRoot = previewRef.current;
     if (!previewRoot) return;
     setIsGeneratingImage(true);
+    let exportContainer: HTMLDivElement | null = null;
 
     try {
       forceInlineImageLoad(previewRoot);
       await ensureImagesDecoded(previewRoot);
-      previewRoot.dataset.exporting = "true";
-      await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
+
+      const rect = previewRoot.getBoundingClientRect();
+      const normalizedWidth = Math.max(
+        1,
+        rect.width || previewRoot.offsetWidth || previewRoot.clientWidth,
+      );
+      const normalizedHeight = Math.max(
+        1,
+        rect.height || previewRoot.offsetHeight || previewRoot.clientHeight,
+      );
+
+      const clonedRoot = previewRoot.cloneNode(true) as HTMLDivElement;
+      clonedRoot.dataset.exporting = "true";
+      clonedRoot.style.width = `${normalizedWidth}px`;
+      clonedRoot.style.height = `${normalizedHeight}px`;
+      clonedRoot.style.maxWidth = `${normalizedWidth}px`;
+      clonedRoot.style.maxHeight = `${normalizedHeight}px`;
+
+      const computedStyles = window.getComputedStyle(previewRoot);
+      const backgroundImage = computedStyles?.backgroundImage || "";
+      if (backgroundImage && /\bgradient\(/i.test(backgroundImage) && backgroundImage !== "none") {
+        clonedRoot.dataset.exportSurface = "gradient";
+      } else {
+        delete clonedRoot.dataset.exportSurface;
+      }
+
+      exportContainer = document.createElement("div");
+      Object.assign(exportContainer.style, {
+        position: "fixed",
+        top: "0",
+        left: "0",
+        width: "0",
+        height: "0",
+        opacity: "0",
+        pointerEvents: "none",
+        overflow: "hidden",
+      });
+      exportContainer.setAttribute("aria-hidden", "true");
+      exportContainer.appendChild(clonedRoot);
+      document.body.appendChild(exportContainer);
+
+      // Give the browser a frame to apply export-only styling on the clone.
+      await new Promise((resolve) =>
+        requestAnimationFrame(() => resolve(undefined)),
+      );
 
       const { toPng } = await import("html-to-image");
-      const dataUrl = await toPng(previewRoot, {
+      const dataUrl = await toPng(clonedRoot, {
         pixelRatio: 6,
-        // Override the style on the clone only - no flicker
-        style: { borderRadius: "0px" },
       });
 
       const link = document.createElement("a");
@@ -269,8 +311,8 @@ const ShareSessionButton = ({
     } catch (err) {
       console.error("Error generating image:", err);
     } finally {
-      if (previewRoot) {
-        delete previewRoot.dataset.exporting;
+      if (exportContainer?.parentNode) {
+        exportContainer.remove();
       }
       if (isMountedRef.current) {
         setIsGeneratingImage(false);
@@ -593,7 +635,7 @@ const ShareSessionButton = ({
                     <div
                       data-share-watermark
                       aria-hidden="true"
-                      className="pointer-events-none absolute inset-x-0 bottom-5 flex justify-center z-40"
+                      className="pointer-events-none absolute inset-x-0 bottom-2.5 flex justify-center z-40"
                     >
                       <div className="inline-flex">
                         <div
