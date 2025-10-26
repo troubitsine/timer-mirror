@@ -593,11 +593,12 @@ const ShareSessionButton = ({
                     <div
                       data-share-watermark
                       aria-hidden="true"
-                      className="pointer-events-none absolute inset-x-0 bottom-6 flex justify-center z-40"
+                      className="pointer-events-none absolute inset-x-0 bottom-5 flex justify-center z-40"
                     >
                       <div className="inline-flex">
                         <div
-                          className="bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-2 rounded-full inner-stroke-white-20-sm px-4 py-1"
+                          className="bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-2 text-xs font-medium
+  leading-tight rounded-full inner-stroke-white-20-sm pl-3 pr-2.5 pt-1 pb-[0.3rem]"
                           style={{
                             transform: `scale(${foregroundScale})`,
                             transformOrigin: "bottom center",
