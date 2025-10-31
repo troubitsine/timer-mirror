@@ -66,15 +66,15 @@ export function useDynamicBackground(
           // For desktop, use the gradient as before
           dynamicOptions.push({
             id: "dynamicGradient",
-            name: "Dynamic Gradient",
+            name: "Dynamic Gradient",
             style: {
-              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 1111 1111' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.4' numOctaves='3' stitchTiles='stitch'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='0.5'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"),
-              radial-gradient(circle at 0% 99%, ${palette.Vibrant.hex} 0%, transparent 67%),
-              radial-gradient(circle at 46% 94%, ${palette.LightVibrant.hex} 0%, transparent 81%),
-              radial-gradient(circle at 93% 95%, ${palette.Vibrant.hex} 0%, transparent 66%),
-              radial-gradient(circle at 89% 8%, ${palette.LightVibrant.hex} 0%, transparent 150%)`,
-              backgroundColor: palette.Vibrant.hex,
-              backgroundBlendMode: "overlay, normal, normal, normal, normal",
+              /* three radial blobs, no blend‑mode */
+              backgroundImage: `
+        radial-gradient(circle at 15%   100%, ${palette.Vibrant.hex}cc       0%, transparent 70%),
+        radial-gradient(circle at 80%  60%, ${palette.LightVibrant.hex}66  0%, transparent 95%),
+        radial-gradient(circle at 100%   0%, ${palette.Vibrant.hex}       0%, transparent 70%)
+      `,
+              backgroundColor: palette.LightVibrant.hex, // solid fallback
             },
           });
         }

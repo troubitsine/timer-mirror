@@ -6,6 +6,7 @@
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
+    --page-background: #ffffff;
 
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
@@ -38,6 +39,7 @@
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
+    --page-background: #171717;
 
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
@@ -64,6 +66,26 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
   }
+}
+
+/* iOS Safari specific styles */
+html {
+  background-color: var(--page-background);
+  min-height: 100vh;
+}
+
+body {
+  background-color: var(--page-background);
+  min-height: 100vh;
+}
+
+/* Route-specific background colors */
+html.home-route {
+  --page-background: #171717;
+}
+
+html.complete-route {
+  --page-background: #fafaf9;
 }
 
 @layer base {
@@ -192,7 +214,7 @@
   }
 
   .task-badge {
-    @apply relative appearance-none cursor-default text-neutral-800/80 px-4 py-2 rounded-[9px] text-sm font-medium shadow-sm backdrop-blur-md;
+    @apply relative appearance-none cursor-default text-neutral-800/80 px-4 py-2 rounded-[9px] text-xs font-medium leading-tight shadow-sm backdrop-blur-md;
     background: radial-gradient(
       var(--spread-x) var(--spread-y) at var(--pos-x) var(--pos-y),
       var(--color-1) var(--stop-1),
@@ -305,5 +327,35 @@
       rgba(200, 200, 200, 0.7) 50%,
       rgba(200, 200, 200, 0.5)
     );
+  }
+}
+
+@layer components {
+  [data-share-export-root] [data-share-watermark] {
+    @apply hidden;
+  }
+
+  [data-share-export-root][data-exporting="true"] [data-share-watermark] {
+    @apply flex;
+  }
+
+  [data-share-export-root][data-exporting="true"][data-export-surface="gradient"],
+  [data-share-export-root][data-exporting="true"][data-export-surface="gradient"]::before,
+  [data-share-export-root][data-exporting="true"][data-export-surface="gradient"]::after {
+    border-radius: 0 !important;
+    mask-image: none !important;
+    -webkit-mask-image: none !important;
+  }
+
+  [data-share-export-root][data-exporting="true"][data-export-surface="gradient"]
+    [data-share-surface="backdrop"],
+  [data-share-export-root][data-exporting="true"][data-export-surface="gradient"]
+    [data-share-surface="backdrop"]::before,
+  [data-share-export-root][data-exporting="true"][data-export-surface="gradient"]
+    [data-share-surface="backdrop"]::after {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    mask-image: none !important;
+    -webkit-mask-image: none !important;
   }
 }

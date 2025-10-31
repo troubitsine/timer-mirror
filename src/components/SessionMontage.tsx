@@ -17,6 +17,8 @@ interface SessionMontageProps {
   onSave?: () => void;
   initialSelectedBackgroundId?: string;
   onBackgroundSelect?: (id: string) => void;
+  hideControls?: boolean;
+  exportRef?: React.RefObject<HTMLDivElement>;
 }
 
 const SessionMontage = ({
@@ -27,6 +29,8 @@ const SessionMontage = ({
   onSave = () => {},
   initialSelectedBackgroundId,
   onBackgroundSelect,
+  hideControls = false,
+  exportRef,
 }: SessionMontageProps) => {
   const navigate = useNavigate();
   const isMobile = isMobileDevice();
@@ -103,6 +107,8 @@ const SessionMontage = ({
     initialSelectedBackgroundId,
     onBackgroundSelect,
   );
+
+  const exportBackgroundStyle = { ...(selectedBackground?.style ?? {}) };
 
   // Animation states
   const [animationPhase, setAnimationPhase] = useState<
@@ -276,12 +282,23 @@ const SessionMontage = ({
 
   return (
     <Card
+      ref={exportRef ?? undefined}
       className={cn(
-        "w-full h-full relative border-0",
+        "w-full h-full relative border-0 overflow-hidden rounded-[18px]",
         selectedBackground?.className,
       )}
-      style={selectedBackground?.style}
+      style={exportBackgroundStyle}
     >
+      {selectedBackground?.className ? (
+        <div
+          aria-hidden="true"
+          className={cn(
+            "absolute inset-0 pointer-events-none rounded-[inherit]",
+            selectedBackground.className,
+          )}
+          style={exportBackgroundStyle}
+        />
+      ) : null}
       {/* Session info displayed at the top of the card - absolutely positioned */}
       <motion.div
         className="absolute top-3 w-full text-center"
@@ -451,10 +468,10 @@ const SessionMontage = ({
                       <img
                         src={photo}
                         alt={`Photo ${index + 1}`}
-                        loading="lazy"
+                        loading="eager"
+                        decoding="async"
                         className="
-    w-full h-full object-cover rounded-[11px] z-30
-    shadow-[0_2px_2px_rgba(0,0,0,0.12),_0_8px_8px_rgba(0,0,0,0.012)]"
+    w-full h-full object-cover inner-stroke-black-10-xs rounded-[11px] z-30"
                       />
                     </div>
                   </motion.div>
@@ -464,9 +481,12 @@ const SessionMontage = ({
           )}
         </div>
 
-        {/* Background color selector - only show when dynamic colors are available */}
-        {hasDynamicColors && (
-          <div className="absolute bottom-3.5 left-4 flex justify-center z-30">
+        {/* Background color selector - only show when dynamic colors are available and controls aren't hidden */}
+        {hasDynamicColors && !hideControls && (
+          <div
+            className="absolute bottom-3.5 left-4 flex justify-center z-30"
+            data-export-exclude="true"
+          >
             <BackgroundColorSelector
               options={backgroundOptions}
               selectedId={selectedBackgroundId}
@@ -476,26 +496,29 @@ const SessionMontage = ({
           </div>
         )}
 
-        {/* Replay button */}
-        <motion.div
-          className="absolute bottom-4 right-3 z-30"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3 }}
-          whileTap={{ scale: 0.95 }}
-          onMouseEnter={() => {}}
-          onMouseLeave={() => {}}
-        >
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={startAnimation}
-            className="bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/70 backdrop-blur-md flex items-center gap-1 rounded-full inner-stroke-white-20-sm sm:pl-[8px] sm:pr-[10px] py-[6px] pl-[10px] pr-[12px]"
+        {/* Replay button - only show when controls aren't hidden */}
+        {!hideControls && (
+          <motion.div
+            className="absolute bottom-4 right-3 z-30"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+            whileTap={{ scale: 0.95 }}
+            onMouseEnter={() => {}}
+            onMouseLeave={() => {}}
+            data-export-exclude="true"
           >
-            <RotateCw className="h-4 w-4" />
-            <span className="hidden sm:inline">Replay</span>
-          </Button>
-        </motion.div>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={startAnimation}
+              className="bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/70 backdrop-blur-md flex items-center gap-1 rounded-full inner-stroke-white-20-sm sm:pl-[8px] sm:pr-[10px] py-[6px] pl-[10px] pr-[12px]"
+            >
+              <RotateCw className="h-4 w-4" />
+              <span className="hidden sm:inline">Replay</span>
+            </Button>
+          </motion.div>
+        )}
       </div>
     </Card>
   );

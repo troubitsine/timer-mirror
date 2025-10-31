@@ -1,4 +1,11 @@
-import React, { useRef, useLayoutEffect, useMemo, useState } from "react";
+import React, {
+  useRef,
+  useLayoutEffect,
+  useMemo,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 import { Card } from "./ui/card";
 import { cn } from "@/lib/utils";
 import { isMobileDevice } from "@/lib/deviceDetection";
@@ -7,7 +14,7 @@ import Tilt from "./Tilt";
 import { motion } from "framer-motion";
 import { useDynamicBackground } from "@/lib/useDynamicBackground";
 
-interface SessionGridViewProps {
+interface ShareSessionGridViewProps {
   screenshots?: string[];
   webcamPhotos?: string[];
   taskName?: string;
@@ -15,7 +22,9 @@ interface SessionGridViewProps {
   className?: string;
   initialSelectedBackgroundId?: string;
   onBackgroundSelect?: (id: string) => void;
-  exportRef?: React.RefObject<HTMLDivElement>;
+  selectedBackgroundId?: string;
+  setSelectedBackgroundId?: (id: string) => void;
+  aspectRatio?: "16:9" | "1:1" | "9:16";
 }
 
 // Configuration for the grid layout
@@ -156,7 +165,7 @@ function FillGrid({ photos }: FillGridProps) {
   );
 }
 
-const SessionGridView = ({
+const ShareSessionGridView = ({
   screenshots = [],
   webcamPhotos = [],
   taskName = "Focus Session",
@@ -164,11 +173,49 @@ const SessionGridView = ({
   className,
   initialSelectedBackgroundId,
   onBackgroundSelect,
-  exportRef,
-}: SessionGridViewProps) => {
+  selectedBackgroundId: externalSelectedBackgroundId,
+  setSelectedBackgroundId: externalSetSelectedBackgroundId,
+  aspectRatio = "16:9",
+}: ShareSessionGridViewProps) => {
   const isMobile = isMobileDevice();
+  const foregroundScale = isMobile ? 1 : 0.67;
 
-  // Get the last photo for color extraction
+  // Keep your aspect→width preference per ratio (tuned for 9:16)
+  const WIDTH_PCT: Record<
+    NonNullable<ShareSessionGridViewProps["aspectRatio"]>,
+    number
+  > = {
+    "16:9": 0.7,
+    "1:1": 0.68,
+    "9:16": 0.76, // ↓ from 0.85 so portrait doesn't press the edges
+  };
+
+  // Minimum presence (as a fraction of container height)
+  const MIN_CARD_H_RATIO: Record<
+    NonNullable<ShareSessionGridViewProps["aspectRatio"]>,
+    number
+  > = {
+    "16:9": 0.42,
+    "1:1": 0.44,
+    "9:16": 0.5, // a bit larger so tall cards don't look spindly
+  };
+
+  // Transform clearance (px) so Tilt never clips (used as padding on the wrapper)
+  const TILT_BLEED_PX: Record<
+    NonNullable<ShareSessionGridViewProps["aspectRatio"]>,
+    number
+  > = {
+    "16:9": 12,
+    "1:1": 14,
+    "9:16": 18, // more headroom for taller cards
+  };
+
+  const widthPercentage = WIDTH_PCT[aspectRatio];
+  const tiltBleed = TILT_BLEED_PX[aspectRatio];
+
+  // NEW: refs to measure the available container and compute a bounded width
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [cardWidthPx, setCardWidthPx] = useState<number | undefined>(undefined);
 
   // Combine photos based on device type
   const allPhotos = useMemo(() => {
@@ -237,15 +284,97 @@ const SessionGridView = ({
     onBackgroundSelect,
   );
 
-  // No need for extractColorsFromImage effect - handled by the hook
+  // Use external selectedBackgroundId and setSelectedBackgroundId if provided
+  useEffect(() => {
+    if (
+      externalSelectedBackgroundId &&
+      externalSelectedBackgroundId !== selectedBackgroundId
+    ) {
+      setSelectedBackgroundId(externalSelectedBackgroundId);
+    }
+  }, [externalSelectedBackgroundId]);
+
+  // ---- NEW: Size logic based on container height with min/max rules ----
+  const recomputeCardWidth = useCallback(() => {
+    const container = wrapperRef.current;
+    if (!container) return;
+
+    // Usable space (we already padded wrapper by tiltBleed)
+    const cW = container.clientWidth - tiltBleed * 2;
+    const cH = container.clientHeight - tiltBleed * 2;
+
+    // Live badge height (wrap-aware)
+    const badgeH =
+      (taskBadgeRef?.current as HTMLElement | null)?.offsetHeight ?? 0;
+
+    // Vertical chrome inside the card: p-1 top+bottom (8) + mt-1 (4) + tiny buffer
+    const EXTRA_VERTICAL = 20;
+
+    // Preferred width from the width policy (still capped by usable width below)
+    const preferred = Math.round(cW * widthPercentage);
+
+    // Height-bound width: gridH = w * FRAME_RATIO, totalH = gridH + badgeH + extras
+    const maxWidthByHeight = Math.floor(
+      (cH - badgeH - EXTRA_VERTICAL) / FRAME_RATIO,
+    );
+
+    // Minimum presence (fraction of container height), tuned per aspect & device
+    const minRatio = isMobile
+      ? Math.max(0, MIN_CARD_H_RATIO[aspectRatio] - 0.04)
+      : MIN_CARD_H_RATIO[aspectRatio];
+
+    const minHeightTarget = Math.max(0, Math.round(cH * minRatio));
+    const minWidthByHeight = Math.ceil(
+      Math.max(0, minHeightTarget - badgeH - EXTRA_VERTICAL) / FRAME_RATIO,
+    );
+
+    // Absolute px bounds
+    const MIN_PX = 260;
+    const lower = Math.max(MIN_PX, minWidthByHeight);
+    // Upper bound must obey BOTH height and the usable width
+    const upper = Math.max(120, Math.min(maxWidthByHeight, cW));
+
+    const clamp = (v: number, lo: number, hi: number) =>
+      Math.min(Math.max(v, lo), hi);
+
+    let nextWidth: number;
+    if (upper < lower) {
+      nextWidth = Math.max(120, upper); // tight space → fit to the smaller cap
+    } else {
+      nextWidth = clamp(preferred, lower, upper);
+    }
+
+    setCardWidthPx(
+      Number.isFinite(nextWidth) ? Math.max(120, nextWidth) : undefined,
+    );
+  }, [widthPercentage, isMobile, taskBadgeRef, aspectRatio, tiltBleed]);
+
+  // Recompute on:
+  // - mount, resize of the wrapper, taskName changes (affects badge height),
+  // - photo set changes (rarely changes height but keep it safe)
+  useLayoutEffect(() => {
+    recomputeCardWidth();
+    const ro = new ResizeObserver(recomputeCardWidth);
+    if (wrapperRef.current) ro.observe(wrapperRef.current);
+    const badgeEl = (taskBadgeRef?.current as HTMLElement | null) ?? undefined;
+    let bro: ResizeObserver | undefined;
+    if (badgeEl) {
+      bro = new ResizeObserver(recomputeCardWidth);
+      bro.observe(badgeEl);
+    }
+    return () => {
+      ro.disconnect();
+      bro?.disconnect();
+    };
+  }, [recomputeCardWidth, taskName, allPhotos.length]);
 
   const exportBackgroundStyle = { ...(selectedBackground?.style ?? {}) };
 
   return (
     <Card
-      ref={exportRef ?? undefined}
+      data-share-surface="backdrop"
       className={cn(
-        "w-full h-full relative overflow-hidden border-0 rounded-[18px]",
+        "w-full h-full relative overflow-hidden border-0",
         selectedBackground?.className,
         className,
       )}
@@ -253,72 +382,83 @@ const SessionGridView = ({
     >
       {selectedBackground?.className ? (
         <div
+          data-share-surface="backdrop"
           aria-hidden="true"
           className={cn(
-            "absolute inset-0 pointer-events-none rounded-[inherit]",
+            "absolute inset-0 pointer-events-none",
             selectedBackground.className,
           )}
           style={exportBackgroundStyle}
         />
       ) : null}
       {/* Fixed size container for grid layout */}
-      <div className="w-full h-full overflow-auto flex justify-center items-center">
+      <div
+        ref={wrapperRef}
+        className="w-full h-full overflow-hidden flex justify-center items-center"
+        style={{ padding: `${tiltBleed}px` }} // ← gives transforms some air
+      >
         {/* Tilt component without motion wrapper */}
-        <Tilt
-          className="w-[55%] sm:w-[35%] md:w-[29%] mb-11"
-          rotationFactor={6}
-          springOptions={{ stiffness: 300, damping: 30 }}
+        <div
+          className="mb-2 flex justify-center items-center"
+          style={
+            !isMobile
+              ? {
+                  transform: `scale(${foregroundScale})`,
+                  transformOrigin: "center",
+                }
+              : undefined
+          }
         >
-          <motion.div
-            className="p-1 bg-white rounded-xl w-full"
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
-            transition={{
-              type: "spring",
-              stiffness: 300,
-              damping: 22,
-              delay: 0.05,
-            }}
+          <Tilt
+            className="flex justify-center items-center"
+            rotationFactor={6}
+            springOptions={{ stiffness: 300, damping: 30 }}
           >
-            <div className="relative">
-              <FillGrid photos={allPhotos} />
-            </div>
-            {/* Session info displayed at the bottom of the card */}
-            <div className="w-full text-center mt-1">
-              <div
-                ref={taskBadgeRef}
-                className="task-badge text-neutral-50/90 inner-stroke-white-20-sm pointer-events-none"
-                style={{
-                  textShadow: "1px 1.5px 2px rgba(0,0,0,0.28)",
-                  maxWidth: "100%",
-                  overflowWrap: "break-word",
-                  whiteSpace: "normal",
-                  textWrap: "balance",
-                }}
-              >
-                {taskName} • {duration} {duration === 1 ? "min" : "min"}
+            <motion.div
+              className="p-1 bg-white rounded-xl shadow-md w-full"
+              style={{
+                width: cardWidthPx ? `${cardWidthPx}px` : undefined,
+                maxHeight: "100%",
+              }}
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              transition={{
+                type: "spring",
+                stiffness: 300,
+                damping: 22,
+                delay: 0.05,
+              }}
+            >
+              <div className="relative">
+                <FillGrid photos={allPhotos} />
               </div>
-            </div>
-          </motion.div>
-        </Tilt>
+              {/* Session info displayed at the bottom of the card */}
+              <div className="w-full text-center mt-1">
+                <div
+                  ref={taskBadgeRef}
+                  className="task-badge text-neutral-50/90 inner-stroke-white-20-sm pointer-events-none"
+                  style={{
+                    textShadow: "1px 1.5px 2px rgba(0,0,0,0.28)",
+                    maxWidth: "100%",
+                    overflowWrap: "break-word",
+                    whiteSpace: "normal",
+                    textWrap: "balance",
+                    fontSize: "0.7rem",
+                    lineHeight: "1.15",
+                    padding: "6px 12px",
+                  }}
+                >
+                  {taskName} • {duration} {duration === 1 ? "min" : "min"}
+                </div>
+              </div>
+            </motion.div>
+          </Tilt>
+        </div>
       </div>
 
-      {/* Background color selector - only show when dynamic colors are available */}
-      {hasDynamicColors && (
-        <div
-          className="absolute bottom-3.5 left-4 flex justify-center z-30"
-          data-export-exclude="true"
-        >
-          <BackgroundColorSelector
-            options={backgroundOptions}
-            selectedId={selectedBackgroundId}
-            onSelect={setSelectedBackgroundId}
-            className="bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[0px] inner-stroke-white-10-sm shadow-sm rounded-full"
-          />
-        </div>
-      )}
+      {/* Background color selector removed to avoid duplication */}
     </Card>
   );
 };
 
-export default SessionGridView;
+export default ShareSessionGridView;
