@@ -45,17 +45,17 @@ export function usePictureInPicture({
   const showEndMessage = () => {
     if (pipWindow) {
       // Hide the countdown timer
-      const countdownContainer = pipWindow.document.querySelector(
-        ".pip-countdown-container",
-      );
+      const countdownContainer =
+        pipWindow.document.querySelector<HTMLElement>(
+          ".pip-countdown-container",
+        );
       if (countdownContainer) {
         countdownContainer.style.display = "none";
       }
 
       // Show the end message in the center container
-      const centerContainer = pipWindow.document.querySelector(
-        ".pip-center-container",
-      );
+      const centerContainer =
+        pipWindow.document.querySelector<HTMLElement>(".pip-center-container");
       if (centerContainer) {
         // Create end message container
         const endMessageContainer = document.createElement("div");
