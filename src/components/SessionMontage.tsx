@@ -8,6 +8,7 @@ import { isMobileDevice } from "@/lib/deviceDetection";
 import BackgroundColorSelector from "./BackgroundColorSelector";
 import { cn } from "@/lib/utils";
 import { useDynamicBackground } from "@/lib/useDynamicBackground";
+import ShareWatermark from "./ShareWatermark";
 
 interface SessionMontageProps {
   screenshots?: string[];
@@ -283,6 +284,7 @@ const SessionMontage = ({
   return (
     <Card
       ref={exportRef ?? undefined}
+      data-share-export-root
       className={cn(
         "w-full h-full relative border-0 overflow-hidden rounded-[18px]",
         selectedBackground?.className,
@@ -520,6 +522,7 @@ const SessionMontage = ({
           </motion.div>
         )}
       </div>
+      <ShareWatermark />
     </Card>
   );
 };

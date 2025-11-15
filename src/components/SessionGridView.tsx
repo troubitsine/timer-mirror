@@ -6,6 +6,7 @@ import BackgroundColorSelector from "./BackgroundColorSelector";
 import Tilt from "./Tilt";
 import { motion } from "framer-motion";
 import { useDynamicBackground } from "@/lib/useDynamicBackground";
+import ShareWatermark from "./ShareWatermark";
 
 interface SessionGridViewProps {
   screenshots?: string[];
@@ -244,6 +245,7 @@ const SessionGridView = ({
   return (
     <Card
       ref={exportRef ?? undefined}
+      data-share-export-root
       className={cn(
         "w-full h-full relative overflow-hidden border-0 rounded-[18px]",
         selectedBackground?.className,
@@ -317,6 +319,7 @@ const SessionGridView = ({
           />
         </div>
       )}
+      <ShareWatermark />
     </Card>
   );
 };

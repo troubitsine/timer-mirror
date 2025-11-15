@@ -16,6 +16,7 @@ import AnimatedTabs from "./ui/animated-tabs";
 import { useDynamicBackground } from "@/lib/useDynamicBackground";
 import ShareSessionMontage from "./ShareSessionMontage";
 import ShareSessionGridView from "./ShareSessionGridView";
+import ShareWatermark from "./ShareWatermark";
 import { cn } from "@/lib/utils";
 import {
   blobToTypedFile,
@@ -124,6 +125,23 @@ const ShareSessionButton = ({
       let cleanupPersistedFile: (() => Promise<void>) | null = null;
 
       try {
+        targetNode.dataset.exporting = "true"; // Reveal watermark just for the export capture.
+        const computedStyles = window.getComputedStyle(targetNode);
+        const backgroundImage = computedStyles?.backgroundImage || "";
+        if (
+          backgroundImage &&
+          /\bgradient\(/i.test(backgroundImage) &&
+          backgroundImage !== "none"
+        ) {
+          targetNode.dataset.exportSurface = "gradient";
+        } else {
+          delete targetNode.dataset.exportSurface;
+        }
+
+        await new Promise((resolve) =>
+          requestAnimationFrame(() => resolve(undefined)),
+        );
+
         const { blob: pngBlob } = await exportSessionImage(targetNode, {
           pixelRatio: EXPORT_PIXEL_RATIO,
         });
@@ -132,7 +150,6 @@ const ShareSessionButton = ({
         let shareFile: File;
 
         try {
-          const computedStyles = window.getComputedStyle(targetNode);
           const jpegBlob = await pngBlobToJpegBlob(
             pngBlob,
             computedStyles?.backgroundColor,
@@ -193,6 +210,8 @@ const ShareSessionButton = ({
       } catch (error) {
         console.error("ShareSessionButton: mobile share failed", error);
       } finally {
+        delete targetNode.dataset.exporting;
+        delete targetNode.dataset.exportSurface;
         if (cleanupPersistedFile) {
           await cleanupPersistedFile();
         }
@@ -632,28 +651,7 @@ const ShareSessionButton = ({
                         aspectRatio={aspectRatio}
                       />
                     )}
-                    <div
-                      data-share-watermark
-                      aria-hidden="true"
-                      className="pointer-events-none absolute inset-x-0 bottom-2.5 flex justify-center z-40"
-                    >
-                      <div className="inline-flex">
-                        <div
-                          className="bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-2 text-xs font-medium
-  leading-tight rounded-full inner-stroke-white-20-sm pl-3 pr-2.5 pt-1 pb-[0.3rem]"
-                          style={{
-                            transform: `scale(${foregroundScale})`,
-                            transformOrigin: "bottom center",
-                            maxWidth: "480px",
-                            overflowWrap: "break-word",
-                            whiteSpace: "normal",
-                            textWrap: "balance",
-                          }}
-                        >
-                          focus-reel.app
-                        </div>
-                      </div>
-                    </div>
+                    <ShareWatermark scale={foregroundScale} />
                   </div>
                 </div>
               </div>
