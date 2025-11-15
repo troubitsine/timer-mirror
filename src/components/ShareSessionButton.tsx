@@ -123,9 +123,29 @@ const ShareSessionButton = ({
       };
 
       let cleanupPersistedFile: (() => Promise<void>) | null = null;
+      let exportContainer: HTMLDivElement | null = null;
 
       try {
-        targetNode.dataset.exporting = "true"; // Reveal watermark just for the export capture.
+        const rect = targetNode.getBoundingClientRect();
+        const normalizedWidth = Math.max(
+          1,
+          rect.width || targetNode.offsetWidth || targetNode.clientWidth,
+        );
+        const normalizedHeight = Math.max(
+          1,
+          rect.height || targetNode.offsetHeight || targetNode.clientHeight,
+        );
+
+        const clonedRoot = targetNode.cloneNode(true) as HTMLDivElement;
+        clonedRoot.style.width = `${normalizedWidth}px`;
+        clonedRoot.style.height = `${normalizedHeight}px`;
+        clonedRoot.style.maxWidth = `${normalizedWidth}px`;
+        clonedRoot.style.maxHeight = `${normalizedHeight}px`;
+
+        if (targetNode.hasAttribute("data-share-export-root")) {
+          clonedRoot.setAttribute("data-share-export-root", "");
+        }
+
         const computedStyles = window.getComputedStyle(targetNode);
         const backgroundImage = computedStyles?.backgroundImage || "";
         if (
@@ -133,16 +153,32 @@ const ShareSessionButton = ({
           /\bgradient\(/i.test(backgroundImage) &&
           backgroundImage !== "none"
         ) {
-          targetNode.dataset.exportSurface = "gradient";
+          clonedRoot.dataset.exportSurface = "gradient";
         } else {
-          delete targetNode.dataset.exportSurface;
+          delete clonedRoot.dataset.exportSurface;
         }
+
+        clonedRoot.dataset.exporting = "true"; // Isolate export styles so the live UI never flashes the watermark.
+        exportContainer = document.createElement("div");
+        Object.assign(exportContainer.style, {
+          position: "fixed",
+          top: "0",
+          left: "0",
+          width: "0",
+          height: "0",
+          opacity: "0",
+          pointerEvents: "none",
+          overflow: "hidden",
+        });
+        exportContainer.setAttribute("aria-hidden", "true");
+        exportContainer.appendChild(clonedRoot);
+        document.body.appendChild(exportContainer);
 
         await new Promise((resolve) =>
           requestAnimationFrame(() => resolve(undefined)),
         );
 
-        const { blob: pngBlob } = await exportSessionImage(targetNode, {
+        const { blob: pngBlob } = await exportSessionImage(clonedRoot, {
           pixelRatio: EXPORT_PIXEL_RATIO,
         });
 
@@ -210,8 +246,9 @@ const ShareSessionButton = ({
       } catch (error) {
         console.error("ShareSessionButton: mobile share failed", error);
       } finally {
-        delete targetNode.dataset.exporting;
-        delete targetNode.dataset.exportSurface;
+        if (exportContainer?.parentNode) {
+          exportContainer.remove();
+        }
         if (cleanupPersistedFile) {
           await cleanupPersistedFile();
         }
