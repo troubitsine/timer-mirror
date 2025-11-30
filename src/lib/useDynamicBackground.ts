@@ -46,6 +46,16 @@ export function useDynamicBackground(
   // Reference to the task badge element for color extraction and CSS variable updates
   const taskBadgeRef = useRef<HTMLDivElement>(null);
 
+  // Handle background selection with callback if provided
+  const handleBackgroundSelect = (id: string) => {
+    setSelectedBackgroundId(id);
+    // Also save to sessionStorage for persistence
+    sessionStorage.setItem("selectedBackgroundId", id);
+    if (onSelect) {
+      onSelect(id);
+    }
+  };
+
   // Function to extract colors from an image
   const extractColorsFromImage = async (imageSrc: string) => {
     try {
@@ -194,16 +204,6 @@ export function useDynamicBackground(
       extractColorsFromImage(imageSrc);
     }
   }, [imageSrc]); // Note: selectedBackgroundId is intentionally not in the dependency array
-
-  // Handle background selection with callback if provided
-  const handleBackgroundSelect = (id: string) => {
-    setSelectedBackgroundId(id);
-    // Also save to sessionStorage for persistence
-    sessionStorage.setItem("selectedBackgroundId", id);
-    if (onSelect) {
-      onSelect(id);
-    }
-  };
 
   return {
     backgroundOptions,

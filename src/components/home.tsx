@@ -29,16 +29,8 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
   });
   const [shouldInitializeCamera, setShouldInitializeCamera] = useState(false);
 
-  // Reset state when component mounts
+  // Check camera permissions on mount and clean up media tracks on unmount
   useEffect(() => {
-    setShowMontage(false);
-    setSessionData({
-      screenshots: [],
-      webcamPhotos: [],
-      taskName: "",
-      duration: 0,
-    });
-
     // Check if user has seen onboarding before
     const hasSeenOnboarding =
       localStorage.getItem("hasSeenOnboarding") === "true";

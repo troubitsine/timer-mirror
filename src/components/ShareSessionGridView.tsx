@@ -84,9 +84,6 @@ function FillGrid({ photos }: FillGridProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [tiles, setTiles] = useState<Tile[]>();
 
-  // Clear stale tiles whenever the photo count changes
-  useLayoutEffect(() => setTiles(undefined), [photos.length]);
-
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -353,7 +350,6 @@ const ShareSessionGridView = ({
   // - mount, resize of the wrapper, taskName changes (affects badge height),
   // - photo set changes (rarely changes height but keep it safe)
   useLayoutEffect(() => {
-    recomputeCardWidth();
     const ro = new ResizeObserver(recomputeCardWidth);
     if (wrapperRef.current) ro.observe(wrapperRef.current);
     const badgeEl = (taskBadgeRef?.current as HTMLElement | null) ?? undefined;

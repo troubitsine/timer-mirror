@@ -6,6 +6,8 @@ import routes from "tempo-routes";
 
 function App() {
   const location = useLocation();
+  const tempoRoutes = useRoutes(routes);
+  const shouldRenderTempo = import.meta.env.VITE_TEMPO === "true";
   
   // Update theme-color meta tag and HTML class based on current route
   useEffect(() => {
@@ -39,7 +41,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/complete" element={<SessionCompletePage />} />
         </Routes>
-        {import.meta.env.VITE_TEMPO === "true" && useRoutes(routes)}
+        {shouldRenderTempo ? tempoRoutes : null}
       </>
     </Suspense>
   );

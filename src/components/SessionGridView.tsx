@@ -76,9 +76,6 @@ function FillGrid({ photos }: FillGridProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [tiles, setTiles] = useState<Tile[]>();
 
-  // Clear stale tiles whenever the photo count changes
-  useLayoutEffect(() => setTiles(undefined), [photos.length]);
-
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;

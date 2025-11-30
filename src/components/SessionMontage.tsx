@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState, useId } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { RotateCw } from "lucide-react";
@@ -22,6 +22,25 @@ interface SessionMontageProps {
   exportRef?: React.RefObject<HTMLDivElement>;
 }
 
+const hashToSeed = (value: string) => {
+  let hash = 0;
+
+  for (let i = 0; i < value.length; i++) {
+    hash = (hash << 5) - hash + value.charCodeAt(i);
+    hash |= 0;
+  }
+
+  return Math.abs(hash) + 1;
+};
+
+const createDeterministicRandom = (seed: number) => {
+  let currentSeed = seed;
+  return () => {
+    const x = Math.sin(currentSeed++) * 10000;
+    return x - Math.floor(x);
+  };
+};
+
 const SessionMontage = ({
   screenshots = [],
   webcamPhotos = [],
@@ -35,6 +54,16 @@ const SessionMontage = ({
 }: SessionMontageProps) => {
   const navigate = useNavigate();
   const isMobile = isMobileDevice();
+  const componentId = useId();
+
+  const circleSeed = useMemo(
+    () => hashToSeed(`${componentId}-circle`),
+    [componentId],
+  );
+  const rotationSeed = useMemo(
+    () => hashToSeed(`${componentId}-rotation`),
+    [componentId],
+  );
 
   // Get the last photo for color extraction
 
@@ -125,17 +154,13 @@ const SessionMontage = ({
   // Calculate number of cards based on available photos
   const numberOfCards = Math.min(allPhotos.length, 12); // Limit to 12 cards max
 
-  // Function to get random number of photos per circle (between 4 and 6)
-  const getRandomPhotosPerCircle = () => {
-    return Math.floor(Math.random() * 3) + 4; // Generates a random number between 4 and 6
-  };
-
   // Calculate spiral parameters
   const baseRadius = 100; // Starting radius for the innermost circle
   const radiusIncrement = 8; // How much to increase radius for each circle
 
   // Create circles data structure with random photos per circle
   const circlesData = useMemo(() => {
+    const random = createDeterministicRandom(circleSeed);
     const circles = [];
     let remainingPhotos = numberOfCards;
     let currentCircle = 0;
@@ -144,7 +169,7 @@ const SessionMontage = ({
       // Get random number of photos for this circle (between 4-6)
       // But don't exceed remaining photos
       const photosInThisCircle = Math.min(
-        getRandomPhotosPerCircle(),
+        Math.floor(random() * 3) + 4,
         remainingPhotos,
       );
 
@@ -159,22 +184,22 @@ const SessionMontage = ({
     }
 
     return circles;
-  }, [numberOfCards]);
+  }, [circleSeed, numberOfCards]);
 
   // Generate random rotations for the pile effect
-  const randomRotations = useMemo(
-    () =>
-      Array.from({ length: numberOfCards }).map((_, index) => {
-        const randomRotation = Math.random() * 16 - 8; // Random rotation between -8 and 8 degrees
-        const rotate = index % 2 === 0 ? randomRotation : -randomRotation; // Alternate sign
-        return {
-          rotate: rotate,
-          x: Math.random() * 20 - 10, // Small random x offset
-          y: Math.random() * 20 - 10, // Small random y offset
-        };
-      }),
-    [numberOfCards],
-  );
+  const randomRotations = useMemo(() => {
+    const random = createDeterministicRandom(rotationSeed);
+
+    return Array.from({ length: numberOfCards }).map((_, index) => {
+      const randomRotation = random() * 16 - 8; // Random rotation between -8 and 8 degrees
+      const rotate = index % 2 === 0 ? randomRotation : -randomRotation; // Alternate sign
+      return {
+        rotate: rotate,
+        x: random() * 20 - 10, // Small random x offset
+        y: random() * 20 - 10, // Small random y offset
+      };
+    });
+  }, [numberOfCards, rotationSeed]);
 
   // Start the animation sequence
   const startAnimation = () => {

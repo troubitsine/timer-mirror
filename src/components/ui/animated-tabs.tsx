@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { AnimatePresence, Transition, motion } from "framer-motion";
-import { Children, ReactElement, useEffect, useState, useId } from "react";
+import { Children, ReactElement, useState, useId } from "react";
 
 type AnimatedTabsProps = {
   children:
@@ -21,7 +21,9 @@ export default function AnimatedTabs({
   transition,
   enableHover = false,
 }: AnimatedTabsProps) {
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(
+    () => defaultValue ?? null,
+  );
   const uniqueId = useId();
 
   const handleSetActiveId = (id: string | null) => {
@@ -31,12 +33,6 @@ export default function AnimatedTabs({
       onValueChange(id);
     }
   };
-
-  useEffect(() => {
-    if (defaultValue !== undefined) {
-      setActiveId(defaultValue);
-    }
-  }, [defaultValue]);
 
   return Children.map(children, (child: any, index) => {
     const id = child.props["data-id"];
