@@ -7,6 +7,7 @@ export type BackgroundOption = {
   name: string;
   style?: React.CSSProperties;
   className?: string;
+  accentColor: string;
 };
 
 export function useDynamicBackground(
@@ -21,6 +22,7 @@ export function useDynamicBackground(
     id: "white",
     name: "White",
     className: "bg-white",
+    accentColor: "#ffffff",
   };
 
   // State for dynamic background options
@@ -61,6 +63,7 @@ export function useDynamicBackground(
             name: "Vibrant",
             className: `bg-[${palette.Vibrant.hex}]`,
             style: { backgroundColor: palette.Vibrant.hex },
+            accentColor: palette.Vibrant.hex,
           });
         } else {
           // For desktop, use the gradient as before
@@ -76,6 +79,7 @@ export function useDynamicBackground(
       `,
               backgroundColor: palette.LightVibrant.hex, // solid fallback
             },
+            accentColor: palette.Vibrant.hex,
           });
         }
 
@@ -133,6 +137,7 @@ export function useDynamicBackground(
           name: "Light Vibrant",
           className: `bg-[${palette.LightVibrant.hex}]`,
           style: { backgroundColor: palette.LightVibrant.hex },
+          accentColor: palette.LightVibrant.hex,
         });
       }
 
@@ -142,6 +147,7 @@ export function useDynamicBackground(
           name: "Muted",
           className: `bg-[${palette.Muted.hex}]`,
           style: { backgroundColor: palette.Muted.hex },
+          accentColor: palette.Muted.hex,
         });
       }
 
@@ -151,6 +157,7 @@ export function useDynamicBackground(
           name: "Light Muted",
           className: `bg-[${palette.LightMuted.hex}]`,
           style: { backgroundColor: palette.LightMuted.hex },
+          accentColor: palette.LightMuted.hex,
         });
       }
 

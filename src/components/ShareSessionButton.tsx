@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { Button } from "./ui/button";
-import { Share2, Download } from "lucide-react";
+import { Download } from "lucide-react";
 import { Cross2Icon } from "@radix-ui/react-icons";
 import {
   Dialog,
@@ -17,6 +17,7 @@ import { useDynamicBackground } from "@/lib/useDynamicBackground";
 import ShareSessionMontage from "./ShareSessionMontage";
 import ShareSessionGridView from "./ShareSessionGridView";
 import ShareWatermark from "./ShareWatermark";
+import { AnimatedShinyText } from "./ui/AnimatedShinyText";
 import { cn } from "@/lib/utils";
 import {
   blobToTypedFile,
@@ -30,6 +31,7 @@ import {
   EXPORT_PIXEL_RATIO,
   EXPORT_SHARE_TEXT,
   EXPORT_SHARE_TITLE,
+  EXPORT_MOBILE_PIXEL_RATIO,
 } from "@/lib/exportConfig";
 import { isMobileDevice } from "@/lib/deviceDetection";
 
@@ -40,6 +42,8 @@ interface ShareSessionButtonProps {
   screenshots?: string[];
   webcamPhotos?: string[];
   exportRef?: React.RefObject<HTMLDivElement>;
+  selectedBackgroundId?: string;
+  onBackgroundChange?: (id: string) => void;
 }
 
 type AspectRatio = "16:9" | "1:1" | "9:16";
@@ -52,6 +56,8 @@ const ShareSessionButton = ({
   screenshots = [],
   webcamPhotos = [],
   exportRef,
+  selectedBackgroundId: externalSelectedBackgroundId,
+  onBackgroundChange,
 }: ShareSessionButtonProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>("16:9");
@@ -67,10 +73,23 @@ const ShareSessionButton = ({
   const isMountedRef = useRef(true);
 
   // Use sessionStorage to persist the selected background ID across page refreshes
-  const [selectedBackgroundId, setSelectedBackgroundId] = useState(() => {
-    const savedId = sessionStorage.getItem("selectedBackgroundId");
-    return savedId || "white";
-  });
+  const initialSelectedBackgroundId = useMemo(() => {
+    const savedId =
+      typeof window !== "undefined"
+        ? sessionStorage.getItem("selectedBackgroundId")
+        : null;
+    return externalSelectedBackgroundId || savedId || "white";
+  }, [externalSelectedBackgroundId]);
+
+  const handleBackgroundChange = useCallback(
+    (id: string) => {
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("selectedBackgroundId", id);
+      }
+      onBackgroundChange?.(id);
+    },
+    [onBackgroundChange],
+  );
 
   // Get the last photo for color extraction
   const lastPhoto =
@@ -89,9 +108,25 @@ const ShareSessionButton = ({
     hasDynamicColors,
   } = useDynamicBackground(
     lastPhoto,
-    selectedBackgroundId,
-    setSelectedBackgroundId,
+    initialSelectedBackgroundId,
+    handleBackgroundChange,
   );
+
+  useEffect(() => {
+    if (
+      externalSelectedBackgroundId &&
+      externalSelectedBackgroundId !== currentBackgroundId
+    ) {
+      setCurrentBackgroundId(externalSelectedBackgroundId);
+    }
+  }, [
+    externalSelectedBackgroundId,
+    currentBackgroundId,
+    setCurrentBackgroundId,
+  ]);
+
+  const shimmerColor =
+    selectedBackground?.accentColor ?? "rgba(255, 255, 255, 0.85)";
 
   const isMobile =
     typeof window !== "undefined" ? isMobileDevice() : false;
@@ -179,7 +214,7 @@ const ShareSessionButton = ({
         );
 
         const { blob: pngBlob } = await exportSessionImage(clonedRoot, {
-          pixelRatio: EXPORT_PIXEL_RATIO,
+          pixelRatio: EXPORT_MOBILE_PIXEL_RATIO,
         });
 
         let shareBlob: Blob = pngBlob;
@@ -604,14 +639,23 @@ const ShareSessionButton = ({
   return (
     <>
       <Button
-        onClick={handleShare}
-        variant="secondary"
         size="sm"
+        variant="secondary"
+        onClick={handleShare}
         disabled={isMobile && isGeneratingImage}
-        className={`bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/70 backdrop-blur-md flex items-center gap-1 rounded-full inner-stroke-white-20-sm sm:pl-[8px] sm:pr-[10px] py-[6px] pl-[10px] pr-[12px] ${className}`}
+        type="button"
+        className={cn(
+          "bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/70 backdrop-blur-md flex items-center gap-1 rounded-full inner-stroke-white-20-sm sm:px-[10px] py-[6px] px-[12px]",
+          className,
+        )}
       >
-        <Share2 className="h-4 w-4" />
-        <span className="hidden sm:inline">Share</span>
+        <AnimatedShinyText
+          shimmerColor={shimmerColor}
+          shimmerWidth={160}
+          className="text-xs font-medium leading-none"
+        >
+          Share
+        </AnimatedShinyText>
       </Button>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

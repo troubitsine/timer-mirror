@@ -52,6 +52,8 @@ const SessionCompletePage = () => {
                 screenshots={sessionData.screenshots}
                 webcamPhotos={sessionData.webcamPhotos}
                 exportRef={exportRef}
+                selectedBackgroundId={selectedBackgroundId}
+                onBackgroundChange={setSelectedBackgroundId}
               />
             </div>
 
