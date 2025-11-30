@@ -758,7 +758,7 @@ const ShareSessionButton = ({
                 <div className="flex flex-1 min-w-[140px] justify-center">
                   <div className="flex flex-col items-center gap-2">
                     <span className="text-xs text-white/70">Aspect Ratio</span>
-                    <div className="flex items-center justify-center rounded-full bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[3px] inner-stroke-white-20-sm shadow-sm min-w-[120px] min-h-[32px]">
+                    <div className="flex items-center justify-center rounded-full bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[3px] inner-stroke-white-20-sm shadow-sm w-fit min-h-[32px]">
                       <AnimatedTabs
                         defaultValue={aspectRatio}
                         onValueChange={(value) =>
@@ -801,7 +801,7 @@ const ShareSessionButton = ({
                 <div className="flex flex-1 min-w-[140px] justify-center">
                   <div className="flex flex-col items-center gap-2">
                     <span className="text-xs text-white/70">View Style</span>
-                    <div className="flex items-center justify-center rounded-full bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[3px] inner-stroke-white-20-sm shadow-sm min-w-[120px] min-h-[32px]">
+                    <div className="flex items-center justify-center rounded-full bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[3px] inner-stroke-white-20-sm shadow-sm w-fit min-h-[32px]">
                       <AnimatedTabs
                         defaultValue={viewMode}
                         onValueChange={(value) => setViewMode(value as ViewMode)}
