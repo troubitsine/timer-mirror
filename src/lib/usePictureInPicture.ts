@@ -87,7 +87,7 @@ export function usePictureInPicture({
         pipWindow.close();
       }
 
-      // @ts-ignore - TypeScript doesn't know about Document Picture-in-Picture API yet
+      // @ts-expect-error documentPictureInPicture is experimental and not yet in lib DOM types
       const newPipWindow = await window.documentPictureInPicture.requestWindow({
         width: options.width || 400,
         height: options.height || 300,

@@ -39,7 +39,7 @@ export async function initializeMediaCapture(
           screenStream = await navigator.mediaDevices.getDisplayMedia({
             video: {
               displaySurface: "monitor",
-              // @ts-ignore - logicalSurface is not yet in TypeScript's lib definitions but is supported in modern browsers
+              // @ts-expect-error logicalSurface is not yet in TypeScript's lib definitions but is supported in modern browsers
               logicalSurface: true,
               width: { ideal: 1920 },
               height: { ideal: 1080 },
@@ -91,7 +91,7 @@ export async function initializeMediaCapture(
         console.log("🖥️ Screen video element created and appended to body");
 
         // Add reference to window for debugging
-        (window as any).__screenVideo = screenVideo;
+        window.__screenVideo = screenVideo;
 
         // Wait for video to be ready
         const videoReady = await new Promise<boolean>((resolve) => {
@@ -202,131 +202,146 @@ declare global {
   }
 }
 
-export function captureScreenshot(): Promise<string> {
+type BitmapLike = ImageBitmap | {
+  width?: number;
+  height?: number;
+  displayWidth?: number;
+  displayHeight?: number;
+};
+
+type ImageCaptureLike = new (track: MediaStreamTrack) => {
+  grabFrame: () => Promise<BitmapLike>;
+};
+
+const tryImageCaptureFallback = async (
+  track?: MediaStreamTrack | null,
+  defaultWidth?: number,
+  defaultHeight?: number,
+): Promise<string | null> => {
+  const ImageCaptureCtor = (
+    window as unknown as { ImageCapture?: ImageCaptureLike }
+  ).ImageCapture;
+
+  if (!track || !ImageCaptureCtor) {
+    return null;
+  }
+
+  try {
+    const imageCapture = new ImageCaptureCtor(track);
+    const bitmap = await imageCapture.grabFrame();
+
+    const fallbackCanvas = document.createElement("canvas");
+    const fallbackWidth =
+      bitmap.width ?? bitmap.displayWidth ?? defaultWidth ?? 1920;
+    const fallbackHeight =
+      bitmap.height ?? bitmap.displayHeight ?? defaultHeight ?? 1080;
+    fallbackCanvas.width = fallbackWidth;
+    fallbackCanvas.height = fallbackHeight;
+    const fCtx = fallbackCanvas.getContext("2d");
+    if (!fCtx) return null;
+
+    fCtx.drawImage(
+      bitmap as unknown as CanvasImageSource,
+      0,
+      0,
+      fallbackCanvas.width,
+      fallbackCanvas.height,
+    );
+
+    const fallbackDataUrl = fallbackCanvas.toDataURL("image/jpeg", 0.9);
+    if (fallbackDataUrl && fallbackDataUrl.length > 100) {
+      console.log(
+        "✅ ImageCapture fallback successful, length:",
+        fallbackDataUrl.length,
+      );
+      return fallbackDataUrl;
+    }
+  } catch (icErr) {
+    console.error("❌ ImageCapture fallback failed:", icErr);
+  }
+
+  return null;
+};
+
+export async function captureScreenshot(): Promise<string> {
   console.log("[CAPTURE] Using NEW helper");
   console.log("[A] capture helper from", import.meta.url);
-  return new Promise(async (resolve, reject) => {
-    if (!screenVideo) {
-      // If screen capture is not available, return an empty string
-      // This allows the app to continue with just webcam photos on mobile
-      console.log("No screen video element available for screenshot");
-      resolve("");
-      return;
-    }
 
-    try {
-      // Wait until at least one frame is available
-      if (
-        screenVideo.readyState < HTMLMediaElement.HAVE_CURRENT_DATA ||
-        !screenVideo.videoWidth
-      ) {
-        await new Promise<void>((resolve) => {
-          const checkFrame = () => {
-            if (
-              screenVideo.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
-              screenVideo.videoWidth > 0
-            ) {
-              resolve();
-            } else {
-              screenVideo.onloadeddata = () => resolve();
-            }
-          };
-          checkFrame();
-        }).catch(() => console.log("Waiting for video frame timed out"));
-      }
+  if (!screenVideo) {
+    // If screen capture is not available, return an empty string
+    // This allows the app to continue with just webcam photos on mobile
+    console.log("No screen video element available for screenshot");
+    return "";
+  }
 
-      // Get track settings as fallback for dimensions
-      const track = (screenVideo.srcObject as MediaStream)?.getVideoTracks()[0];
-      const { width: trackWidth, height: trackHeight } =
-        track?.getSettings() || {};
-
-      const canvas = document.createElement("canvas");
-      canvas.width = screenVideo.videoWidth || trackWidth || 1920;
-      canvas.height = screenVideo.videoHeight || trackHeight || 1080;
-      const ctx = canvas.getContext("2d");
-
-      if (!ctx) {
-        console.error("Could not get canvas context");
-        resolve("");
-        return;
-      }
-
-      ctx.drawImage(screenVideo, 0, 0, canvas.width, canvas.height);
-
-      // Use a higher quality setting for the JPEG
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
-
-      // Verify that we got a valid data URL
-      if (dataUrl === "data:," || dataUrl.length < 100) {
-        console.error(
-          "Generated empty or invalid screenshot – attempting ImageCapture fallback",
-        );
-
-        // ---------- NEW: ImageCapture fallback ----------
-        try {
-          const track = (
-            screenVideo.srcObject as MediaStream
-          )?.getVideoTracks?.()[0];
-          if (track && "ImageCapture" in window) {
-            // @ts-ignore – ImageCapture is not yet in the TS lib DOM types everywhere
-            const imageCapture = new (window as any).ImageCapture(track);
-            // grabFrame returns a VideoFrame (new spec) or ImageBitmap (old)
-            const bitmap: any = await imageCapture.grabFrame();
-
-            const fallbackCanvas = document.createElement("canvas");
-            // @ts-ignore width/height differ for VideoFrame vs ImageBitmap but both expose them
-            fallbackCanvas.width =
-              bitmap.width || (bitmap as any).displayWidth || 1920;
-            // @ts-ignore
-            fallbackCanvas.height =
-              bitmap.height || (bitmap as any).displayHeight || 1080;
-            const fCtx = fallbackCanvas.getContext("2d");
-            if (fCtx) {
-              // drawBitmap is available for VideoFrame, otherwise we fall back to drawImage
-              if ("drawBitmap" in fCtx) {
-                // @ts-ignore – drawBitmap is experimental
-                await (fCtx as any).drawBitmap(bitmap, 0, 0);
-              } else {
-                // For ImageBitmap we can use drawImage directly
-                // @ts-ignore
-                fCtx.drawImage(
-                  bitmap,
-                  0,
-                  0,
-                  fallbackCanvas.width,
-                  fallbackCanvas.height,
-                );
-              }
-              const fallbackDataUrl = fallbackCanvas.toDataURL(
-                "image/jpeg",
-                0.9,
-              );
-              if (fallbackDataUrl && fallbackDataUrl.length > 100) {
-                console.log(
-                  "✅ ImageCapture fallback successful, length:",
-                  fallbackDataUrl.length,
-                );
-                resolve(fallbackDataUrl);
-                return;
-              }
-            }
+  try {
+    // Wait until at least one frame is available
+    if (
+      screenVideo.readyState < HTMLMediaElement.HAVE_CURRENT_DATA ||
+      !screenVideo.videoWidth
+    ) {
+      await new Promise<void>((resolve) => {
+        const checkFrame = () => {
+          if (
+            screenVideo &&
+            screenVideo.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
+            screenVideo.videoWidth > 0
+          ) {
+            resolve();
+          } else if (screenVideo) {
+            screenVideo.onloadeddata = () => resolve();
+          } else {
+            resolve();
           }
-        } catch (icErr) {
-          console.error("❌ ImageCapture fallback failed:", icErr);
-        }
-        // ---------- END NEW ----------
+        };
+        checkFrame();
+      }).catch(() => console.log("Waiting for video frame timed out"));
+    }
 
-        resolve("");
-        return;
+    const track = (screenVideo.srcObject as MediaStream | null)
+      ?.getVideoTracks?.()[0];
+    const { width: trackWidth, height: trackHeight } =
+      track?.getSettings() || {};
+
+    const canvas = document.createElement("canvas");
+    canvas.width = screenVideo.videoWidth || trackWidth || 1920;
+    canvas.height = screenVideo.videoHeight || trackHeight || 1080;
+    const ctx = canvas.getContext("2d");
+
+    if (!ctx) {
+      console.error("Could not get canvas context");
+      return "";
+    }
+
+    ctx.drawImage(screenVideo, 0, 0, canvas.width, canvas.height);
+
+    // Use a higher quality setting for the JPEG
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+
+    // Verify that we got a valid data URL
+    if (dataUrl === "data:," || dataUrl.length < 100) {
+      console.error(
+        "Generated empty or invalid screenshot – attempting ImageCapture fallback",
+      );
+
+      const fallbackDataUrl = await tryImageCaptureFallback(
+        track ?? null,
+        canvas.width,
+        canvas.height,
+      );
+      if (fallbackDataUrl) {
+        return fallbackDataUrl;
       }
 
-      console.log("[A] len", dataUrl.length, dataUrl.slice(0, 40));
-      resolve(dataUrl);
-    } catch (error) {
-      console.error("Error capturing screenshot:", error);
-      resolve(""); // Return empty string on error to continue with webcam only
+      return "";
     }
-  });
+
+    console.log("[A] len", dataUrl.length, dataUrl.slice(0, 40));
+    return dataUrl;
+  } catch (error) {
+    console.error("Error capturing screenshot:", error);
+    return ""; // Return empty string on error to continue with webcam only
+  }
 }
 
 export function captureWebcam(
