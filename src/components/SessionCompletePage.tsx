@@ -30,6 +30,13 @@ const SessionCompletePage = () => {
     // Scroll to top on mount
     window.scrollTo(0, 0);
 
+    console.log(
+      "[SessionCompletePage] screenshots length:",
+      sessionData.screenshots?.length ?? 0,
+      "webcamPhotos length:",
+      sessionData.webcamPhotos?.length ?? 0,
+    );
+
     track("session_complete", {
       duration: sessionData.duration,
       taskName: sessionData.taskName,

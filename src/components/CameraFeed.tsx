@@ -4,7 +4,6 @@ import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { AlertDialog, AlertDialogContent } from "./ui/alert-dialog";
 import { Maximize2 } from "lucide-react";
-import { Cross2Icon } from "@radix-ui/react-icons";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePictureInPicture } from "@/lib/usePictureInPicture";
 import { captureScreenshot, captureWebcam } from "@/lib/mediaCapture";
@@ -55,6 +54,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
       null,
     );
     const timerRef = useRef<NodeJS.Timeout>();
+    const latestPendingStreamRef = useRef<MediaStream | null>(null);
 
     // Use the PiP hook
     const { enterPiP, showEndMessage } = usePictureInPicture({
@@ -113,14 +113,19 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
       };
     }, []);
 
+    useEffect(() => {
+      latestPendingStreamRef.current = pendingStream;
+    }, [pendingStream]);
+
     // Handle stream attachment when video element becomes available
     useEffect(() => {
-      if (pendingStream && videoRef.current && !videoRef.current.srcObject) {
+      const videoElement = videoRef.current;
+      if (pendingStream && videoElement && !videoElement.srcObject) {
         console.log("Attaching pending stream to video element");
-        videoRef.current.srcObject = pendingStream;
+        videoElement.srcObject = pendingStream;
         setPendingStream(null);
       }
-    }, [pendingStream, hasPermission]);
+    }, [pendingStream, hasPermission, videoRef]);
 
     // Handle timer completion
     useEffect(() => {
@@ -180,18 +185,23 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
       }
 
       // Cleanup function
+      const videoElement = videoRef.current;
       return () => {
-        if (videoRef.current?.srcObject) {
-          const tracks = (
-            videoRef.current.srcObject as MediaStream
-          ).getTracks();
+        const activePending = latestPendingStreamRef.current;
+        if (videoElement?.srcObject) {
+          const tracks = (videoElement.srcObject as MediaStream).getTracks();
           tracks.forEach((track) => track.stop());
         }
-        if (pendingStream) {
-          pendingStream.getTracks().forEach((track) => track.stop());
+        if (activePending) {
+          activePending.getTracks().forEach((track) => track.stop());
         }
       };
-    }, [skipInitialCameraRequest, onPermissionGranted, onPermissionDenied]);
+    }, [
+      skipInitialCameraRequest,
+      onPermissionGranted,
+      onPermissionDenied,
+      videoRef,
+    ]);
 
     // Predefined duration options - adjust for mobile
     const durationOptions = isMobile

@@ -1,4 +1,11 @@
-import React, { useEffect, useMemo, useState, useId } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useId,
+} from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { RotateCw } from "lucide-react";
@@ -140,19 +147,33 @@ const SessionMontage = ({
 
   const exportBackgroundStyle = { ...(selectedBackground?.style ?? {}) };
 
+  const numberOfCards = Math.min(allPhotos.length, 12); // Limit to 12 cards max
+
+  useEffect(() => {
+    console.log(
+      "[SessionMontage] allPhotos length:",
+      allPhotos.length,
+      "numberOfCards:",
+      numberOfCards,
+    );
+  }, [allPhotos.length, numberOfCards]);
+
   // Animation states
   const [animationPhase, setAnimationPhase] = useState<
     "initial" | "spread" | "pile" | "fadeOut"
   >("initial");
-  const [isHovering, setIsHovering] = useState(false);
   const [badgeVisible, setBadgeVisible] = useState(false);
+  const animationPhaseRef = useRef(animationPhase);
+
+  useEffect(() => {
+    animationPhaseRef.current = animationPhase;
+  }, [animationPhase]);
 
   // State to track the order of photos for the shuffle effect
-  const [photoOrder, setPhotoOrder] = useState<number[]>([]);
+  const [photoOrder, setPhotoOrder] = useState<number[]>(() =>
+    Array.from({ length: numberOfCards }, (_, i) => i),
+  );
   const [isShuffling, setIsShuffling] = useState(false);
-
-  // Calculate number of cards based on available photos
-  const numberOfCards = Math.min(allPhotos.length, 12); // Limit to 12 cards max
 
   // Calculate spiral parameters
   const baseRadius = 100; // Starting radius for the innermost circle
@@ -202,70 +223,40 @@ const SessionMontage = ({
   }, [numberOfCards, rotationSeed]);
 
   // Start the animation sequence
-  const startAnimation = () => {
-    // First fade out the current pile to the center
-    if (animationPhase === "pile") {
-      // Create a temporary animation phase for the fade out
-      const tempPhase = "fadeOut";
-      setAnimationPhase(tempPhase as any);
-
-      // Wait for fade out animation to complete - further reduced time for even faster transition
-      setTimeout(() => {
-        // Then reset to initial state
-        setAnimationPhase("initial");
-        setIsHovering(false);
-
-        // Show badge if not already visible
-        if (!badgeVisible) {
-          setBadgeVisible(true);
-        }
-
-        // Start the spread animation after a very short delay
-        setTimeout(() => {
-          setAnimationPhase("spread");
-
-          // After all cards have spread out, trigger the pile animation
-          const spreadDuration = numberOfCards * 80 + 800; // Reduced base time and stagger delay
-          setTimeout(() => {
-            setAnimationPhase("pile");
-          }, spreadDuration);
-        }, 300); // Further reduced delay for snappier transition
-      }, 200); // Further reduced time for fade out animation
-    } else {
-      // If not already in pile phase, just start the normal animation sequence
+  const startAnimation = useCallback(() => {
+    const runSequence = () => {
       setAnimationPhase("initial");
-      setIsHovering(false);
+      setBadgeVisible(true);
 
-      // Show badge if not already visible
-      if (!badgeVisible) {
-        setBadgeVisible(true);
-      }
-
-      // Start the spread animation after a shorter delay
       setTimeout(() => {
         setAnimationPhase("spread");
 
-        // After all cards have spread out, trigger the pile animation
         const spreadDuration = numberOfCards * 80 + 800; // Reduced base time and stagger delay
         setTimeout(() => {
           setAnimationPhase("pile");
         }, spreadDuration);
       }, 500); // Reduced delay to allow badge to appear first but be snappier
+    };
+
+    if (animationPhaseRef.current === "pile") {
+      setAnimationPhase("fadeOut");
+      setTimeout(runSequence, 200); // Faster fade out before restarting
+    } else {
+      runSequence();
     }
-  };
-
-  // Auto-start animation on first load
-  useEffect(() => {
-    startAnimation();
-
-    // Initialize photo order
-    setPhotoOrder(Array.from({ length: numberOfCards }, (_, i) => i));
   }, [numberOfCards]);
 
-  // Cleanup function
+  // Auto-start animation on first load or when card count changes
   useEffect(() => {
-    return () => {};
-  }, [numberOfCards]);
+    if (numberOfCards === 0) return;
+
+    const frame = requestAnimationFrame(() => {
+      setPhotoOrder(Array.from({ length: numberOfCards }, (_, i) => i));
+      startAnimation();
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [numberOfCards, startAnimation]);
 
   // No need for extractColorsFromImage effect - handled by the hook
 
@@ -367,10 +358,6 @@ const SessionMontage = ({
               whileHover={
                 animationPhase === "pile" && !isShuffling ? { scale: 1.15 } : {}
               }
-              onMouseEnter={() =>
-                animationPhase === "pile" && setIsHovering(true)
-              }
-              onMouseLeave={() => setIsHovering(false)}
               onClick={() => {
                 if (animationPhase === "pile" && !isShuffling) {
                   // Shuffle the cards - move the top card to the bottom

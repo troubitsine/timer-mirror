@@ -3,7 +3,6 @@ import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { RotateCw } from "lucide-react";
 import { motion, useAnimation } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import { isMobileDevice } from "@/lib/deviceDetection";
 import BackgroundColorSelector from "./BackgroundColorSelector";
 import { cn } from "@/lib/utils";
@@ -23,20 +22,27 @@ interface ShareSessionMontageProps {
   aspectRatio?: "16:9" | "1:1" | "9:16";
 }
 
+type CardState = {
+  id: number;
+  src: string;
+  pos: number;
+  z: number;
+  rot: number;
+};
+
 const ShareSessionMontage = ({
   screenshots = [],
   webcamPhotos = [],
   taskName = "Focus Session",
   duration = 25,
-  onSave = () => {},
+  onSave: _onSave = () => {},
   initialSelectedBackgroundId,
   onBackgroundSelect,
   hideControls = false,
   selectedBackgroundId: externalSelectedBackgroundId,
-  setSelectedBackgroundId: externalSetSelectedBackgroundId,
+  setSelectedBackgroundId: _externalSetSelectedBackgroundId,
   aspectRatio = "16:9",
 }: ShareSessionMontageProps) => {
-  const navigate = useNavigate();
   const isMobile = isMobileDevice();
   const foregroundScale = isMobile ? 1 : 0.67;
 
@@ -121,7 +127,11 @@ const ShareSessionMontage = ({
     ) {
       setSelectedBackgroundId(externalSelectedBackgroundId);
     }
-  }, [externalSelectedBackgroundId]);
+  }, [
+    externalSelectedBackgroundId,
+    selectedBackgroundId,
+    setSelectedBackgroundId,
+  ]);
 
   // Animation config
   const H_X_STEP = 4; // horizontal distance between stacked cards
@@ -142,61 +152,74 @@ const ShareSessionMontage = ({
   // Calculate the base X position to center the stack horizontally
   const HR_BASE_X = -((numberOfCards - 1) * H_X_STEP) / 2;
 
-  const randRot = () => (Math.random() - 0.5) * 8;
+  const randRot = useCallback(() => (Math.random() - 0.5) * 8, []);
 
-  // Initialize cards with positions, rotations, and their own image source
-  const [cards, setCards] = useState(() =>
-    Array.from({ length: numberOfCards }, (_, i) => ({
-      id: i + 1,
-      src: allPhotos[i % allPhotos.length], // each card keeps its own photo
-      pos: i, // 0 = top of the stack
-      z: numberOfCards - i, // higher z = on top
-      rot: randRot(),
-    })),
+  const buildCards = useCallback(
+    (): CardState[] =>
+      Array.from({ length: numberOfCards }, (_, i) => ({
+        id: i + 1,
+        src: allPhotos[i % allPhotos.length], // each card keeps its own photo
+        pos: i,
+        z: numberOfCards - i,
+        rot: randRot(),
+      })),
+    [allPhotos, numberOfCards, randRot],
   );
+
+  const [cards, setCards] = useState<CardState[]>(() => buildCards());
 
   const [movingId, setMovingId] = useState<number | null>(null);
   const controls = useAnimation();
-  const [badgeVisible, setBadgeVisible] = useState(true);
-
   // --- Pose helpers ---------------------------------------------------
-  const basePose = (c: any) => ({
-    x: HR_BASE_X + c.pos * H_X_STEP,
-    y: 0, // Changed from -10 to 0 for true centering
-    rotate: c.rot,
-    zIndex: c.z,
-  });
+  const basePose = useCallback(
+    (c: CardState) => ({
+      x: HR_BASE_X + c.pos * H_X_STEP,
+      y: 0, // Changed from -10 to 0 for true centering
+      rotate: c.rot,
+      zIndex: c.z,
+    }),
+    [HR_BASE_X, H_X_STEP],
+  );
 
-  const liftPose = (c: any) => ({
-    ...basePose(c),
-    y: -24, // Adjusted from -34
-    rotate: c.rot + 6,
-    zIndex: 200,
-    scale: 0.96,
-    opacity: 1,
-    transition: { type: "spring", stiffness: 320, damping: 32 },
-  });
+  const liftPose = useCallback(
+    (c: CardState) => ({
+      ...basePose(c),
+      y: -24, // Adjusted from -34
+      rotate: c.rot + 6,
+      zIndex: 200,
+      scale: 0.96,
+      opacity: 1,
+      transition: { type: "spring", stiffness: 320, damping: 32 },
+    }),
+    [basePose],
+  );
 
-  const peelPose = (c: any) => ({
-    ...basePose(c),
-    x: basePose(c).x + 120,
-    y: 20,
-    rotate: c.rot + 18,
-    zIndex: 0,
-    scale: 0.9,
-    opacity: 1,
-    transition: { type: "spring", stiffness: 260, damping: 22 },
-  });
+  const peelPose = useCallback(
+    (c: CardState) => ({
+      ...basePose(c),
+      x: basePose(c).x + 120,
+      y: 20,
+      rotate: c.rot + 18,
+      zIndex: 0,
+      scale: 0.9,
+      opacity: 1,
+      transition: { type: "spring", stiffness: 260, damping: 22 },
+    }),
+    [basePose],
+  );
 
-  const backPose = (len: number) => ({
-    x: HR_BASE_X + (len - 1) * H_X_STEP,
-    y: -10, // Adjusted from -20
-    rotate: 0,
-    scale: 1,
-    opacity: 1,
-    zIndex: 1,
-    transition: { type: "spring", stiffness: 300, damping: 22 },
-  });
+  const backPose = useCallback(
+    (len: number) => ({
+      x: HR_BASE_X + (len - 1) * H_X_STEP,
+      y: -10, // Adjusted from -20
+      rotate: 0,
+      scale: 1,
+      opacity: 1,
+      zIndex: 1,
+      transition: { type: "spring", stiffness: 300, damping: 22 },
+    }),
+    [HR_BASE_X, H_X_STEP],
+  );
 
   // --- Shuffle cycle --------------------------------------------------
   const shuffle = useCallback(async () => {
@@ -208,7 +231,6 @@ const ShareSessionMontage = ({
     await controls.start(peelPose(top));
     await controls.start(backPose(cards.length));
 
-    // Re-order array ---------------------------------------------------
     setCards((prev) => {
       const next = prev.map((o) => ({ ...o }));
       next.forEach((c) => {
@@ -227,44 +249,12 @@ const ShareSessionMontage = ({
     });
 
     setMovingId(null);
-  }, [cards, controls]);
+  }, [backPose, cards, controls, liftPose, peelPose, randRot]);
 
   // Start the animation sequence
-  const startAnimation = () => {
-    // Reset the cards to their initial positions
-    setCards(
-      Array.from({ length: numberOfCards }, (_, i) => ({
-        id: i + 1,
-        src: allPhotos[i % allPhotos.length], // each card keeps its own photo
-        pos: i,
-        z: numberOfCards - i,
-        rot: randRot(),
-      })),
-    );
-
-    // Show badge if not already visible
-    if (!badgeVisible) {
-      setBadgeVisible(true);
-    }
-  };
-
-  // Initialize cards on photo change
-  useEffect(() => {
-    setCards(
-      Array.from({ length: numberOfCards }, (_, i) => ({
-        id: i + 1,
-        src: allPhotos[i % allPhotos.length], // each card keeps its own photo
-        pos: i,
-        z: numberOfCards - i,
-        rot: randRot(),
-      })),
-    );
-  }, [numberOfCards, allPhotos]);
-
-  // Cleanup function
-  useEffect(() => {
-    return () => {};
-  }, [numberOfCards]);
+  const startAnimation = useCallback(() => {
+    setCards(buildCards());
+  }, [buildCards]);
 
   return (
     <Card
@@ -353,7 +343,7 @@ const ShareSessionMontage = ({
                   onTap={shuffle}
                 >
                   {/* Card stack */}
-                  {cards.map((card, index) => {
+                  {cards.map((card, _index) => {
                     return (
                       <motion.div
                         key={`photo-${card.id}`}
