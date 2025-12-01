@@ -1,20 +1,15 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useId,
-} from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState, useId } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { RotateCw } from "lucide-react";
-import { motion } from "framer-motion";
-import { isMobileDevice } from "@/lib/deviceDetection";
+import { motion, AnimatePresence } from "framer-motion";
 import BackgroundColorSelector from "./BackgroundColorSelector";
 import { cn } from "@/lib/utils";
 import { useDynamicBackground } from "@/lib/useDynamicBackground";
+import { useSessionMedia } from "@/lib/useSessionMedia";
 import ShareWatermark from "./ShareWatermark";
+import CardStack, { CardStackRef } from "./CardStack";
+import SpiralAnimation from "./SpiralAnimation";
 
 interface SessionMontageProps {
   screenshots?: string[];
@@ -29,21 +24,11 @@ interface SessionMontageProps {
 
 const hashToSeed = (value: string) => {
   let hash = 0;
-
   for (let i = 0; i < value.length; i++) {
     hash = (hash << 5) - hash + value.charCodeAt(i);
     hash |= 0;
   }
-
   return Math.abs(hash) + 1;
-};
-
-const createDeterministicRandom = (seed: number) => {
-  let currentSeed = seed;
-  return () => {
-    const x = Math.sin(currentSeed++) * 10000;
-    return x - Math.floor(x);
-  };
 };
 
 const SessionMontage = ({
@@ -56,8 +41,13 @@ const SessionMontage = ({
   hideControls = false,
   exportRef,
 }: SessionMontageProps) => {
-  const isMobile = isMobileDevice();
   const componentId = useId();
+
+  // Use shared media hook
+  const { allPhotos, lastPhoto, numberOfCards, isMobile } = useSessionMedia({
+    screenshots,
+    webcamPhotos,
+  });
 
   const circleSeed = useMemo(
     () => hashToSeed(`${componentId}-circle`),
@@ -67,65 +57,6 @@ const SessionMontage = ({
     () => hashToSeed(`${componentId}-rotation`),
     [componentId],
   );
-
-  // Get the last photo for color extraction
-
-  // Helper function to interleave two arrays
-  const interleaveArrays = (arr1: string[], arr2: string[]): string[] => {
-    const result: string[] = [];
-    const maxLength = Math.max(arr1.length, arr2.length);
-    for (let i = 0; i < maxLength; i++) {
-      if (arr1[i]) result.push(arr1[i]);
-      if (arr2[i]) result.push(arr2[i]);
-    }
-    return result;
-  };
-
-  // Determine which photos to use based on device and available data
-  const allPhotos = useMemo(() => {
-    // Simple filter for valid images
-    const validScreenshots = screenshots.filter((s) => s && s.length > 0);
-    const validWebcamPhotos = webcamPhotos.filter((p) => p && p.length > 0);
-
-    console.log(
-      `Valid screenshots: ${validScreenshots.length}, Valid webcam photos: ${validWebcamPhotos.length}`,
-    );
-
-    // Check if we have valid screenshots available
-    const hasScreenshots = validScreenshots.length > 0;
-
-    if (isMobile || !hasScreenshots) {
-      // On mobile or when no valid screenshots are available, only use webcam photos
-      return [...validWebcamPhotos];
-    } else {
-      // For desktop with valid screenshots, interleave screenshots and webcam photos
-      return interleaveArrays(validScreenshots, validWebcamPhotos);
-    }
-  }, [screenshots, webcamPhotos, isMobile]);
-
-  // Get the last photo for color extraction
-  const lastPhoto = useMemo(() => {
-    // First, filter out any empty strings or invalid entries - simplified
-    const validScreenshots = screenshots.filter(Boolean);
-    const validWebcamPhotos = webcamPhotos.filter(Boolean);
-
-    // Check if we have valid screenshots available
-    const hasScreenshots = validScreenshots.length > 0;
-
-    if (isMobile || !hasScreenshots) {
-      // On mobile or when no valid screenshots are available, use the last webcam photo
-      return validWebcamPhotos.length > 0
-        ? validWebcamPhotos[validWebcamPhotos.length - 1]
-        : null;
-    } else {
-      // On desktop with valid screenshots, prefer the last screenshot, fallback to webcam photo
-      return validScreenshots.length > 0
-        ? validScreenshots[validScreenshots.length - 1]
-        : validWebcamPhotos.length > 0
-          ? validWebcamPhotos[validWebcamPhotos.length - 1]
-          : null;
-    }
-  }, [screenshots, webcamPhotos, isMobile]);
 
   // Use the dynamic background hook with initial selection and callback
   const {
@@ -143,16 +74,8 @@ const SessionMontage = ({
 
   const exportBackgroundStyle = { ...(selectedBackground?.style ?? {}) };
 
-  const numberOfCards = Math.min(allPhotos.length, 12); // Limit to 12 cards max
-
-  useEffect(() => {
-    console.log(
-      "[SessionMontage] allPhotos length:",
-      allPhotos.length,
-      "numberOfCards:",
-      numberOfCards,
-    );
-  }, [allPhotos.length, numberOfCards]);
+  // CardStack ref for pile phase
+  const cardStackRef = useRef<CardStackRef>(null);
 
   // Animation states
   const [animationPhase, setAnimationPhase] = useState<
@@ -164,75 +87,26 @@ const SessionMontage = ({
     animationPhaseRef.current = animationPhase;
   }, [animationPhase]);
 
-  // State to track the order of photos for the shuffle effect
-  const [photoOrder, setPhotoOrder] = useState<number[]>(() =>
-    Array.from({ length: numberOfCards }, (_, i) => i),
-  );
-  const [isShuffling, setIsShuffling] = useState(false);
-
-  // Calculate spiral parameters
-  const baseRadius = 100; // Starting radius for the innermost circle
-  const radiusIncrement = 8; // How much to increase radius for each circle
-
-  // Create circles data structure with random photos per circle
-  const circlesData = useMemo(() => {
-    const random = createDeterministicRandom(circleSeed);
-    const circles = [];
-    let remainingPhotos = numberOfCards;
-    let currentCircle = 0;
-
-    while (remainingPhotos > 0) {
-      // Get random number of photos for this circle (between 4-6)
-      // But don't exceed remaining photos
-      const photosInThisCircle = Math.min(
-        Math.floor(random() * 3) + 4,
-        remainingPhotos,
-      );
-
-      circles.push({
-        circleIndex: currentCircle,
-        photosCount: photosInThisCircle,
-        radius: baseRadius + currentCircle * radiusIncrement,
-      });
-
-      remainingPhotos -= photosInThisCircle;
-      currentCircle++;
-    }
-
-    return circles;
-  }, [circleSeed, numberOfCards]);
-
-  // Generate random rotations for the pile effect
-  const randomRotations = useMemo(() => {
-    const random = createDeterministicRandom(rotationSeed);
-
-    return Array.from({ length: numberOfCards }).map((_, index) => {
-      const randomRotation = random() * 16 - 8; // Random rotation between -8 and 8 degrees
-      const rotate = index % 2 === 0 ? randomRotation : -randomRotation; // Alternate sign
-      return {
-        rotate: rotate,
-      };
-    });
-  }, [numberOfCards, rotationSeed]);
-
   // Start the animation sequence
   const startAnimation = useCallback(() => {
     const runSequence = () => {
       setAnimationPhase("initial");
+      // Reset CardStack when replaying
+      cardStackRef.current?.reset();
 
       setTimeout(() => {
         setAnimationPhase("spread");
 
-        const spreadDuration = numberOfCards * 80 + 800; // Reduced base time and stagger delay
+        const spreadDuration = numberOfCards * 80 + 800;
         setTimeout(() => {
           setAnimationPhase("pile");
         }, spreadDuration);
-      }, 500); // Reduced delay to allow badge to appear first but be snappier
+      }, 500);
     };
 
     if (animationPhaseRef.current === "pile") {
       setAnimationPhase("fadeOut");
-      setTimeout(runSequence, 200); // Faster fade out before restarting
+      setTimeout(runSequence, 200);
     } else {
       runSequence();
     }
@@ -243,51 +117,12 @@ const SessionMontage = ({
     if (numberOfCards === 0) return;
 
     const frame = requestAnimationFrame(() => {
-      setPhotoOrder(Array.from({ length: numberOfCards }, (_, i) => i));
       startAnimation();
     });
 
     return () => cancelAnimationFrame(frame);
   }, [numberOfCards, startAnimation]);
 
-  // No need for extractColorsFromImage effect - handled by the hook
-
-  // Calculate position data for each photo
-  const photoPositions = useMemo(() => {
-    const positions = [];
-    let photoIndex = 0;
-
-    // For each circle
-    for (const circle of circlesData) {
-      const photosInCircle = circle.photosCount;
-      const angleOffsetPerCard = 360 / photosInCircle;
-      const angleOffset = 250; // Offset in degrees to start from top-left
-
-      // For each photo in this circle
-      for (let i = 0; i < photosInCircle; i++) {
-        if (photoIndex >= numberOfCards) break;
-
-        // Calculate the angle for this card (in radians)
-        const angle = ((i * angleOffsetPerCard + angleOffset) * Math.PI) / 180;
-
-        // Calculate the spread position using trigonometry
-        const spreadX = circle.radius * Math.cos(angle);
-        const spreadY = circle.radius * Math.sin(angle);
-
-        positions.push({
-          photoIndex,
-          angle,
-          spreadX,
-          spreadY,
-          circleIndex: circle.circleIndex,
-        });
-
-        photoIndex++;
-      }
-    }
-
-    return positions;
-  }, [circlesData, numberOfCards]);
 
   return (
     <Card
@@ -340,147 +175,39 @@ const SessionMontage = ({
 
       <div className="flex flex-col h-full items-center justify-center">
         <div className="h-[260px] w-full max-w-[500px] flex items-center justify-center mb-5">
-          {/* Spiral animation */}
-          {numberOfCards > 0 && (
-            <motion.div
-              className={`relative h-full w-full flex items-center justify-center ${
-                animationPhase === "pile" ? "cursor-pointer" : ""
-              }`}
-              style={{ transformOrigin: "center" }}
-              whileHover={
-                animationPhase === "pile" && !isShuffling ? { scale: 1.15 } : {}
-              }
-              onClick={() => {
-                if (animationPhase === "pile" && !isShuffling) {
-                  // Shuffle the cards - move the top card to the bottom
-                  setIsShuffling(true);
-                  setTimeout(() => {
-                    setPhotoOrder((prev) => {
-                      const newOrder = [...prev];
-                      const topCard = newOrder.shift();
-                      if (topCard !== undefined) newOrder.push(topCard);
-                      return newOrder;
-                    });
-                    setIsShuffling(false);
-                  }, 500); // Wait for animation to complete
-                }
-              }}
-            >
-              {photoPositions.map((position, index) => {
-                // Get the actual index from the photoOrder array to determine which photo to show
-                const orderIndex =
-                  photoOrder[index] !== undefined ? photoOrder[index] : index;
+          <AnimatePresence mode="wait">
+            {/* Spiral animation - shown during initial, spread, and fadeOut */}
+            {animationPhase !== "pile" && numberOfCards > 0 && (
+              <SpiralAnimation
+                photos={allPhotos}
+                numberOfCards={numberOfCards}
+                isMobile={isMobile}
+                animationPhase={animationPhase as "initial" | "spread" | "fadeOut"}
+                circleSeed={circleSeed}
+                rotationSeed={rotationSeed}
+              />
+            )}
 
-                // Use the actual photo from allPhotos
-                const photo = allPhotos[orderIndex % allPhotos.length];
-
-                // Get random rotation for pile effect
-                const { rotate } = randomRotations[index];
-
-                // Determine if this is the top card being shuffled
-                const isTopCard = index === 0 && isShuffling;
-
-                return (
-                  <motion.div
-                    key={`photo-${orderIndex}`}
-                    className="absolute left-1/2 top-1/2"
-                    style={{
-                      zIndex:
-                        animationPhase === "pile" ? numberOfCards - index : 1,
-                    }}
-                    initial={{
-                      x: 0,
-                      y: 0,
-                      scale: 0,
-                      opacity: 0,
-                      rotate: -20,
-                      zIndex: 1,
-                    }}
-                    animate={
-                      animationPhase === "initial"
-                        ? {}
-                        : animationPhase === "spread"
-                          ? {
-                              x: position.spreadX,
-                              y: position.spreadY,
-                              scale: 1,
-                              opacity: 1,
-                              rotate: 0,
-                              zIndex: 1,
-                            }
-                          : animationPhase === "fadeOut"
-                            ? {
-                                // Fade out to center animation - faster and more dramatic
-                                x: -50,
-                                y: -50,
-                                scale: 0.4, // Smaller scale for more dramatic effect
-                                opacity: 0,
-                                rotate: 0,
-                                zIndex: numberOfCards - index,
-                              }
-                            : isTopCard
-                              ? {
-                                  // Top card being shuffled animation - moves down faster
-                                  x: -35,
-                                  y: 60, // Increased distance for more dramatic effect
-                                  scale: 0.5, // Smaller scale for more dramatic effect
-                                  opacity: 0,
-                                  rotate: rotate * 1.2, // More rotation for more dramatic effect
-                                  zIndex: numberOfCards + 1,
-                                }
-                              : index === 0 && !isShuffling
-                                ? {
-                                    // New top card - scale up by 8%
-                                    x: 0, // Center horizontally
-                                    y: 0, // Center vertically
-                                    scale: 1.06, // Scale up by 8% for more emphasis
-                                    opacity: 1,
-                                    rotate: rotate,
-                                    zIndex: numberOfCards,
-                                  }
-                                : {
-                                    // pile phase for other cards
-                                    x: 0, // Center horizontally
-                                    y: 0, // Center vertically
-                                    scale: 1,
-                                    opacity: 1,
-                                    rotate: rotate,
-                                    zIndex: numberOfCards - index,
-                                  }
-                    }
-                    // Removed individual card hover effect since we're scaling the entire pile
-                    transition={{
-                      type: animationPhase === "fadeOut" ? "tween" : "spring",
-                      stiffness: animationPhase === "spread" ? 300 : 350, // Increased stiffness for snappier spring
-                      damping: animationPhase === "spread" ? 18 : 22, // Reduced damping for more bounce
-                      delay: animationPhase === "spread" ? index * 0.08 : 0, // Reduced stagger delay
-                      duration: animationPhase === "fadeOut" ? 0.15 : 0.4, // Even faster fadeOut animation
-                      ease:
-                        animationPhase === "fadeOut" ? "circOut" : undefined, // Changed to circOut for even snappier feel
-                    }}
-                  >
-                    <div
-                      className={cn(
-                        "-translate-x-1/2 -translate-y-1/2 bg-white rounded-[15px] p-[5px] inner-stroke-black-5-sm",
-                        isMobile
-                          ? "h-[160px] w-[130px]"
-                          : "h-[180px] w-[240px]",
-                      )}
-                    >
-                      <img
-                        src={photo}
-                        alt={`Photo ${index + 1}`}
-                        loading="eager"
-                        decoding="async"
-                        className="
-    w-full h-full object-cover inner-stroke-black-10-xs rounded-[11px] z-30"
-                      />
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </motion.div>
-          )}
+            {/* CardStack - shown during pile phase for shuffling */}
+            {animationPhase === "pile" && numberOfCards > 0 && (
+              <motion.div
+                key="cardstack"
+                className="relative h-full w-full flex items-center justify-center"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+              >
+                <CardStack
+                  ref={cardStackRef}
+                  photos={allPhotos}
+                  numberOfCards={numberOfCards}
+                  isMobile={isMobile}
+                  aspectRatio="16:9"
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Background color selector - only show when dynamic colors are available and controls aren't hidden */}
