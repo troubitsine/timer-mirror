@@ -16,7 +16,7 @@ export function usePictureInPicture({
   videoRef,
   taskName,
   remainingTime,
-  onSessionComplete = () => {},
+  onSessionComplete: _onSessionComplete = () => {},
 }: UsePictureInPictureProps) {
   const [pipWindow, setPipWindow] = useState<Window | null>(null);
 

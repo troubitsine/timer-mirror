@@ -6,8 +6,6 @@ import {
   Dialog,
   DialogClose,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
@@ -20,7 +18,6 @@ import ShareWatermark from "./ShareWatermark";
 import { AnimatedShinyText } from "./ui/AnimatedShinyText";
 import { cn } from "@/lib/utils";
 import {
-  blobToTypedFile,
   exportSessionImage,
   fileFromBlob,
   generateShareFilename,
@@ -28,7 +25,6 @@ import {
   pngBlobToJpegBlob,
 } from "@/lib/exportSessionImage";
 import {
-  EXPORT_PIXEL_RATIO,
   EXPORT_SHARE_TEXT,
   EXPORT_SHARE_TITLE,
   EXPORT_MOBILE_PIXEL_RATIO,

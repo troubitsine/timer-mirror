@@ -28,7 +28,6 @@ const TimerCard = ({
   skipInitialCameraRequest = false,
 }: TimerCardProps) => {
   const [isRunning, setIsRunning] = useState(false);
-  const [remainingTime, setRemainingTime] = useState(0);
   const [sessionDuration, setSessionDuration] = useState(0);
   const [taskName, setTaskName] = useState("");
   const [sessionData, setSessionData] = useState<{
@@ -132,7 +131,6 @@ const TimerCard = ({
     // This allows the app to work even if screen capture permission is denied
     const totalDurationSec = duration * 60;
     setSessionDuration(totalDurationSec);
-    setRemainingTime(totalDurationSec);
     setSessionData({ screenshots: [], webcamPhotos: [] });
     setIsRunning(true);
     onSessionStart();

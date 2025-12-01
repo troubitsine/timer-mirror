@@ -1,6 +1,6 @@
 console.log("⚡ CAPTURE helper loaded from", import.meta.url);
 
-import { isMobileDevice, isScreenCaptureSupported } from "./deviceDetection";
+import { isScreenCaptureSupported } from "./deviceDetection";
 
 let screenVideo: HTMLVideoElement | null = null;
 let webcamVideo: HTMLVideoElement | null = null;

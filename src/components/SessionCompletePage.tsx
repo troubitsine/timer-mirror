@@ -4,8 +4,6 @@ import SessionGridView from "./SessionGridView";
 import { useState, useEffect, useRef } from "react";
 import { track } from "@vercel/analytics";
 import { Button } from "./ui/button";
-import { Grid2X2, Layers } from "lucide-react";
-import { motion } from "framer-motion";
 import AnimatedTabs from "./ui/animated-tabs";
 import ShareSessionButton from "./ShareSessionButton";
 

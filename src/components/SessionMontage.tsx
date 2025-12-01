@@ -10,7 +10,6 @@ import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { RotateCw } from "lucide-react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import { isMobileDevice } from "@/lib/deviceDetection";
 import BackgroundColorSelector from "./BackgroundColorSelector";
 import { cn } from "@/lib/utils";
@@ -22,7 +21,6 @@ interface SessionMontageProps {
   webcamPhotos?: string[];
   taskName?: string;
   duration?: number;
-  onSave?: () => void;
   initialSelectedBackgroundId?: string;
   onBackgroundSelect?: (id: string) => void;
   hideControls?: boolean;
@@ -53,13 +51,11 @@ const SessionMontage = ({
   webcamPhotos = [],
   taskName = "Focus Session",
   duration = 25,
-  onSave = () => {},
   initialSelectedBackgroundId,
   onBackgroundSelect,
   hideControls = false,
   exportRef,
 }: SessionMontageProps) => {
-  const navigate = useNavigate();
   const isMobile = isMobileDevice();
   const componentId = useId();
 
@@ -162,7 +158,6 @@ const SessionMontage = ({
   const [animationPhase, setAnimationPhase] = useState<
     "initial" | "spread" | "pile" | "fadeOut"
   >("initial");
-  const [badgeVisible, setBadgeVisible] = useState(false);
   const animationPhaseRef = useRef(animationPhase);
 
   useEffect(() => {
@@ -216,8 +211,6 @@ const SessionMontage = ({
       const rotate = index % 2 === 0 ? randomRotation : -randomRotation; // Alternate sign
       return {
         rotate: rotate,
-        x: random() * 20 - 10, // Small random x offset
-        y: random() * 20 - 10, // Small random y offset
       };
     });
   }, [numberOfCards, rotationSeed]);
@@ -226,7 +219,6 @@ const SessionMontage = ({
   const startAnimation = useCallback(() => {
     const runSequence = () => {
       setAnimationPhase("initial");
-      setBadgeVisible(true);
 
       setTimeout(() => {
         setAnimationPhase("spread");
@@ -383,11 +375,7 @@ const SessionMontage = ({
                 const photo = allPhotos[orderIndex % allPhotos.length];
 
                 // Get random rotation for pile effect
-                const {
-                  rotate,
-                  x: pileOffsetX,
-                  y: pileOffsetY,
-                } = randomRotations[index];
+                const { rotate } = randomRotations[index];
 
                 // Determine if this is the top card being shuffled
                 const isTopCard = index === 0 && isShuffling;
