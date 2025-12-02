@@ -28,3 +28,25 @@ Brief: merge ShareSessionMontage’s shuffle stack into SessionMontage while uni
 ## Step 6 — Cleanup and regression pass
 - Action: Remove obsolete code paths, ensure files stay ≤300 LOC with brief headers. Re-read all touched files to confirm consistency.
 - Verify: `npm run lint && npm run build`. Final Playwright MCP pass: load key screens, test background selector, spiral→stack shuffle, grid display, `hideControls` (if exposable), and confirm watermark/badge placement. Archive final snapshots for before/after comparison.
+
+
+Summary
+
+New shared modules created:
+•  src/lib/useSessionMedia.ts - Shared hook for photo interleaving and media selection logic
+•  src/components/SessionFrame.tsx - Wrapper component with dynamic background, badge, controls, watermark
+•  src/components/CardStack.tsx - Reusable shuffleable photo stack with lift/peel/back animations
+•  src/components/SpiralAnimation.tsx - Extracted spiral fan-out animation
+•  src/components/TaskBadgeRefContext.tsx - Context for sharing taskBadgeRef with custom badge content
+
+Components refactored:
+•  SessionMontage - Now uses useSessionMedia, SpiralAnimation, and CardStack (266 LOC, down from 530+)
+•  ShareSessionMontage - Now uses useSessionMedia and CardStack (200 LOC)
+•  SessionGridView - Now uses useSessionMedia and SessionFrame with context hook (241 LOC)
+
+Key improvements:
+•  Eliminated duplicate photo interleaving logic across 3 components
+•  Unified shuffle behavior via shared CardStack component
+•  SessionFrame provides consistent background/badge/watermark infrastructure
+•  All component files now ≤300 LOC
+•  Lint passes and build succeeds

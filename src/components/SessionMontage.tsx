@@ -2,14 +2,13 @@ import React, { useCallback, useEffect, useMemo, useRef, useState, useId } from 
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { RotateCw } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import BackgroundColorSelector from "./BackgroundColorSelector";
 import { cn } from "@/lib/utils";
 import { useDynamicBackground } from "@/lib/useDynamicBackground";
 import { useSessionMedia } from "@/lib/useSessionMedia";
 import ShareWatermark from "./ShareWatermark";
-import CardStack, { CardStackRef } from "./CardStack";
-import SpiralAnimation from "./SpiralAnimation";
+import UnifiedPhotoAnimation from "./UnifiedPhotoAnimation";
 
 interface SessionMontageProps {
   screenshots?: string[];
@@ -74,12 +73,9 @@ const SessionMontage = ({
 
   const exportBackgroundStyle = { ...(selectedBackground?.style ?? {}) };
 
-  // CardStack ref for pile phase
-  const cardStackRef = useRef<CardStackRef>(null);
-
   // Animation states
   const [animationPhase, setAnimationPhase] = useState<
-    "initial" | "spread" | "pile" | "fadeOut"
+    "initial" | "spread" | "collapse" | "pile" | "fadeOut"
   >("initial");
   const animationPhaseRef = useRef(animationPhase);
 
@@ -91,15 +87,18 @@ const SessionMontage = ({
   const startAnimation = useCallback(() => {
     const runSequence = () => {
       setAnimationPhase("initial");
-      // Reset CardStack when replaying
-      cardStackRef.current?.reset();
 
       setTimeout(() => {
         setAnimationPhase("spread");
 
         const spreadDuration = numberOfCards * 80 + 800;
         setTimeout(() => {
-          setAnimationPhase("pile");
+          setAnimationPhase("collapse");
+
+          const collapseDuration = numberOfCards * 40 + 400;
+          setTimeout(() => {
+            setAnimationPhase("pile");
+          }, collapseDuration);
         }, spreadDuration);
       }, 500);
     };
@@ -175,39 +174,16 @@ const SessionMontage = ({
 
       <div className="flex flex-col h-full items-center justify-center">
         <div className="h-[260px] w-full max-w-[500px] flex items-center justify-center mb-5">
-          <AnimatePresence mode="wait">
-            {/* Spiral animation - shown during initial, spread, and fadeOut */}
-            {animationPhase !== "pile" && numberOfCards > 0 && (
-              <SpiralAnimation
-                photos={allPhotos}
-                numberOfCards={numberOfCards}
-                isMobile={isMobile}
-                animationPhase={animationPhase as "initial" | "spread" | "fadeOut"}
-                circleSeed={circleSeed}
-                rotationSeed={rotationSeed}
-              />
-            )}
-
-            {/* CardStack - shown during pile phase for shuffling */}
-            {animationPhase === "pile" && numberOfCards > 0 && (
-              <motion.div
-                key="cardstack"
-                className="relative h-full w-full flex items-center justify-center"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-              >
-                <CardStack
-                  ref={cardStackRef}
-                  photos={allPhotos}
-                  numberOfCards={numberOfCards}
-                  isMobile={isMobile}
-                  aspectRatio="16:9"
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {numberOfCards > 0 && (
+            <UnifiedPhotoAnimation
+              photos={allPhotos}
+              numberOfCards={numberOfCards}
+              isMobile={isMobile}
+              animationPhase={animationPhase as "initial" | "spread" | "collapse" | "pile" | "fadeOut"}
+              circleSeed={circleSeed}
+              rotationSeed={rotationSeed}
+            />
+          )}
         </div>
 
         {/* Background color selector - only show when dynamic colors are available and controls aren't hidden */}
