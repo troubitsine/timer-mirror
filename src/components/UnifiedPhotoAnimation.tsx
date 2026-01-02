@@ -76,11 +76,14 @@ const UnifiedPhotoAnimation = ({
     for (const circle of circles) {
       const photosInCircle = circle.photosCount;
       const angleOffsetPerCard = 360 / photosInCircle;
-      const angleOffset = 250;
+      // Start at ~1 o'clock (-45° in screen coords where y points down)
+      const angleOffset = -95;
 
       for (let i = 0; i < photosInCircle; i++) {
         if (photoIndex >= numberOfCards) break;
-        const angle = ((i * angleOffsetPerCard + angleOffset) * Math.PI) / 180;
+        // Subtract angle for counter-clockwise placement by index
+        // With reversed stagger (high index first), this creates clockwise visual appearance
+        const angle = ((angleOffset - i * angleOffsetPerCard) * Math.PI) / 180;
         positions.push({
           x: circle.radius * Math.cos(angle),
           y: circle.radius * Math.sin(angle),
@@ -116,10 +119,17 @@ const UnifiedPhotoAnimation = ({
   const [movingId, setMovingId] = useState<number | null>(null);
   const controls = useAnimation();
 
-  // Rebuild cards when dependencies change
+  // Rebuild cards when dependencies change or animation restarts
   useEffect(() => {
     setCards(buildCards());
   }, [buildCards]);
+
+  // Reset cards to initial state when animation restarts (fixes shuffle → replay issue)
+  useEffect(() => {
+    if (animationPhase === "initial") {
+      setCards(buildCards());
+    }
+  }, [animationPhase, buildCards]);
 
   // --- Pose helpers for pile phase ---
   const basePose = useCallback(
@@ -213,7 +223,8 @@ const UnifiedPhotoAnimation = ({
 
     switch (animationPhase) {
       case "initial":
-        return { x: 0, y: 0, scale: 0, opacity: 0, rotate: -20 };
+        // Use card.z for consistent z-ordering from the start (prevents flash on phase change)
+        return { x: 0, y: 0, scale: 0, opacity: 0, rotate: -20, zIndex: card.z };
 
       case "spread":
         return {
@@ -222,7 +233,7 @@ const UnifiedPhotoAnimation = ({
           scale: 1,
           opacity: 1,
           rotate: 0,
-          zIndex: 1,
+          zIndex: card.z,
         };
 
       case "collapse":
@@ -257,20 +268,23 @@ const UnifiedPhotoAnimation = ({
   const getTransition = (index: number) => {
     switch (animationPhase) {
       case "spread":
+        // Reverse stagger: back cards (low z) appear first, top card (high z) appears last
+        // This matches z-index order so each new card naturally lands on top
         return {
           type: "spring",
           stiffness: 300,
           damping: 18,
-          delay: index * 0.08,
+          delay: (numberOfCards - index - 1) * 0.08,
         };
 
       case "collapse":
         // Reverse stagger - back cards move first for depth effect
+        // Lower stiffness + higher damping = smoother, less oscillation
         return {
           type: "spring",
-          stiffness: 280,
-          damping: 20,
-          delay: (numberOfCards - index - 1) * 0.04,
+          stiffness: 380,
+          damping: 25,
+          delay: (numberOfCards - index - 1) * 0.035,
         };
 
       case "pile":
@@ -296,9 +310,9 @@ const UnifiedPhotoAnimation = ({
     }
   };
 
-  const widthPercentage = 0.45;
-  const CARD_W_PERCENT = Math.round(widthPercentage * 100);
-  const CARD_AR = isMobile ? "4 / 5" : "4 / 3";
+  // Fixed card dimensions - consistent across all phases to avoid layout shifts
+  const CARD_W = isMobile ? 130 : 240;
+  const CARD_H = isMobile ? 160 : 180;
 
   return (
     <div className="relative h-full w-full flex items-center justify-center">
@@ -317,49 +331,30 @@ const UnifiedPhotoAnimation = ({
             <motion.div
               key={`photo-${card.id}`}
               className="absolute"
-              style={
-                animationPhase === "pile" || animationPhase === "collapse"
-                  ? {
-                      width: `${CARD_W_PERCENT}%`,
-                      aspectRatio: CARD_AR,
-                      left: 0,
-                      top: 12,
-                      bottom: 0,
-                      right: 0,
-                      margin: "auto",
-                    }
-                  : {
-                      left: "50%",
-                      top: "50%",
-                      zIndex: animateProps?.zIndex || 1,
-                    }
-              }
+              style={{
+                // Consistent positioning for all phases - only transforms animate
+                left: "50%",
+                top: "50%",
+                width: CARD_W,
+                height: CARD_H,
+                marginLeft: -CARD_W / 2,
+                marginTop: -CARD_H / 2,
+                zIndex: animateProps?.zIndex || 1,
+                willChange: "transform, opacity",
+              }}
               initial={{ x: 0, y: 0, scale: 0, opacity: 0, rotate: -20 }}
               animate={shouldUseControls ? controls : animateProps}
               transition={getTransition(index)}
             >
               <div
-                className={cn(
-                  "bg-white inner-stroke-black-5-sm",
-                  animationPhase === "pile" || animationPhase === "collapse"
-                    ? "overflow-hidden w-full h-full p-[5px] rounded-[15px]"
-                    : cn(
-                        "-translate-x-1/2 -translate-y-1/2 rounded-[15px] p-[5px]",
-                        isMobile ? "h-[160px] w-[130px]" : "h-[180px] w-[240px]"
-                      )
-                )}
+                className="bg-white inner-stroke-black-5-sm overflow-hidden w-full h-full p-[5px] rounded-[15px]"
               >
                 <img
                   src={card.src}
                   alt={`Photo ${card.id}`}
                   loading="eager"
                   decoding="async"
-                  className={cn(
-                    "w-full h-full object-cover z-30",
-                    animationPhase === "pile" || animationPhase === "collapse"
-                      ? "rounded-[11px] shadow-[0_1px_2px_rgba(0,0,0,0.14),_0_8px_8px_rgba(0,0,0,0.04)]"
-                      : "inner-stroke-black-10-xs rounded-[11px]"
-                  )}
+                  className="w-full h-full object-cover z-30 rounded-[11px] shadow-[0_1px_2px_rgba(0,0,0,0.14),_0_8px_8px_rgba(0,0,0,0.04)]"
                 />
               </div>
             </motion.div>
