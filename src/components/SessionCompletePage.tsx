@@ -50,7 +50,7 @@ const SessionCompletePage = () => {
         <div className="w-[calc(100%-20px)] lg:w-[65vw] min-w-[300px] max-w-[1800px] max-h-[1200px] mx-auto flex flex-col gap-4 sm:gap-6">
           <div className="w-full h-[70vh] sm:aspect-video relative">
             {/* Share button positioned at the top-right */}
-            <div className="absolute top-3 right-3 z-30">
+            <div className="absolute top-4 right-4 z-30">
               <ShareSessionButton
                 taskName={sessionData.taskName}
                 duration={sessionData.duration}

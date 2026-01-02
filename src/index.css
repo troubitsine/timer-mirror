@@ -134,6 +134,15 @@ html.complete-route {
     100% { background-position: -150% 0, 0 0; }
   }
 
+  @keyframes spin-around {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
   @property --pos-x {
     syntax: "<percentage>";
     initial-value: 11.14%;
@@ -394,4 +403,8 @@ html.complete-route {
     will-change: background-position;
   }
 
+  .animate-spin-around {
+    animation: spin-around var(--shimmer-speed, 3s) linear infinite;
+    will-change: transform;
+  }
 }

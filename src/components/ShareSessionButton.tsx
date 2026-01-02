@@ -634,25 +634,38 @@ const ShareSessionButton = ({
 
   return (
     <>
-      <Button
-        size="sm"
-        variant="secondary"
-        onClick={handleShare}
-        disabled={isMobile && isGeneratingImage}
-        type="button"
-        className={cn(
-          "bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/70 backdrop-blur-md flex items-center gap-1 rounded-full inner-stroke-white-20-sm sm:px-[10px] py-[6px] px-[12px]",
-          className,
-        )}
+      <div
+        className={cn("relative z-0 inline-flex rounded-full p-[1.5px]", className)}
+        style={
+          {
+            "--shimmer-color": shimmerColor,
+            "--border-shimmer": `color-mix(in srgb, rgba(0, 0, 0, 0.2) 70%, ${shimmerColor})`,
+            "--shimmer-speed": "4s",
+          } as React.CSSProperties
+        }
       >
-        <AnimatedShinyText
-          shimmerColor={shimmerColor}
-          shimmerWidth={160}
-          className="text-xs font-medium leading-none"
+        {/* Border shimmer - spinning conic gradient (stays inside wrapper due to p-[2px]) */}
+        <div className="absolute inset-0 -z-10 overflow-hidden rounded-full">
+          <div className="absolute -inset-full animate-spin-around [background:conic-gradient(from_270deg,transparent_0deg,var(--border-shimmer)_60deg,transparent_120deg)]" />
+        </div>
+
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={handleShare}
+          disabled={isMobile && isGeneratingImage}
+          type="button"
+          className="relative z-10 bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/70 backdrop-blur-md flex items-center gap-1 rounded-full inner-stroke-white-20-sm sm:px-[10px] pt-[6px] pb-[7px] px-[12px]"
         >
-          Share
-        </AnimatedShinyText>
-      </Button>
+          <AnimatedShinyText
+            shimmerColor={shimmerColor}
+            shimmerWidth={160}
+            className="text-xs font-medium leading-none"
+          >
+            Share
+          </AnimatedShinyText>
+        </Button>
+      </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="fixed left-3 right-3 top-[10vh] sm:top-[5vh] translate-x-0 translate-y-0 sm:left-1/2 sm:-translate-x-1/2 p-0 border-none overflow-auto max-h-[90vh] w-auto max-w-full sm:max-w-[650px] sm:w-full mx-0 sm:mx-4 bg-transparent rounded-[18px] pb-[env(safe-area-inset-bottom)] sm:pb-0">
