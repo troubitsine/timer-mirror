@@ -4,7 +4,6 @@
  */
 import React, { useMemo, useState, useCallback, useEffect } from "react";
 import { motion, useAnimation } from "framer-motion";
-import { cn } from "@/lib/utils";
 
 interface UnifiedPhotoAnimationProps {
   photos: string[];

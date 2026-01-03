@@ -1,3 +1,6 @@
+// ShareSessionButton.tsx
+// Share button + dialog for exporting and sharing session previews.
+// Coordinates preview sizing, background selection, and export/download flows.
 import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { Button } from "./ui/button";
 import {
@@ -15,6 +18,7 @@ import ShareWatermark from "./ShareWatermark";
 import { AnimatedShinyText } from "./ui/AnimatedShinyText";
 import { cn } from "@/lib/utils";
 import { ShimmerBorder } from "./ui/shimmer-border";
+import { motion } from "framer-motion";
 import {
   exportSessionImage,
   fileFromBlob,
@@ -617,22 +621,6 @@ const ShareSessionButton = ({
     };
   }, [aspectRatio, measuredWidth, viewportHeight, viewportWidth, chromeHeight]);
 
-  const previewStyle = useMemo(() => {
-    const { width, height, maxPreviewHeight } = previewDimensions;
-
-    const style: React.CSSProperties = {
-      width: `${width}px`,
-      height: `${height}px`,
-      maxWidth: "100%",
-    };
-
-    if (typeof maxPreviewHeight === "number") {
-      style.maxHeight = `${maxPreviewHeight}px`;
-    }
-
-    return style;
-  }, [previewDimensions]);
-
   return (
     <>
       <ShimmerBorder shimmerColor={shimmerColor} variant="dark" className={className}>
@@ -684,10 +672,23 @@ const ShareSessionButton = ({
             >
               {/* Preview container with aspect ratio wrapper */}
               <div className="w-full">
-                <div
+                <motion.div
                   ref={previewContainerRef}
                   className="relative mx-auto overflow-hidden"
-                  style={previewStyle}
+                  initial={false}
+                  animate={{
+                    width: previewDimensions.width,
+                    height: previewDimensions.height,
+                  }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 300,
+                    damping: 30,
+                  }}
+                  style={{
+                    maxWidth: "100%",
+                    maxHeight: previewDimensions.maxPreviewHeight,
+                  }}
                 >
                   <div
                     ref={previewRef}
@@ -728,7 +729,7 @@ const ShareSessionButton = ({
                     )}
                     <ShareWatermark scale={foregroundScale} />
                   </div>
-                </div>
+                </motion.div>
               </div>
 
               {/* Customization controls */}

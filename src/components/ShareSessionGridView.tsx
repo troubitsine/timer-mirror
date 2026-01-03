@@ -1,3 +1,6 @@
+// ShareSessionGridView.tsx
+// Share dialog "Card" preview that renders a grid of captured session media.
+// Keeps initial sizing/entry animation smooth inside the share preview container.
 import React, {
   useRef,
   useLayoutEffect,
@@ -413,18 +416,29 @@ const ShareSessionGridView = ({
             springOptions={{ stiffness: 300, damping: 30 }}
           >
             <motion.div
-              className="p-1 bg-white rounded-xl shadow-md w-full"
+              className="p-1 bg-white rounded-xl shadow-md w-full transition-[width] duration-300 ease-out"
               style={{
                 width: cardWidthPx ? `${cardWidthPx}px` : undefined,
                 maxHeight: "100%",
               }}
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={
+                cardWidthPx === undefined
+                  ? { scale: 0.8, opacity: 0 }
+                  : { scale: 1, opacity: 1 }
+              }
               transition={{
-                type: "spring",
-                stiffness: 300,
-                damping: 22,
-                delay: 0.05,
+                scale: {
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 24,
+                  delay: 0.05,
+                },
+                opacity: {
+                  duration: 0.18,
+                  ease: "easeOut",
+                  delay: 0.05,
+                },
               }}
             >
               <div className="relative">
