@@ -217,6 +217,7 @@ const ShareSessionGridView = ({
   // NEW: refs to measure the available container and compute a bounded width
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [cardWidthPx, setCardWidthPx] = useState<number | undefined>(undefined);
+  const [enableWidthTransition, setEnableWidthTransition] = useState(false);
 
   // Combine photos based on device type
   const allPhotos = useMemo(() => {
@@ -355,6 +356,7 @@ const ShareSessionGridView = ({
   // - mount, resize of the wrapper, taskName changes (affects badge height),
   // - photo set changes (rarely changes height but keep it safe)
   useLayoutEffect(() => {
+    recomputeCardWidth();
     const ro = new ResizeObserver(recomputeCardWidth);
     if (wrapperRef.current) ro.observe(wrapperRef.current);
     const badgeEl = (taskBadgeRef?.current as HTMLElement | null) ?? undefined;
@@ -416,7 +418,10 @@ const ShareSessionGridView = ({
             springOptions={{ stiffness: 300, damping: 30 }}
           >
             <motion.div
-              className="p-1 bg-white rounded-xl shadow-md w-full transition-[width] duration-300 ease-out"
+              className={cn(
+                "p-1 bg-white rounded-xl shadow-md w-full",
+                enableWidthTransition && "transition-[width] duration-300 ease-out",
+              )}
               style={{
                 width: cardWidthPx ? `${cardWidthPx}px` : undefined,
                 maxHeight: "100%",
@@ -428,17 +433,15 @@ const ShareSessionGridView = ({
                   : { scale: 1, opacity: 1 }
               }
               transition={{
-                scale: {
-                  type: "spring",
-                  stiffness: 300,
-                  damping: 24,
-                  delay: 0.05,
-                },
-                opacity: {
-                  duration: 0.18,
-                  ease: "easeOut",
-                  delay: 0.05,
-                },
+                type: "spring",
+                stiffness: 300,
+                damping: 24,
+                delay: 0.05,
+              }}
+              onAnimationComplete={() => {
+                if (!enableWidthTransition) {
+                  setEnableWidthTransition(true);
+                }
               }}
             >
               <div className="relative">

@@ -773,14 +773,14 @@ const ShareSessionButton = ({
                           type="button"
                           className="px-3 py-[6px] text-black/75 transition-colors duration-300 flex items-center justify-center gap-1.5 rounded-full min-h-[28px]"
                         >
-                          <SquareIcon className="h-4 w-4" />
+                          <SquareIcon className="h-3 w-3" />
                         </button>
                         <button
                           data-id="9:16"
                           type="button"
                           className="px-3 py-[6px] text-black/75 transition-colors duration-300 flex items-center justify-center gap-1.5 rounded-full min-h-[28px]"
                         >
-                          <RectangleVerticalIcon className="h-4 w-4" />
+                          <RectangleVerticalIcon className="h-3.5 w-3.5" />
                         </button>
                       </AnimatedTabs>
                   </div>
