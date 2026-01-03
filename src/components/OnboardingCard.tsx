@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "./ui/button";
 import { isMobileDevice } from "@/lib/deviceDetection";
 import { motion } from "framer-motion";

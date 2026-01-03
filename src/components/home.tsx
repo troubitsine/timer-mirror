@@ -5,7 +5,6 @@ import SessionMontage from "./SessionMontage";
 import OnboardingCard from "./OnboardingCard";
 import OnboardingDialog from "./OnboardingDialog";
 import { motion, AnimatePresence } from "framer-motion";
-import { isMobileDevice } from "@/lib/deviceDetection";
 
 interface HomeProps {
   onSessionComplete?: () => void;
@@ -13,10 +12,9 @@ interface HomeProps {
 
 const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const isMobile = isMobileDevice();
 
   const [showMontage, setShowMontage] = useState(false);
-  const [sessionData, setSessionData] = useState({
+  const [sessionData] = useState({
     screenshots: [],
     webcamPhotos: [],
     taskName: "",
@@ -29,16 +27,8 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
   });
   const [shouldInitializeCamera, setShouldInitializeCamera] = useState(false);
 
-  // Reset state when component mounts
+  // Check camera permissions on mount and clean up media tracks on unmount
   useEffect(() => {
-    setShowMontage(false);
-    setSessionData({
-      screenshots: [],
-      webcamPhotos: [],
-      taskName: "",
-      duration: 0,
-    });
-
     // Check if user has seen onboarding before
     const hasSeenOnboarding =
       localStorage.getItem("hasSeenOnboarding") === "true";
@@ -71,9 +61,10 @@ const Home = ({ onSessionComplete = () => {} }: HomeProps) => {
     checkCameraPermissions();
 
     // Cleanup
+    const videoElement = videoRef.current;
     return () => {
-      if (videoRef.current?.srcObject) {
-        const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
+      if (videoElement?.srcObject) {
+        const tracks = (videoElement.srcObject as MediaStream).getTracks();
         tracks.forEach((track) => track.stop());
       }
     };

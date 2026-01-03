@@ -9,7 +9,6 @@ import React, {
 import { Card } from "./ui/card";
 import { cn } from "@/lib/utils";
 import { isMobileDevice } from "@/lib/deviceDetection";
-import BackgroundColorSelector from "./BackgroundColorSelector";
 import Tilt from "./Tilt";
 import { motion } from "framer-motion";
 import { useDynamicBackground } from "@/lib/useDynamicBackground";
@@ -83,9 +82,6 @@ interface FillGridProps {
 function FillGrid({ photos }: FillGridProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [tiles, setTiles] = useState<Tile[]>();
-
-  // Clear stale tiles whenever the photo count changes
-  useLayoutEffect(() => setTiles(undefined), [photos.length]);
 
   useLayoutEffect(() => {
     const el = ref.current;
@@ -174,7 +170,7 @@ const ShareSessionGridView = ({
   initialSelectedBackgroundId,
   onBackgroundSelect,
   selectedBackgroundId: externalSelectedBackgroundId,
-  setSelectedBackgroundId: externalSetSelectedBackgroundId,
+  setSelectedBackgroundId: _externalSetSelectedBackgroundId,
   aspectRatio = "16:9",
 }: ShareSessionGridViewProps) => {
   const isMobile = isMobileDevice();
@@ -191,14 +187,16 @@ const ShareSessionGridView = ({
   };
 
   // Minimum presence (as a fraction of container height)
-  const MIN_CARD_H_RATIO: Record<
-    NonNullable<ShareSessionGridViewProps["aspectRatio"]>,
-    number
-  > = {
-    "16:9": 0.42,
-    "1:1": 0.44,
-    "9:16": 0.5, // a bit larger so tall cards don't look spindly
-  };
+  const MIN_CARD_H_RATIO = useMemo<
+    Record<NonNullable<ShareSessionGridViewProps["aspectRatio"]>, number>
+  >(
+    () => ({
+      "16:9": 0.42,
+      "1:1": 0.44,
+      "9:16": 0.5, // a bit larger so tall cards don't look spindly
+    }),
+    [],
+  );
 
   // Transform clearance (px) so Tilt never clips (used as padding on the wrapper)
   const TILT_BLEED_PX: Record<
@@ -271,18 +269,8 @@ const ShareSessionGridView = ({
   }, [screenshots, webcamPhotos, isMobile]);
 
   // Use the dynamic background hook with initial selection and callback
-  const {
-    selectedBackground,
-    selectedBackgroundId,
-    setSelectedBackgroundId,
-    backgroundOptions,
-    hasDynamicColors,
-    taskBadgeRef,
-  } = useDynamicBackground(
-    lastPhoto,
-    initialSelectedBackgroundId,
-    onBackgroundSelect,
-  );
+  const { selectedBackground, selectedBackgroundId, setSelectedBackgroundId, taskBadgeRef } =
+    useDynamicBackground(lastPhoto, initialSelectedBackgroundId, onBackgroundSelect);
 
   // Use external selectedBackgroundId and setSelectedBackgroundId if provided
   useEffect(() => {
@@ -292,7 +280,11 @@ const ShareSessionGridView = ({
     ) {
       setSelectedBackgroundId(externalSelectedBackgroundId);
     }
-  }, [externalSelectedBackgroundId]);
+  }, [
+    externalSelectedBackgroundId,
+    selectedBackgroundId,
+    setSelectedBackgroundId,
+  ]);
 
   // ---- NEW: Size logic based on container height with min/max rules ----
   const recomputeCardWidth = useCallback(() => {
@@ -347,13 +339,19 @@ const ShareSessionGridView = ({
     setCardWidthPx(
       Number.isFinite(nextWidth) ? Math.max(120, nextWidth) : undefined,
     );
-  }, [widthPercentage, isMobile, taskBadgeRef, aspectRatio, tiltBleed]);
+  }, [
+    widthPercentage,
+    isMobile,
+    taskBadgeRef,
+    aspectRatio,
+    tiltBleed,
+    MIN_CARD_H_RATIO,
+  ]);
 
   // Recompute on:
   // - mount, resize of the wrapper, taskName changes (affects badge height),
   // - photo set changes (rarely changes height but keep it safe)
   useLayoutEffect(() => {
-    recomputeCardWidth();
     const ro = new ResizeObserver(recomputeCardWidth);
     if (wrapperRef.current) ro.observe(wrapperRef.current);
     const badgeEl = (taskBadgeRef?.current as HTMLElement | null) ?? undefined;
@@ -366,7 +364,7 @@ const ShareSessionGridView = ({
       ro.disconnect();
       bro?.disconnect();
     };
-  }, [recomputeCardWidth, taskName, allPhotos.length]);
+  }, [recomputeCardWidth, taskName, allPhotos.length, taskBadgeRef]);
 
   const exportBackgroundStyle = { ...(selectedBackground?.style ?? {}) };
 

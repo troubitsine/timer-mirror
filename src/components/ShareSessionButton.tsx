@@ -1,13 +1,11 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { Button } from "./ui/button";
-import { Share2, Download } from "lucide-react";
+import { Download } from "lucide-react";
 import { Cross2Icon } from "@radix-ui/react-icons";
 import {
   Dialog,
   DialogClose,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
@@ -16,9 +14,10 @@ import AnimatedTabs from "./ui/animated-tabs";
 import { useDynamicBackground } from "@/lib/useDynamicBackground";
 import ShareSessionMontage from "./ShareSessionMontage";
 import ShareSessionGridView from "./ShareSessionGridView";
+import ShareWatermark from "./ShareWatermark";
+import { AnimatedShinyText } from "./ui/AnimatedShinyText";
 import { cn } from "@/lib/utils";
 import {
-  blobToTypedFile,
   exportSessionImage,
   fileFromBlob,
   generateShareFilename,
@@ -26,9 +25,9 @@ import {
   pngBlobToJpegBlob,
 } from "@/lib/exportSessionImage";
 import {
-  EXPORT_PIXEL_RATIO,
   EXPORT_SHARE_TEXT,
   EXPORT_SHARE_TITLE,
+  EXPORT_MOBILE_PIXEL_RATIO,
 } from "@/lib/exportConfig";
 import { isMobileDevice } from "@/lib/deviceDetection";
 
@@ -39,6 +38,8 @@ interface ShareSessionButtonProps {
   screenshots?: string[];
   webcamPhotos?: string[];
   exportRef?: React.RefObject<HTMLDivElement>;
+  selectedBackgroundId?: string;
+  onBackgroundChange?: (id: string) => void;
 }
 
 type AspectRatio = "16:9" | "1:1" | "9:16";
@@ -51,6 +52,8 @@ const ShareSessionButton = ({
   screenshots = [],
   webcamPhotos = [],
   exportRef,
+  selectedBackgroundId: externalSelectedBackgroundId,
+  onBackgroundChange,
 }: ShareSessionButtonProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>("16:9");
@@ -66,10 +69,23 @@ const ShareSessionButton = ({
   const isMountedRef = useRef(true);
 
   // Use sessionStorage to persist the selected background ID across page refreshes
-  const [selectedBackgroundId, setSelectedBackgroundId] = useState(() => {
-    const savedId = sessionStorage.getItem("selectedBackgroundId");
-    return savedId || "white";
-  });
+  const initialSelectedBackgroundId = useMemo(() => {
+    const savedId =
+      typeof window !== "undefined"
+        ? sessionStorage.getItem("selectedBackgroundId")
+        : null;
+    return externalSelectedBackgroundId || savedId || "white";
+  }, [externalSelectedBackgroundId]);
+
+  const handleBackgroundChange = useCallback(
+    (id: string) => {
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("selectedBackgroundId", id);
+      }
+      onBackgroundChange?.(id);
+    },
+    [onBackgroundChange],
+  );
 
   // Get the last photo for color extraction
   const lastPhoto =
@@ -88,9 +104,25 @@ const ShareSessionButton = ({
     hasDynamicColors,
   } = useDynamicBackground(
     lastPhoto,
-    selectedBackgroundId,
-    setSelectedBackgroundId,
+    initialSelectedBackgroundId,
+    handleBackgroundChange,
   );
+
+  useEffect(() => {
+    if (
+      externalSelectedBackgroundId &&
+      externalSelectedBackgroundId !== currentBackgroundId
+    ) {
+      setCurrentBackgroundId(externalSelectedBackgroundId);
+    }
+  }, [
+    externalSelectedBackgroundId,
+    currentBackgroundId,
+    setCurrentBackgroundId,
+  ]);
+
+  const shimmerColor =
+    selectedBackground?.accentColor ?? "rgba(255, 255, 255, 0.85)";
 
   const isMobile =
     typeof window !== "undefined" ? isMobileDevice() : false;
@@ -122,17 +154,69 @@ const ShareSessionButton = ({
       };
 
       let cleanupPersistedFile: (() => Promise<void>) | null = null;
+      let exportContainer: HTMLDivElement | null = null;
 
       try {
-        const { blob: pngBlob } = await exportSessionImage(targetNode, {
-          pixelRatio: EXPORT_PIXEL_RATIO,
+        const rect = targetNode.getBoundingClientRect();
+        const normalizedWidth = Math.max(
+          1,
+          rect.width || targetNode.offsetWidth || targetNode.clientWidth,
+        );
+        const normalizedHeight = Math.max(
+          1,
+          rect.height || targetNode.offsetHeight || targetNode.clientHeight,
+        );
+
+        const clonedRoot = targetNode.cloneNode(true) as HTMLDivElement;
+        clonedRoot.style.width = `${normalizedWidth}px`;
+        clonedRoot.style.height = `${normalizedHeight}px`;
+        clonedRoot.style.maxWidth = `${normalizedWidth}px`;
+        clonedRoot.style.maxHeight = `${normalizedHeight}px`;
+
+        if (targetNode.hasAttribute("data-share-export-root")) {
+          clonedRoot.setAttribute("data-share-export-root", "");
+        }
+
+        const computedStyles = window.getComputedStyle(targetNode);
+        const backgroundImage = computedStyles?.backgroundImage || "";
+        if (
+          backgroundImage &&
+          /\bgradient\(/i.test(backgroundImage) &&
+          backgroundImage !== "none"
+        ) {
+          clonedRoot.dataset.exportSurface = "gradient";
+        } else {
+          delete clonedRoot.dataset.exportSurface;
+        }
+
+        clonedRoot.dataset.exporting = "true"; // Isolate export styles so the live UI never flashes the watermark.
+        exportContainer = document.createElement("div");
+        Object.assign(exportContainer.style, {
+          position: "fixed",
+          top: "0",
+          left: "0",
+          width: "0",
+          height: "0",
+          opacity: "0",
+          pointerEvents: "none",
+          overflow: "hidden",
+        });
+        exportContainer.setAttribute("aria-hidden", "true");
+        exportContainer.appendChild(clonedRoot);
+        document.body.appendChild(exportContainer);
+
+        await new Promise((resolve) =>
+          requestAnimationFrame(() => resolve(undefined)),
+        );
+
+        const { blob: pngBlob } = await exportSessionImage(clonedRoot, {
+          pixelRatio: EXPORT_MOBILE_PIXEL_RATIO,
         });
 
         let shareBlob: Blob = pngBlob;
         let shareFile: File;
 
         try {
-          const computedStyles = window.getComputedStyle(targetNode);
           const jpegBlob = await pngBlobToJpegBlob(
             pngBlob,
             computedStyles?.backgroundColor,
@@ -193,6 +277,9 @@ const ShareSessionButton = ({
       } catch (error) {
         console.error("ShareSessionButton: mobile share failed", error);
       } finally {
+        if (exportContainer?.parentNode) {
+          exportContainer.remove();
+        }
         if (cleanupPersistedFile) {
           await cleanupPersistedFile();
         }
@@ -547,16 +634,38 @@ const ShareSessionButton = ({
 
   return (
     <>
-      <Button
-        onClick={handleShare}
-        variant="secondary"
-        size="sm"
-        disabled={isMobile && isGeneratingImage}
-        className={`bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/70 backdrop-blur-md flex items-center gap-1 rounded-full inner-stroke-white-20-sm sm:pl-[8px] sm:pr-[10px] py-[6px] pl-[10px] pr-[12px] ${className}`}
+      <div
+        className={cn("relative z-0 inline-flex rounded-full p-[1.5px]", className)}
+        style={
+          {
+            "--shimmer-color": shimmerColor,
+            "--border-shimmer": `color-mix(in srgb, rgba(0, 0, 0, 0.2) 70%, ${shimmerColor})`,
+            "--shimmer-speed": "4s",
+          } as React.CSSProperties
+        }
       >
-        <Share2 className="h-4 w-4" />
-        <span className="hidden sm:inline">Share</span>
-      </Button>
+        {/* Border shimmer - spinning conic gradient (stays inside wrapper due to p-[2px]) */}
+        <div className="absolute inset-0 -z-10 overflow-hidden rounded-full">
+          <div className="absolute -inset-full animate-spin-around [background:conic-gradient(from_270deg,transparent_0deg,var(--border-shimmer)_60deg,transparent_120deg)]" />
+        </div>
+
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={handleShare}
+          disabled={isMobile && isGeneratingImage}
+          type="button"
+          className="relative z-10 bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/70 backdrop-blur-md flex items-center gap-1 rounded-full inner-stroke-white-20-sm sm:px-[10px] pt-[6px] pb-[7px] px-[12px]"
+        >
+          <AnimatedShinyText
+            shimmerColor={shimmerColor}
+            shimmerWidth={160}
+            className="text-xs font-medium leading-none"
+          >
+            Share
+          </AnimatedShinyText>
+        </Button>
+      </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="fixed left-3 right-3 top-[10vh] sm:top-[5vh] translate-x-0 translate-y-0 sm:left-1/2 sm:-translate-x-1/2 p-0 border-none overflow-auto max-h-[90vh] w-auto max-w-full sm:max-w-[650px] sm:w-full mx-0 sm:mx-4 bg-transparent rounded-[18px] pb-[env(safe-area-inset-bottom)] sm:pb-0">
@@ -632,28 +741,7 @@ const ShareSessionButton = ({
                         aspectRatio={aspectRatio}
                       />
                     )}
-                    <div
-                      data-share-watermark
-                      aria-hidden="true"
-                      className="pointer-events-none absolute inset-x-0 bottom-2.5 flex justify-center z-40"
-                    >
-                      <div className="inline-flex">
-                        <div
-                          className="bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-2 text-xs font-medium
-  leading-tight rounded-full inner-stroke-white-20-sm pl-3 pr-2.5 pt-1 pb-[0.3rem]"
-                          style={{
-                            transform: `scale(${foregroundScale})`,
-                            transformOrigin: "bottom center",
-                            maxWidth: "480px",
-                            overflowWrap: "break-word",
-                            whiteSpace: "normal",
-                            textWrap: "balance",
-                          }}
-                        >
-                          focus-reel.app
-                        </div>
-                      </div>
-                    </div>
+                    <ShareWatermark scale={foregroundScale} />
                   </div>
                 </div>
               </div>
@@ -679,7 +767,7 @@ const ShareSessionButton = ({
                 <div className="flex flex-1 min-w-[140px] justify-center">
                   <div className="flex flex-col items-center gap-2">
                     <span className="text-xs text-white/70">Aspect Ratio</span>
-                    <div className="flex items-center justify-center rounded-full bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[3px] inner-stroke-white-20-sm shadow-sm min-w-[120px] min-h-[32px]">
+                    <div className="flex items-center justify-center rounded-full bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[3px] inner-stroke-white-20-sm shadow-sm w-fit min-h-[32px]">
                       <AnimatedTabs
                         defaultValue={aspectRatio}
                         onValueChange={(value) =>
@@ -722,7 +810,7 @@ const ShareSessionButton = ({
                 <div className="flex flex-1 min-w-[140px] justify-center">
                   <div className="flex flex-col items-center gap-2">
                     <span className="text-xs text-white/70">View Style</span>
-                    <div className="flex items-center justify-center rounded-full bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[3px] inner-stroke-white-20-sm shadow-sm min-w-[120px] min-h-[32px]">
+                    <div className="flex items-center justify-center rounded-full bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[3px] inner-stroke-white-20-sm shadow-sm w-fit min-h-[32px]">
                       <AnimatedTabs
                         defaultValue={viewMode}
                         onValueChange={(value) => setViewMode(value as ViewMode)}

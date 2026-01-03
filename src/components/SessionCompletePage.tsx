@@ -4,8 +4,6 @@ import SessionGridView from "./SessionGridView";
 import { useState, useEffect, useRef } from "react";
 import { track } from "@vercel/analytics";
 import { Button } from "./ui/button";
-import { Grid2X2, Layers } from "lucide-react";
-import { motion } from "framer-motion";
 import AnimatedTabs from "./ui/animated-tabs";
 import ShareSessionButton from "./ShareSessionButton";
 
@@ -30,6 +28,13 @@ const SessionCompletePage = () => {
     // Scroll to top on mount
     window.scrollTo(0, 0);
 
+    console.log(
+      "[SessionCompletePage] screenshots length:",
+      sessionData.screenshots?.length ?? 0,
+      "webcamPhotos length:",
+      sessionData.webcamPhotos?.length ?? 0,
+    );
+
     track("session_complete", {
       duration: sessionData.duration,
       taskName: sessionData.taskName,
@@ -45,13 +50,15 @@ const SessionCompletePage = () => {
         <div className="w-[calc(100%-20px)] lg:w-[65vw] min-w-[300px] max-w-[1800px] max-h-[1200px] mx-auto flex flex-col gap-4 sm:gap-6">
           <div className="w-full h-[70vh] sm:aspect-video relative">
             {/* Share button positioned at the top-right */}
-            <div className="absolute top-3 right-3 z-30">
+            <div className="absolute top-4 right-4 z-30">
               <ShareSessionButton
                 taskName={sessionData.taskName}
                 duration={sessionData.duration}
                 screenshots={sessionData.screenshots}
                 webcamPhotos={sessionData.webcamPhotos}
                 exportRef={exportRef}
+                selectedBackgroundId={selectedBackgroundId}
+                onBackgroundChange={setSelectedBackgroundId}
               />
             </div>
 

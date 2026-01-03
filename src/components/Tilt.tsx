@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useCallback } from "react";
 import {
   motion,
   useMotionTemplate,
@@ -51,35 +51,38 @@ export default function Tilt({
 
   const transform = useMotionTemplate`perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
 
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!ref.current) return;
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!ref.current) return;
 
-    const rect = ref.current.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
+      const rect = ref.current.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
 
-    // Calculate mouse position relative to the center of the element
-    const centerX = rect.left + width / 2;
-    const centerY = rect.top + height / 2;
+      // Calculate mouse position relative to the center of the element
+      const centerX = rect.left + width / 2;
+      const centerY = rect.top + height / 2;
 
-    // Calculate the distance from mouse to center
-    const distanceX = e.clientX - centerX;
-    const distanceY = e.clientY - centerY;
+      // Calculate the distance from mouse to center
+      const distanceX = e.clientX - centerX;
+      const distanceY = e.clientY - centerY;
 
-    // Calculate normalized position (-0.5 to 0.5)
-    // Use a divisor to control sensitivity - larger values make the effect more subtle
-    const sensitivity = Math.max(window.innerWidth, window.innerHeight) / 2;
-    const xPos = distanceX / sensitivity;
-    const yPos = distanceY / sensitivity;
+      // Calculate normalized position (-0.5 to 0.5)
+      // Use a divisor to control sensitivity - larger values make the effect more subtle
+      const sensitivity = Math.max(window.innerWidth, window.innerHeight) / 2;
+      const xPos = distanceX / sensitivity;
+      const yPos = distanceY / sensitivity;
 
-    x.set(xPos);
-    y.set(yPos);
-  };
+      x.set(xPos);
+      y.set(yPos);
+    },
+    [ref, x, y],
+  );
 
-  const resetPosition = () => {
+  const resetPosition = useCallback(() => {
     x.set(0);
     y.set(0);
-  };
+  }, [x, y]);
 
   useEffect(() => {
     // Add global mouse move listener
@@ -90,7 +93,7 @@ export default function Tilt({
       window.removeEventListener("mousemove", handleMouseMove);
       resetPosition();
     };
-  }, []);
+  }, [handleMouseMove, resetPosition]);
 
   return (
     <motion.div

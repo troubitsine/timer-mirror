@@ -1,11 +1,9 @@
-import React, { useRef, useLayoutEffect, useMemo, useState } from "react";
-import { Card } from "./ui/card";
-import { cn } from "@/lib/utils";
-import { isMobileDevice } from "@/lib/deviceDetection";
-import BackgroundColorSelector from "./BackgroundColorSelector";
+import React, { useRef, useLayoutEffect, useState } from "react";
 import Tilt from "./Tilt";
 import { motion } from "framer-motion";
-import { useDynamicBackground } from "@/lib/useDynamicBackground";
+import { useSessionMedia } from "@/lib/useSessionMedia";
+import SessionFrame from "./SessionFrame";
+import { useTaskBadgeRef } from "./TaskBadgeRefContext";
 
 interface SessionGridViewProps {
   screenshots?: string[];
@@ -74,9 +72,6 @@ interface FillGridProps {
 function FillGrid({ photos }: FillGridProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [tiles, setTiles] = useState<Tile[]>();
-
-  // Clear stale tiles whenever the photo count changes
-  useLayoutEffect(() => setTiles(undefined), [photos.length]);
 
   useLayoutEffect(() => {
     const el = ref.current;
@@ -166,159 +161,81 @@ const SessionGridView = ({
   onBackgroundSelect,
   exportRef,
 }: SessionGridViewProps) => {
-  const isMobile = isMobileDevice();
-
-  // Get the last photo for color extraction
-
-  // Combine photos based on device type
-  const allPhotos = useMemo(() => {
-    // Simple filter for valid images
-    const validScreenshots = screenshots.filter(Boolean);
-    const validWebcamPhotos = webcamPhotos.filter(Boolean);
-
-    // Check if we have valid screenshots available
-    const hasScreenshots = validScreenshots.length > 0;
-
-    if (isMobile || !hasScreenshots) {
-      // On mobile or when no valid screenshots are available, only use webcam photos
-      return [...validWebcamPhotos];
-    } else {
-      // For desktop with valid screenshots, combine screenshots and webcam photos
-      const combined = [];
-      const maxLength = Math.max(
-        validScreenshots.length,
-        validWebcamPhotos.length,
-      );
-
-      for (let i = 0; i < maxLength; i++) {
-        if (validScreenshots[i]) combined.push(validScreenshots[i]);
-        if (validWebcamPhotos[i]) combined.push(validWebcamPhotos[i]);
-      }
-
-      return combined;
-    }
-  }, [screenshots, webcamPhotos, isMobile]);
-
-  // Get the last photo for color extraction
-  const lastPhoto = useMemo(() => {
-    // First, filter out any empty strings or invalid entries - simplified
-    const validScreenshots = screenshots.filter(Boolean);
-    const validWebcamPhotos = webcamPhotos.filter(Boolean);
-
-    // Check if we have valid screenshots available
-    const hasScreenshots = validScreenshots.length > 0;
-
-    if (isMobile || !hasScreenshots) {
-      // On mobile or when no valid screenshots are available, use the last webcam photo
-      return validWebcamPhotos.length > 0
-        ? validWebcamPhotos[validWebcamPhotos.length - 1]
-        : null;
-    } else {
-      // On desktop with valid screenshots, prefer the last screenshot, fallback to webcam photo
-      return validScreenshots.length > 0
-        ? validScreenshots[validScreenshots.length - 1]
-        : validWebcamPhotos.length > 0
-          ? validWebcamPhotos[validWebcamPhotos.length - 1]
-          : null;
-    }
-  }, [screenshots, webcamPhotos, isMobile]);
-
-  // Use the dynamic background hook with initial selection and callback
-  const {
-    selectedBackground,
-    selectedBackgroundId,
-    setSelectedBackgroundId,
-    backgroundOptions,
-    hasDynamicColors,
-    taskBadgeRef,
-  } = useDynamicBackground(
-    lastPhoto,
-    initialSelectedBackgroundId,
-    onBackgroundSelect,
-  );
-
-  // No need for extractColorsFromImage effect - handled by the hook
-
-  const exportBackgroundStyle = { ...(selectedBackground?.style ?? {}) };
+  // Use shared media hook
+  const { allPhotos, lastPhoto } = useSessionMedia({
+    screenshots,
+    webcamPhotos,
+  });
 
   return (
-    <Card
+    <SessionFrame
       ref={exportRef ?? undefined}
-      className={cn(
-        "w-full h-full relative overflow-hidden border-0 rounded-[18px]",
-        selectedBackground?.className,
-        className,
-      )}
-      style={exportBackgroundStyle}
+      imageSrc={lastPhoto}
+      taskName={taskName}
+      duration={duration}
+      initialSelectedBackgroundId={initialSelectedBackgroundId}
+      onBackgroundSelect={onBackgroundSelect}
+      badgePosition="none"
+      className={className}
     >
-      {selectedBackground?.className ? (
-        <div
-          aria-hidden="true"
-          className={cn(
-            "absolute inset-0 pointer-events-none rounded-[inherit]",
-            selectedBackground.className,
-          )}
-          style={exportBackgroundStyle}
-        />
-      ) : null}
-      {/* Fixed size container for grid layout */}
-      <div className="w-full h-full overflow-auto flex justify-center items-center">
-        {/* Tilt component without motion wrapper */}
-        <Tilt
-          className="w-[55%] sm:w-[35%] md:w-[29%] mb-11"
-          rotationFactor={6}
-          springOptions={{ stiffness: 300, damping: 30 }}
-        >
-          <motion.div
-            className="p-1 bg-white rounded-xl w-full"
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
-            transition={{
-              type: "spring",
-              stiffness: 300,
-              damping: 22,
-              delay: 0.05,
-            }}
-          >
-            <div className="relative">
-              <FillGrid photos={allPhotos} />
-            </div>
-            {/* Session info displayed at the bottom of the card */}
-            <div className="w-full text-center mt-1">
-              <div
-                ref={taskBadgeRef}
-                className="task-badge text-neutral-50/90 inner-stroke-white-20-sm pointer-events-none"
-                style={{
-                  textShadow: "1px 1.5px 2px rgba(0,0,0,0.28)",
-                  maxWidth: "100%",
-                  overflowWrap: "break-word",
-                  whiteSpace: "normal",
-                  textWrap: "balance",
-                }}
-              >
-                {taskName} • {duration} {duration === 1 ? "min" : "min"}
-              </div>
-            </div>
-          </motion.div>
-        </Tilt>
-      </div>
-
-      {/* Background color selector - only show when dynamic colors are available */}
-      {hasDynamicColors && (
-        <div
-          className="absolute bottom-3.5 left-4 flex justify-center z-30"
-          data-export-exclude="true"
-        >
-          <BackgroundColorSelector
-            options={backgroundOptions}
-            selectedId={selectedBackgroundId}
-            onSelect={setSelectedBackgroundId}
-            className="bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[0px] inner-stroke-white-10-sm shadow-sm rounded-full"
-          />
-        </div>
-      )}
-    </Card>
+      <GridContent photos={allPhotos} taskName={taskName} duration={duration} />
+    </SessionFrame>
   );
 };
+
+/** Inner component to access taskBadgeRef via context */
+function GridContent({
+  photos,
+  taskName,
+  duration,
+}: {
+  photos: string[];
+  taskName: string;
+  duration: number;
+}) {
+  const taskBadgeRef = useTaskBadgeRef();
+
+  return (
+    <div className="w-full h-full overflow-auto flex justify-center items-center">
+      <Tilt
+        className="w-[55%] sm:w-[35%] md:w-[29%] mb-11"
+        rotationFactor={6}
+        springOptions={{ stiffness: 300, damping: 30 }}
+      >
+        <motion.div
+          className="p-1 bg-white rounded-xl w-full"
+          initial={{ scale: 0.8 }}
+          animate={{ scale: 1 }}
+          transition={{
+            type: "spring",
+            stiffness: 300,
+            damping: 22,
+            delay: 0.05,
+          }}
+        >
+          <div className="relative">
+            <FillGrid photos={photos} />
+          </div>
+          {/* Session info displayed at the bottom of the card */}
+          <div className="w-full text-center mt-1">
+            <div
+              ref={taskBadgeRef}
+              className="task-badge text-neutral-50/90 inner-stroke-white-20-sm pointer-events-none"
+              style={{
+                textShadow: "1px 1.5px 2px rgba(0,0,0,0.28)",
+                maxWidth: "100%",
+                overflowWrap: "break-word",
+                whiteSpace: "normal",
+                textWrap: "balance",
+              }}
+            >
+              {taskName} • {duration} min
+            </div>
+          </div>
+        </motion.div>
+      </Tilt>
+    </div>
+  );
+}
 
 export default SessionGridView;
