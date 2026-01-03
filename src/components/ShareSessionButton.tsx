@@ -1,10 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { Button } from "./ui/button";
-import { Download } from "lucide-react";
-import { Cross2Icon } from "@radix-ui/react-icons";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -17,6 +14,7 @@ import ShareSessionGridView from "./ShareSessionGridView";
 import ShareWatermark from "./ShareWatermark";
 import { AnimatedShinyText } from "./ui/AnimatedShinyText";
 import { cn } from "@/lib/utils";
+import { ShimmerBorder } from "./ui/shimmer-border";
 import {
   exportSessionImage,
   fileFromBlob,
@@ -30,6 +28,9 @@ import {
   EXPORT_MOBILE_PIXEL_RATIO,
 } from "@/lib/exportConfig";
 import { isMobileDevice } from "@/lib/deviceDetection";
+import RectangleIcon from "@/assets/icons/RectangleIcon";
+import SquareIcon from "@/assets/icons/SquareIcon";
+import RectangleVerticalIcon from "@/assets/icons/RectangleVerticalIcon";
 
 interface ShareSessionButtonProps {
   taskName: string;
@@ -634,21 +635,7 @@ const ShareSessionButton = ({
 
   return (
     <>
-      <div
-        className={cn("relative z-0 inline-flex rounded-full p-[1.5px]", className)}
-        style={
-          {
-            "--shimmer-color": shimmerColor,
-            "--border-shimmer": `color-mix(in srgb, rgba(0, 0, 0, 0.2) 70%, ${shimmerColor})`,
-            "--shimmer-speed": "4s",
-          } as React.CSSProperties
-        }
-      >
-        {/* Border shimmer - spinning conic gradient (stays inside wrapper due to p-[2px]) */}
-        <div className="absolute inset-0 -z-10 overflow-hidden rounded-full">
-          <div className="absolute -inset-full animate-spin-around [background:conic-gradient(from_270deg,transparent_0deg,var(--border-shimmer)_60deg,transparent_120deg)]" />
-        </div>
-
+      <ShimmerBorder shimmerColor={shimmerColor} variant="dark" className={className}>
         <Button
           size="sm"
           variant="secondary"
@@ -665,7 +652,7 @@ const ShareSessionButton = ({
             Share
           </AnimatedShinyText>
         </Button>
-      </div>
+      </ShimmerBorder>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="fixed left-3 right-3 top-[10vh] sm:top-[5vh] translate-x-0 translate-y-0 sm:left-1/2 sm:-translate-x-1/2 p-0 border-none overflow-auto max-h-[90vh] w-auto max-w-full sm:max-w-[650px] sm:w-full mx-0 sm:mx-4 bg-transparent rounded-[18px] pb-[env(safe-area-inset-bottom)] sm:pb-0">
@@ -674,23 +661,21 @@ const ShareSessionButton = ({
              before:absolute before:inset-0 before:bg-gradient-to-br before:from-neutral-400/40 before:to-transparent sm:before:rounded-[18px] before:pointer-events-none
              backdrop-blur-md rounded-t-[18px] relative flex flex-col"
           >
-            {/* Close button */}
-            <div className="absolute right-[11px] top-[11px] z-20">
-              <DialogClose asChild>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-2 rounded-full inner-stroke-white-20-sm p-2"
-                >
-                  <Cross2Icon className="h-4 w-4" />
-                </Button>
-              </DialogClose>
-            </div>
-
-            <DialogHeader className="flex flex-col mb-0 text-left px-4 pt-4">
+            <DialogHeader className="flex flex-row items-center justify-between mb-0 px-4 pt-1">
               <DialogTitle className="text-lg font-semibold text-white/85 z-10 flex-shrink-0 text-left">
                 Share your progress
               </DialogTitle>
+              <ShimmerBorder shimmerColor={shimmerColor} variant="light">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={handleDownload}
+                  disabled={isGeneratingImage}
+                  className="relative z-10 bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-1 rounded-full inner-stroke-white-20-sm px-3 py-1.5"
+                >
+                  {isGeneratingImage ? "Generating..." : "Download"}
+                </Button>
+              </ShimmerBorder>
             </DialogHeader>
 
             <div
@@ -747,27 +732,22 @@ const ShareSessionButton = ({
               </div>
 
               {/* Customization controls */}
-              <div className="flex flex-wrap items-center justify-center gap-3 sm:grid sm:grid-cols-3 sm:gap-4 mt-2">
+              <div className="flex flex-wrap items-center justify-between gap-3 px-4 mt-2">
                 {/* Background selector */}
                 {hasDynamicColors && (
-                  <div className="flex flex-1 min-w-[140px] justify-center">
-                    <div className="flex flex-col items-center gap-2">
-                      <span className="text-xs text-white/70">Background</span>
-                      <BackgroundColorSelector
-                        options={backgroundOptions}
-                        selectedId={currentBackgroundId}
-                        onSelect={setCurrentBackgroundId}
-                        className="bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[0px] inner-stroke-white-10-sm shadow-sm rounded-full"
-                      />
-                    </div>
+                  <div className="flex flex-1 justify-start">
+                    <BackgroundColorSelector
+                      options={backgroundOptions}
+                      selectedId={currentBackgroundId}
+                      onSelect={setCurrentBackgroundId}
+                      className="bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[0px] inner-stroke-white-10-sm shadow-sm rounded-full"
+                    />
                   </div>
                 )}
 
                 {/* Aspect ratio selector */}
-                <div className="flex flex-1 min-w-[140px] justify-center">
-                  <div className="flex flex-col items-center gap-2">
-                    <span className="text-xs text-white/70">Aspect Ratio</span>
-                    <div className="flex items-center justify-center rounded-full bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[3px] inner-stroke-white-20-sm shadow-sm w-fit min-h-[32px]">
+                <div className="flex justify-center">
+                  <div className="flex items-center justify-center rounded-full bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[3px] inner-stroke-white-20-sm shadow-sm w-fit min-h-[32px]">
                       <AnimatedTabs
                         defaultValue={aspectRatio}
                         onValueChange={(value) =>
@@ -783,34 +763,31 @@ const ShareSessionButton = ({
                         <button
                           data-id="16:9"
                           type="button"
-                          className="px-3 pt-[1px] pb-[4px] text-black/75 transition-colors duration-300 flex items-center gap-1.5 rounded-full min-h-[28px]"
+                          className="px-3 py-[6px] text-black/75 transition-colors duration-300 flex items-center justify-center gap-1.5 rounded-full min-h-[28px]"
                         >
-                          <span className="text-xs font-medium">16:9</span>
+                          <RectangleIcon className="h-4 w-4" />
                         </button>
                         <button
                           data-id="1:1"
                           type="button"
-                          className="px-3 pt-[1px] pb-[4px] text-black/75 transition-colors duration-300 flex items-center gap-1.5 rounded-full min-h-[28px]"
+                          className="px-3 py-[6px] text-black/75 transition-colors duration-300 flex items-center justify-center gap-1.5 rounded-full min-h-[28px]"
                         >
-                          <span className="text-xs font-medium">1:1</span>
+                          <SquareIcon className="h-4 w-4" />
                         </button>
                         <button
                           data-id="9:16"
                           type="button"
-                          className="px-3 pt-[1px] pb-[4px] text-black/75 transition-colors duration-300 flex items-center gap-1.5 rounded-full min-h-[28px]"
+                          className="px-3 py-[6px] text-black/75 transition-colors duration-300 flex items-center justify-center gap-1.5 rounded-full min-h-[28px]"
                         >
-                          <span className="text-xs font-medium">9:16</span>
+                          <RectangleVerticalIcon className="h-4 w-4" />
                         </button>
                       </AnimatedTabs>
-                    </div>
                   </div>
                 </div>
 
                 {/* View mode selector */}
-                <div className="flex flex-1 min-w-[140px] justify-center">
-                  <div className="flex flex-col items-center gap-2">
-                    <span className="text-xs text-white/70">View Style</span>
-                    <div className="flex items-center justify-center rounded-full bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[3px] inner-stroke-white-20-sm shadow-sm w-fit min-h-[32px]">
+                <div className="flex flex-1 justify-end">
+                  <div className="flex items-center justify-center rounded-full bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[3px] inner-stroke-white-20-sm shadow-sm w-fit min-h-[32px]">
                       <AnimatedTabs
                         defaultValue={viewMode}
                         onValueChange={(value) => setViewMode(value as ViewMode)}
@@ -836,21 +813,8 @@ const ShareSessionButton = ({
                           <span className="text-xs font-medium">Card</span>
                         </button>
                       </AnimatedTabs>
-                    </div>
                   </div>
                 </div>
-              </div>
-
-              {/* Download button */}
-              <div className="flex justify-center mt-2">
-                <Button
-                  onClick={handleDownload}
-                  disabled={isGeneratingImage}
-                  className="bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center justify-center gap-2 rounded-full inner-stroke-white-20-sm px-6 py-2"
-                >
-                  <Download className="h-4 w-4" />
-                  {isGeneratingImage ? "Generating..." : "Download Image"}
-                </Button>
               </div>
             </div>
           </div>
