@@ -16,7 +16,7 @@ type PictureInPictureVariant = "default" | "compactBlur";
 
 const PIP_VARIANT_STORAGE_KEY = "timer-mirror:pip-variant";
 const DEFAULT_PIP_SIZE = { width: 400, height: 300 };
-const COMPACT_PIP_SIZE = { width: 360, height: 200 };
+const COMPACT_PIP_SIZE = { width: 300, height: 100 };
 
 const getStoredVariant = (): PictureInPictureVariant => {
   if (typeof window === "undefined") {
@@ -152,7 +152,7 @@ export function usePictureInPicture({
           height: 100%;
           position: relative;
           background: rgba(0, 0, 0, 0.2);
-          border-radius: 12px;
+          border-radius: 0px;
           overflow: hidden;
           box-shadow: none;
         }
@@ -164,6 +164,9 @@ export function usePictureInPicture({
         }
         .pip-container[data-pip-variant="compactBlur"] .pip-video {
           filter: blur(8px);
+        }
+        .pip-container[data-pip-variant="compactBlur"] .pip-timer {
+          background: none;
         }
         .pip-timer {
           position: absolute;
@@ -190,7 +193,9 @@ export function usePictureInPicture({
           -webkit-backdrop-filter: blur(8px);
           padding: 8px 16px 9px 16px;
           border-radius: 10px;
-          font-size: 15px;
+          font: inherit;
+          font-size: 12px;
+          font-weight: 500;
           color: rgba(255, 255, 255, 0.9);
           position: relative;
           box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -220,20 +225,30 @@ export function usePictureInPicture({
         }
         .pip-variant-toggle {
           border: none;
-          background: linear-gradient(to bottom, rgba(70, 70, 70, 0.5), rgba(40, 40, 40, 0.5));
-          backdrop-filter: blur(8px);
-          -webkit-backdrop-filter: blur(8px);
-          padding: 6px 10px;
-          border-radius: 10px;
+          background: rgba(255, 255, 255, 0.6);
+          backdrop-filter: blur(4px);
+          -webkit-backdrop-filter: blur(4px);
+          padding: 4px 9px;
+          border-radius: 100px;
+          font: inherit;
           font-size: 12px;
-          font-weight: 600;
-          color: rgba(255, 255, 255, 0.85);
+          font-weight: 500;
+          letter-spacing: -0.03em;
+          color: rgba(0, 0, 0, 0.75);
           position: absolute;
-          right: 8px;
+          right: 10px;
           top: 50%;
           transform: translateY(-50%);
           cursor: pointer;
           box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .pip-variant-toggle::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.2));
+          border-radius: 100px;
+          pointer-events: none;
         }
         .pip-variant-toggle::after {
           content: '';
@@ -259,8 +274,8 @@ export function usePictureInPicture({
           position: absolute;
           bottom: 8px;
           left: 8px;
-          width: 70px;
-          height: 35px;
+          width: 52px;
+          height: 22px;
           display: flex;
           justify-content: center;
           align-items: center;
@@ -274,8 +289,8 @@ export function usePictureInPicture({
           display: flex;
           align-items: center;
           justify-content: center;
-          border-radius: 10px;
-          font-size: 15px;
+          border-radius: 6px;
+          font-size: 12px;
           font-weight: 600;
           color: rgba(255, 255, 255, 0.85);
           position: relative;
@@ -286,7 +301,7 @@ export function usePictureInPicture({
           position: absolute;
           inset: 0;
           border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 10px;
+          border-radius: 6px;
           pointer-events: none;
         }
         .pip-complete-text {
@@ -307,8 +322,8 @@ export function usePictureInPicture({
           position: absolute;
           bottom: 8px;
           left: 8px;
-          width: 70px;
-          height: 35px;
+          width: 52px;
+          height: 22px;
           display: flex;
           justify-content: center;
           align-items: center;
@@ -322,8 +337,8 @@ export function usePictureInPicture({
           display: flex;
           align-items: center;
           justify-content: center;
-          border-radius: 10px;
-          font-size: 15px;
+          border-radius: 6px;
+          font-size: 12px;
           font-weight: 600;
           color: rgba(255, 255, 255, 0.85);
           position: relative;
@@ -334,18 +349,43 @@ export function usePictureInPicture({
           position: absolute;
           inset: 0;
           border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 10px;
+          border-radius: 6px;
           pointer-events: none;
         }
         .pip-container[data-pip-variant="compactBlur"] .pip-task-name-container {
           justify-content: flex-start;
+          align-items: center;
+          gap: 0;
+          padding: 0 8px 0 0;
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(to bottom, rgba(70, 70, 70, 0.5), rgba(40, 40, 40, 0.5));
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
         }
         .pip-container[data-pip-variant="compactBlur"] .pip-task-name {
           width: auto;
+          padding: 0;
           text-align: left;
+          background: none;
+          box-shadow: none;
+          backdrop-filter: none;
+          -webkit-backdrop-filter: none;
+        }
+        .pip-container[data-pip-variant="compactBlur"] .pip-task-name::after {
+          content: none;
         }
         .pip-container[data-pip-variant="compactBlur"] .pip-header-time {
           display: flex;
+        }
+        .pip-container[data-pip-variant="compactBlur"] .pip-countdown-text {
+          background: none;
+          box-shadow: none;
+          backdrop-filter: none;
+          -webkit-backdrop-filter: none;
+        }
+        .pip-container[data-pip-variant="compactBlur"] .pip-countdown-text::after {
+          content: none;
         }
         .pip-container[data-pip-variant="compactBlur"] .pip-countdown-container {
           display: none;
