@@ -254,7 +254,7 @@ export function usePictureInPicture({
           pointer-events: none;
         }
         .pip-header-time {
-          width: 52px;
+          width: 40px;
           height: 30px;
           display: flex;
           align-items: center;
@@ -266,19 +266,27 @@ export function usePictureInPicture({
           background: rgba(255, 255, 255, 0.6);
           backdrop-filter: blur(4px);
           -webkit-backdrop-filter: blur(4px);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
           padding: 4px 9px;
           border-radius: 100px;
           font: inherit;
           font-size: 12px;
-          font-weight: 500;
-          letter-spacing: -0.03em;
-          color: rgba(0, 0, 0, 0.75);
+          font-weight: 600;
+          letter-spacing: -0.025em;
+          color: rgba(0, 0, 0, 0.7);
           position: absolute;
           right: 12px;
           top: 50%;
           transform: translateY(-50%);
           cursor: pointer;
           box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .pip-variant-toggle svg {
+          width: 14px;
+          height: 14px;
+          display: block;
         }
         .pip-variant-toggle::before {
           content: '';
@@ -312,7 +320,7 @@ export function usePictureInPicture({
           position: absolute;
           bottom: 8px;
           left: 8px;
-          width: 52px;
+          width: 40px;
           height: 22px;
           display: none;
           justify-content: center;
@@ -360,7 +368,7 @@ export function usePictureInPicture({
           position: absolute;
           bottom: 8px;
           left: 8px;
-          width: 52px;
+          width: 40px;
           height: 16px;
           display: none;
           justify-content: center;
@@ -389,6 +397,49 @@ export function usePictureInPicture({
           border: 1px solid rgba(255, 255, 255, 0.1);
           border-radius: 8px;
           pointer-events: none;
+        }
+        .pip-container[data-pip-variant="default"] .pip-task-name-container {
+          background: linear-gradient(to bottom, rgba(70, 70, 70, 0.5), rgba(40, 40, 40, 0.5));
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          border-radius: 12px;
+          margin: 4px;
+          width: calc(100% - 8px);
+          gap: 4px;
+          padding: 6px 8px;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .pip-container[data-pip-variant="default"] .pip-task-name-container::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 12px;
+          pointer-events: none;
+        }
+        .pip-container[data-pip-variant="default"] .pip-task-name {
+          background: none;
+          box-shadow: none;
+          backdrop-filter: none;
+          -webkit-backdrop-filter: none;
+          padding: 0;
+        }
+        .pip-container[data-pip-variant="default"] .pip-task-name::after {
+          content: none;
+        }
+        .pip-container[data-pip-variant="default"] .pip-countdown-text {
+          background: none;
+          box-shadow: none;
+          backdrop-filter: none;
+          -webkit-backdrop-filter: none;
+        }
+        .pip-container[data-pip-variant="default"] .pip-countdown-text::after {
+          content: none;
+        }
+        .pip-container[data-pip-variant="default"] .pip-variant-toggle {
+          position: static;
+          transform: none;
+          margin-left: auto;
         }
         .pip-container[data-pip-variant="compactBlur"] .pip-task-name-container {
           justify-content: flex-start;
@@ -566,9 +617,24 @@ export function usePictureInPicture({
 
       let currentVariant = initialVariant;
 
+      const defaultIconMarkup = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" focusable="false">
+          <path d="M96.68,57.87a4,4,0,0,1,2.08-6.6A130.13,130.13,0,0,1,128,48c34.88,0,66.57,13.26,91.66,38.35,18.83,18.83,27.3,37.62,27.65,38.41a8,8,0,0,1,0,6.5c-.35.79-8.82,19.57-27.65,38.4q-4.28,4.26-8.79,8.07a4,4,0,0,1-5.55-.36ZM213.92,210.62a8,8,0,1,1-11.84,10.76L180,197.13A127.21,127.21,0,0,1,128,208c-34.88,0-66.57-13.26-91.66-38.34C17.51,150.83,9,132.05,8.69,131.26a8,8,0,0,1,0-6.5C9,124,17.51,105.18,36.34,86.35a135,135,0,0,1,25-19.78L42.08,45.38A8,8,0,1,1,53.92,34.62Zm-65.49-48.25-52.69-58a40,40,0,0,0,52.69,58Z"></path>
+        </svg>
+      `;
+      const compactIconMarkup = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" focusable="false">
+          <path d="M247.31,124.76c-.35-.79-8.82-19.58-27.65-38.41C194.57,61.26,162.88,48,128,48S61.43,61.26,36.34,86.35C17.51,105.18,9,124,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208s66.57-13.26,91.66-38.34c18.83-18.83,27.3-37.61,27.65-38.4A8,8,0,0,0,247.31,124.76ZM128,168a40,40,0,1,1,40-40A40,40,0,0,1,128,168Z"></path>
+        </svg>
+      `;
+
       const updateToggleLabel = (variant: PictureInPictureVariant) => {
-        toggleButton.textContent =
-          variant === "compactBlur" ? "Default" : "Compact";
+        const nextVariant =
+          variant === "compactBlur" ? "default" : "compactBlur";
+        toggleButton.innerHTML =
+          nextVariant === "compactBlur"
+            ? compactIconMarkup
+            : defaultIconMarkup;
         toggleButton.setAttribute(
           "aria-pressed",
           variant === "compactBlur" ? "true" : "false",
