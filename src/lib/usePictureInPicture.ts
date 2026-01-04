@@ -12,6 +12,42 @@ interface UsePictureInPictureProps {
   onSessionComplete?: () => void;
 }
 
+type PictureInPictureVariant = "default" | "compactBlur";
+
+const PIP_VARIANT_STORAGE_KEY = "timer-mirror:pip-variant";
+const DEFAULT_PIP_SIZE = { width: 400, height: 300 };
+const COMPACT_PIP_SIZE = { width: 300, height: 100 };
+
+const getStoredVariant = (): PictureInPictureVariant => {
+  if (typeof window === "undefined") {
+    return "default";
+  }
+
+  try {
+    const storedVariant = window.localStorage.getItem(
+      PIP_VARIANT_STORAGE_KEY,
+    );
+    return storedVariant === "compactBlur" ? "compactBlur" : "default";
+  } catch {
+    return "default";
+  }
+};
+
+const persistVariant = (variant: PictureInPictureVariant) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(PIP_VARIANT_STORAGE_KEY, variant);
+  } catch {
+    // Ignore storage access errors.
+  }
+};
+
+const getVariantSize = (variant: PictureInPictureVariant) =>
+  variant === "compactBlur" ? COMPACT_PIP_SIZE : DEFAULT_PIP_SIZE;
+
 export function usePictureInPicture({
   videoRef,
   taskName,
@@ -23,7 +59,8 @@ export function usePictureInPicture({
   // Update PiP window timer
   useEffect(() => {
     if (pipWindow) {
-      const timerText = pipWindow.document.querySelector(".pip-countdown-text");
+      const timerText =
+        pipWindow.document.querySelector<HTMLElement>("[data-pip-timer]");
       if (timerText) {
         timerText.textContent = `${Math.floor(remainingTime / 60)}:${String(
           Math.floor(remainingTime % 60),
@@ -45,12 +82,20 @@ export function usePictureInPicture({
   const showEndMessage = () => {
     if (pipWindow) {
       // Hide the countdown timer
-      const countdownContainer =
-        pipWindow.document.querySelector<HTMLElement>(
-          ".pip-countdown-container",
+      const timerContainers =
+        pipWindow.document.querySelectorAll<HTMLElement>(
+          "[data-pip-timer-container]",
         );
-      if (countdownContainer) {
-        countdownContainer.style.display = "none";
+      timerContainers.forEach((container) => {
+        container.style.display = "none";
+      });
+
+      const taskNameContainer =
+        pipWindow.document.querySelector<HTMLElement>(
+          ".pip-task-name-container",
+        );
+      if (taskNameContainer) {
+        taskNameContainer.style.display = "none";
       }
 
       // Show the end message in the center container
@@ -82,6 +127,9 @@ export function usePictureInPicture({
     }
 
     try {
+      const initialVariant = getStoredVariant();
+      const initialSize = getVariantSize(initialVariant);
+
       // Close existing PiP window if it exists
       if (pipWindow) {
         pipWindow.close();
@@ -89,8 +137,8 @@ export function usePictureInPicture({
 
       // @ts-expect-error documentPictureInPicture is experimental and not yet in lib DOM types
       const newPipWindow = await window.documentPictureInPicture.requestWindow({
-        width: options.width || 400,
-        height: options.height || 300,
+        width: options.width ?? initialSize.width,
+        height: options.height ?? initialSize.height,
       });
 
       setPipWindow(newPipWindow);
@@ -107,12 +155,23 @@ export function usePictureInPicture({
           height: 100vh;
           font-family: system-ui;
         }
+        @keyframes pip-marquee {
+          0% {
+            transform: translateX(0);
+          }
+          85% {
+            transform: translateX(calc(-1 * var(--pip-marquee-distance, 0px)));
+          }
+          100% {
+            transform: translateX(calc(-1 * var(--pip-marquee-distance, 0px)));
+          }
+        }
         .pip-container {
           width: 100%;
           height: 100%;
           position: relative;
           background: rgba(0, 0, 0, 0.2);
-          border-radius: 12px;
+          border-radius: 0px;
           overflow: hidden;
           box-shadow: none;
         }
@@ -121,6 +180,12 @@ export function usePictureInPicture({
           height: 100%;
           object-fit: cover;
           transform: rotateY(180deg);
+        }
+        .pip-container[data-pip-variant="compactBlur"] .pip-video {
+          filter: blur(8px);
+        }
+        .pip-container[data-pip-variant="compactBlur"] .pip-timer {
+          background: none;
         }
         .pip-timer {
           position: absolute;
@@ -134,9 +199,12 @@ export function usePictureInPicture({
         .pip-task-name-container {
           width: 100%;
           display: flex;
-          justify-content: center;
+          align-items: center;
+          justify-content: flex-start;
+          gap: 4px;
           padding: 8px 8px 8px;
           box-sizing: border-box;
+          position: relative;
         }
         .pip-task-name {
           background: linear-gradient(to bottom, rgba(70, 70, 70, 0.5), rgba(40, 40, 40, 0.5));
@@ -144,17 +212,99 @@ export function usePictureInPicture({
           -webkit-backdrop-filter: blur(8px);
           padding: 8px 16px 9px 16px;
           border-radius: 10px;
-          font-size: 15px;
+          font: inherit;
+          font-size: 12px;
+          font-weight: 500;
           color: rgba(255, 255, 255, 0.9);
           position: relative;
           box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-          width: calc(100% - 8px);
+          flex: 1 1 auto;
+          min-width: 0;
+          white-space: nowrap;
+          overflow: hidden;
+          text-align: left;
+        }
+        .pip-task-name-track {
+          width: 100%;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
-          text-align: center;
+          display: block;
+        }
+        .pip-task-name-text {
+          white-space: nowrap;
+        }
+        .pip-task-name-text + .pip-task-name-text {
+          display: none;
+        }
+        .pip-task-name.is-scrolling {
+          text-overflow: clip;
+        }
+        .pip-task-name.is-scrolling .pip-task-name-track {
+          width: auto;
+          display: inline-flex;
+          align-items: center;
+          gap: var(--pip-marquee-gap, 32px);
+          overflow: visible;
+          text-overflow: clip;
+          animation: pip-marquee var(--pip-marquee-duration, 12s) linear infinite;
+          will-change: transform;
+        }
+        .pip-task-name.is-scrolling .pip-task-name-text + .pip-task-name-text {
+          display: inline;
         }
         .pip-task-name::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 10px;
+          pointer-events: none;
+        }
+        .pip-header-time {
+          width: 44px;
+          height: 30px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex: 0 0 auto;
+        }
+        .pip-variant-toggle {
+          border: none;
+          background: rgba(255, 255, 255, 0.6);
+          backdrop-filter: blur(4px);
+          -webkit-backdrop-filter: blur(4px);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 4px 9px;
+          border-radius: 100px;
+          font: inherit;
+          font-size: 12px;
+          font-weight: 600;
+          letter-spacing: -0.025em;
+          color: rgba(0, 0, 0, 0.7);
+          position: absolute;
+          right: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          cursor: pointer;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .pip-variant-toggle svg {
+          width: 14px;
+          height: 14px;
+          display: block;
+        }
+        .pip-variant-toggle::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.2));
+          border-radius: 100px;
+          pointer-events: none;
+        }
+        .pip-variant-toggle::after {
           content: '';
           position: absolute;
           inset: 0;
@@ -178,9 +328,9 @@ export function usePictureInPicture({
           position: absolute;
           bottom: 8px;
           left: 8px;
-          width: 70px;
-          height: 35px;
-          display: flex;
+          width: 44px;
+          height: 22px;
+          display: none;
           justify-content: center;
           align-items: center;
         }
@@ -193,8 +343,8 @@ export function usePictureInPicture({
           display: flex;
           align-items: center;
           justify-content: center;
-          border-radius: 10px;
-          font-size: 15px;
+          border-radius: 8px;
+          font-size: 12px;
           font-weight: 600;
           color: rgba(255, 255, 255, 0.85);
           position: relative;
@@ -205,7 +355,7 @@ export function usePictureInPicture({
           position: absolute;
           inset: 0;
           border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 10px;
+          border-radius: 8px;
           pointer-events: none;
         }
         .pip-complete-text {
@@ -226,9 +376,9 @@ export function usePictureInPicture({
           position: absolute;
           bottom: 8px;
           left: 8px;
-          width: 70px;
-          height: 35px;
-          display: flex;
+          width: 44px;
+          height: 16px;
+          display: none;
           justify-content: center;
           align-items: center;
         }
@@ -241,8 +391,8 @@ export function usePictureInPicture({
           display: flex;
           align-items: center;
           justify-content: center;
-          border-radius: 10px;
-          font-size: 15px;
+          border-radius: 8px;
+          font-size: 12px;
           font-weight: 600;
           color: rgba(255, 255, 255, 0.85);
           position: relative;
@@ -253,8 +403,95 @@ export function usePictureInPicture({
           position: absolute;
           inset: 0;
           border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 10px;
+          border-radius: 8px;
           pointer-events: none;
+        }
+        .pip-container[data-pip-variant="default"] .pip-task-name-container {
+          background: linear-gradient(to bottom, rgba(70, 70, 70, 0.5), rgba(40, 40, 40, 0.5));
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          border-radius: 12px;
+          margin: 4px;
+          width: calc(100% - 8px);
+          gap: 4px;
+          padding: 6px 8px;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .pip-container[data-pip-variant="default"] .pip-task-name-container::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 12px;
+          pointer-events: none;
+        }
+        .pip-container[data-pip-variant="default"] .pip-task-name {
+          background: none;
+          box-shadow: none;
+          backdrop-filter: none;
+          -webkit-backdrop-filter: none;
+          padding: 0;
+        }
+        .pip-container[data-pip-variant="default"] .pip-task-name::after {
+          content: none;
+        }
+        .pip-container[data-pip-variant="default"] .pip-countdown-text {
+          background: none;
+          box-shadow: none;
+          backdrop-filter: none;
+          -webkit-backdrop-filter: none;
+        }
+        .pip-container[data-pip-variant="default"] .pip-countdown-text::after {
+          content: none;
+        }
+        .pip-container[data-pip-variant="default"] .pip-variant-toggle {
+          position: static;
+          transform: none;
+          margin-left: auto;
+        }
+        .pip-container[data-pip-variant="compactBlur"] .pip-task-name-container {
+          justify-content: flex-start;
+          align-items: center;
+          gap: 4px;
+          padding: 0 8px 0 4px;
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(to bottom, rgba(70, 70, 70, 0.5), rgba(40, 40, 40, 0.5));
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          border-radius: 0;
+        }
+        .pip-container[data-pip-variant="compactBlur"] .pip-task-name {
+          width: auto;
+          padding: 0;
+          text-align: left;
+          background: none;
+          box-shadow: none;
+          backdrop-filter: none;
+          -webkit-backdrop-filter: none;
+        }
+        .pip-container[data-pip-variant="compactBlur"] .pip-task-name::after {
+          content: none;
+        }
+        .pip-container[data-pip-variant="compactBlur"] .pip-header-time {
+          display: flex;
+        }
+        .pip-container[data-pip-variant="compactBlur"] .pip-countdown-text {
+          background: none;
+          box-shadow: none;
+          backdrop-filter: none;
+          -webkit-backdrop-filter: none;
+        }
+        .pip-container[data-pip-variant="compactBlur"] .pip-countdown-text::after {
+          content: none;
+        }
+        .pip-container[data-pip-variant="compactBlur"] .pip-countdown-container {
+          display: none;
+        }
+        .pip-container[data-pip-variant="compactBlur"] .pip-variant-toggle {
+          position: static;
+          transform: none;
+          margin-left: auto;
         }
         .pip-end-message {
   display: flex;
@@ -290,10 +527,40 @@ export function usePictureInPicture({
       const taskNameContainer = document.createElement("div");
       taskNameContainer.className = "pip-task-name-container";
 
+      const headerTime = document.createElement("div");
+      headerTime.className = "pip-header-time";
+      headerTime.setAttribute("data-pip-timer-container", "true");
+
+      const countdownText = document.createElement("div");
+      countdownText.className = "pip-countdown-text";
+      countdownText.setAttribute("data-pip-timer", "true");
+
       const taskNameDiv = document.createElement("div");
       taskNameDiv.className = "pip-task-name";
-      taskNameDiv.textContent = taskName;
+      const taskNameTrack = document.createElement("div");
+      taskNameTrack.className = "pip-task-name-track";
+
+      const taskNameSpan = document.createElement("span");
+      taskNameSpan.className = "pip-task-name-text";
+      taskNameSpan.textContent = taskName;
+
+      const taskNameSpanDuplicate = document.createElement("span");
+      taskNameSpanDuplicate.className = "pip-task-name-text";
+      taskNameSpanDuplicate.textContent = taskName;
+      taskNameSpanDuplicate.setAttribute("aria-hidden", "true");
+
+      taskNameTrack.appendChild(taskNameSpan);
+      taskNameTrack.appendChild(taskNameSpanDuplicate);
+      taskNameDiv.appendChild(taskNameTrack);
+
+      const toggleButton = document.createElement("button");
+      toggleButton.className = "pip-variant-toggle";
+      toggleButton.type = "button";
+      toggleButton.setAttribute("aria-label", "Toggle PiP layout");
+
+      taskNameContainer.appendChild(headerTime);
       taskNameContainer.appendChild(taskNameDiv);
+      taskNameContainer.appendChild(toggleButton);
       timerDiv.appendChild(taskNameContainer);
 
       // Center container for end message
@@ -304,15 +571,121 @@ export function usePictureInPicture({
       // Countdown timer at bottom left
       const countdownContainer = document.createElement("div");
       countdownContainer.className = "pip-countdown-container";
-
-      const countdownText = document.createElement("div");
-      countdownText.className = "pip-countdown-text";
-      countdownContainer.appendChild(countdownText);
+      countdownContainer.setAttribute("data-pip-timer-container", "true");
       timerDiv.appendChild(countdownContainer);
+
+      const updateTaskNameMarquee = () => {
+        const taskNameStyles = newPipWindow.getComputedStyle(taskNameDiv);
+        const paddingLeft = Number.parseFloat(taskNameStyles.paddingLeft);
+        const paddingRight = Number.parseFloat(taskNameStyles.paddingRight);
+        const paddingWidth = Number.isFinite(paddingLeft + paddingRight)
+          ? paddingLeft + paddingRight
+          : 0;
+        const availableWidth = taskNameDiv.clientWidth - paddingWidth;
+        if (availableWidth <= 0) {
+          return;
+        }
+
+        const textWidth = taskNameSpan.getBoundingClientRect().width;
+        if (!textWidth) {
+          taskNameDiv.classList.remove("is-scrolling");
+          return;
+        }
+
+        const gap = 32;
+        const needsScroll = textWidth > availableWidth + 1;
+
+        if (needsScroll) {
+          const distance = textWidth + gap;
+          const duration = distance * 0.08;
+          taskNameDiv.classList.add("is-scrolling");
+          taskNameTrack.style.setProperty("--pip-marquee-gap", `${gap}px`);
+          taskNameTrack.style.setProperty(
+            "--pip-marquee-distance",
+            `${distance}px`,
+          );
+          taskNameTrack.style.setProperty(
+            "--pip-marquee-duration",
+            `${duration}s`,
+          );
+        } else {
+          taskNameDiv.classList.remove("is-scrolling");
+          taskNameTrack.style.removeProperty("--pip-marquee-distance");
+          taskNameTrack.style.removeProperty("--pip-marquee-duration");
+        }
+      };
+
+      const scheduleTaskNameMarquee = () => {
+        if (typeof newPipWindow.requestAnimationFrame === "function") {
+          newPipWindow.requestAnimationFrame(updateTaskNameMarquee);
+        } else {
+          updateTaskNameMarquee();
+        }
+      };
+
+      let currentVariant = initialVariant;
+
+      const defaultIconMarkup = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" focusable="false">
+          <path d="M96.68,57.87a4,4,0,0,1,2.08-6.6A130.13,130.13,0,0,1,128,48c34.88,0,66.57,13.26,91.66,38.35,18.83,18.83,27.3,37.62,27.65,38.41a8,8,0,0,1,0,6.5c-.35.79-8.82,19.57-27.65,38.4q-4.28,4.26-8.79,8.07a4,4,0,0,1-5.55-.36ZM213.92,210.62a8,8,0,1,1-11.84,10.76L180,197.13A127.21,127.21,0,0,1,128,208c-34.88,0-66.57-13.26-91.66-38.34C17.51,150.83,9,132.05,8.69,131.26a8,8,0,0,1,0-6.5C9,124,17.51,105.18,36.34,86.35a135,135,0,0,1,25-19.78L42.08,45.38A8,8,0,1,1,53.92,34.62Zm-65.49-48.25-52.69-58a40,40,0,0,0,52.69,58Z"></path>
+        </svg>
+      `;
+      const compactIconMarkup = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" focusable="false">
+          <path d="M247.31,124.76c-.35-.79-8.82-19.58-27.65-38.41C194.57,61.26,162.88,48,128,48S61.43,61.26,36.34,86.35C17.51,105.18,9,124,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208s66.57-13.26,91.66-38.34c18.83-18.83,27.3-37.61,27.65-38.4A8,8,0,0,0,247.31,124.76ZM128,168a40,40,0,1,1,40-40A40,40,0,0,1,128,168Z"></path>
+        </svg>
+      `;
+
+      const updateToggleLabel = (variant: PictureInPictureVariant) => {
+        const nextVariant =
+          variant === "compactBlur" ? "default" : "compactBlur";
+        toggleButton.innerHTML =
+          nextVariant === "compactBlur"
+            ? compactIconMarkup
+            : defaultIconMarkup;
+        toggleButton.setAttribute(
+          "aria-pressed",
+          variant === "compactBlur" ? "true" : "false",
+        );
+      };
+
+      const applyVariant = (variant: PictureInPictureVariant) => {
+        currentVariant = variant;
+        container.dataset.pipVariant = variant;
+
+        if (countdownText.parentElement !== headerTime) {
+          headerTime.appendChild(countdownText);
+        }
+
+        updateToggleLabel(variant);
+
+        if (container.isConnected) {
+          scheduleTaskNameMarquee();
+        }
+      };
+
+      applyVariant(initialVariant);
+
+      toggleButton.addEventListener("click", () => {
+        const nextVariant =
+          currentVariant === "compactBlur" ? "default" : "compactBlur";
+        applyVariant(nextVariant);
+        persistVariant(nextVariant);
+        const nextSize = getVariantSize(nextVariant);
+
+        try {
+          if (typeof newPipWindow.resizeTo === "function") {
+            newPipWindow.resizeTo(nextSize.width, nextSize.height);
+          }
+        } catch {
+          // Ignore resize failures.
+        }
+      });
 
       container.appendChild(timerDiv);
 
       newPipWindow.document.body.appendChild(container);
+      scheduleTaskNameMarquee();
 
       // Handle window closing
       const handleUnload = () => {
@@ -321,6 +694,7 @@ export function usePictureInPicture({
 
       newPipWindow.addEventListener("unload", handleUnload);
       newPipWindow.addEventListener("beforeunload", handleUnload);
+      newPipWindow.addEventListener("resize", scheduleTaskNameMarquee);
 
       // Handle page visibility changes
       const handleVisibilityChange = () => {
@@ -340,6 +714,7 @@ export function usePictureInPicture({
         if (newPipWindow) {
           newPipWindow.removeEventListener("unload", handleUnload);
           newPipWindow.removeEventListener("beforeunload", handleUnload);
+          newPipWindow.removeEventListener("resize", scheduleTaskNameMarquee);
           // We intentionally don't close the PiP window here
           // so it remains visible with the completion animation
         }

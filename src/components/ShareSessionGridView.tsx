@@ -1,3 +1,6 @@
+// ShareSessionGridView.tsx
+// Share dialog "Card" preview that renders a grid of captured session media.
+// Keeps initial sizing/entry animation smooth inside the share preview container.
 import React, {
   useRef,
   useLayoutEffect,
@@ -214,6 +217,7 @@ const ShareSessionGridView = ({
   // NEW: refs to measure the available container and compute a bounded width
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [cardWidthPx, setCardWidthPx] = useState<number | undefined>(undefined);
+  const [enableWidthTransition, setEnableWidthTransition] = useState(false);
 
   // Combine photos based on device type
   const allPhotos = useMemo(() => {
@@ -352,6 +356,7 @@ const ShareSessionGridView = ({
   // - mount, resize of the wrapper, taskName changes (affects badge height),
   // - photo set changes (rarely changes height but keep it safe)
   useLayoutEffect(() => {
+    recomputeCardWidth();
     const ro = new ResizeObserver(recomputeCardWidth);
     if (wrapperRef.current) ro.observe(wrapperRef.current);
     const badgeEl = (taskBadgeRef?.current as HTMLElement | null) ?? undefined;
@@ -413,18 +418,30 @@ const ShareSessionGridView = ({
             springOptions={{ stiffness: 300, damping: 30 }}
           >
             <motion.div
-              className="p-1 bg-white rounded-xl shadow-md w-full"
+              className={cn(
+                "p-1 bg-white rounded-xl shadow-md w-full",
+                enableWidthTransition && "transition-[width] duration-300 ease-out",
+              )}
               style={{
                 width: cardWidthPx ? `${cardWidthPx}px` : undefined,
                 maxHeight: "100%",
               }}
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={
+                cardWidthPx === undefined
+                  ? { scale: 0.8, opacity: 0 }
+                  : { scale: 1, opacity: 1 }
+              }
               transition={{
                 type: "spring",
                 stiffness: 300,
-                damping: 22,
+                damping: 24,
                 delay: 0.05,
+              }}
+              onAnimationComplete={() => {
+                if (!enableWidthTransition) {
+                  setEnableWidthTransition(true);
+                }
               }}
             >
               <div className="relative">

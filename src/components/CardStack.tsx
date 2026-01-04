@@ -201,7 +201,6 @@ const CardStack = forwardRef<CardStackRef, CardStackProps>(
               key={`photo-${card.id}`}
               className="absolute"
               style={{
-                width: `${CARD_W_PERCENT}%`,
                 aspectRatio: CARD_AR,
                 left: 0,
                 top: 12,
@@ -209,8 +208,15 @@ const CardStack = forwardRef<CardStackRef, CardStackProps>(
                 right: 0,
                 margin: "auto",
               }}
-              initial={basePose(card)}
-              animate={card.id === movingId ? controls : basePose(card)}
+              initial={{ ...basePose(card), width: `${CARD_W_PERCENT}%` }}
+              animate={
+                card.id === movingId
+                  ? controls
+                  : { ...basePose(card), width: `${CARD_W_PERCENT}%` }
+              }
+              transition={{
+                width: { type: "spring", stiffness: 300, damping: 28 },
+              }}
             >
               <div
                 className={cn(

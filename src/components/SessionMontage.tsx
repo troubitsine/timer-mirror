@@ -204,7 +204,7 @@ const SessionMontage = ({
         {/* Replay button - only show when controls aren't hidden */}
         {!hideControls && (
           <motion.div
-            className="absolute bottom-4 right-4 z-30"
+            className="absolute top-4 left-4 z-30"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.3 }}

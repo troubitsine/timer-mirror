@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import TaskNameInput from "./TaskNameInput";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
@@ -55,6 +55,13 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
     );
     const timerRef = useRef<NodeJS.Timeout>();
     const latestPendingStreamRef = useRef<MediaStream | null>(null);
+    const handleTaskNameChange = useCallback(
+      (value: string) => {
+        setTaskName(value);
+        onTaskNameChange(value);
+      },
+      [onTaskNameChange],
+    );
 
     // Use the PiP hook
     const { enterPiP, showEndMessage } = usePictureInPicture({
@@ -290,10 +297,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                   value={taskName}
                   readOnly
                   isRunning={true}
-                  onChange={(value) => {
-                    setTaskName(value);
-                    onTaskNameChange(value);
-                  }}
+                  onChange={handleTaskNameChange}
                 />
               </div>
             ) : (
@@ -302,10 +306,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                   value={taskName}
                   autoFocus={hasPermission}
                   isRunning={false}
-                  onChange={(value) => {
-                    setTaskName(value);
-                    onTaskNameChange(value);
-                  }}
+                  onChange={handleTaskNameChange}
                 />
                 <div className="w-full max-w-lg mx-auto space-y-1 md:space-y-3 sm:px-0">
                   <div className="px-3 sm:px-6 py-3 sm:py-3 rounded-xl bg-gradient-to-b from-neutral-700/50 via-neutral-900/50 to-neutral-900/50 shadow-sm backdrop-blur-md border-none inner-stroke-white-10-sm">
