@@ -131,6 +131,7 @@ const ShareSessionButton = ({
 
   const isMobile =
     typeof window !== "undefined" ? isMobileDevice() : false;
+  const isShareGenerating = isMobile && isGeneratingImage;
   const foregroundScale = isMobile ? 1 : 0.67;
 
   const handleShare = async () => {
@@ -628,9 +629,12 @@ const ShareSessionButton = ({
           size="sm"
           variant="secondary"
           onClick={handleShare}
-          disabled={isMobile && isGeneratingImage}
+          disabled={isShareGenerating}
           type="button"
-          className="relative z-10 bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/70 backdrop-blur-md flex items-center gap-1 rounded-full inner-stroke-white-20-sm sm:px-[10px] pt-[6px] pb-[7px] px-[12px]"
+          className={cn(
+            "relative z-10 bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/70 backdrop-blur-md flex items-center gap-1 rounded-full inner-stroke-white-20-sm sm:px-[10px] pt-[6px] pb-[7px] px-[12px]",
+            isShareGenerating && "bg-white/65 disabled:bg-white/65 disabled:opacity-100",
+          )}
         >
           <AnimatedShinyText
             shimmerColor={shimmerColor}
