@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { useDynamicBackground } from "@/lib/useDynamicBackground";
 import { useSessionMedia } from "@/lib/useSessionMedia";
 import CardStack, { CardStackRef } from "./CardStack";
+import { ANALYTICS_EVENTS, trackEvent } from "@/lib/analytics";
 
 interface ShareSessionMontageProps {
   screenshots?: string[];
@@ -76,6 +77,7 @@ const ShareSessionMontage = ({
 
   // Reset the card stack
   const handleReset = () => {
+    trackEvent(ANALYTICS_EVENTS.SHARE_REPLAY, { surface: "share_montage" });
     cardStackRef.current?.reset();
   };
 
@@ -83,7 +85,7 @@ const ShareSessionMontage = ({
     <Card
       data-share-surface="backdrop"
       className={cn(
-        "w-full h-full relative border-0",
+        "w-full h-full relative border-0 shadow-none inner-stroke-white-20-sm",
         selectedBackground?.className,
       )}
       style={exportBackgroundStyle}
@@ -166,6 +168,7 @@ const ShareSessionMontage = ({
             options={backgroundOptions}
             selectedId={selectedBackgroundId}
             onSelect={setSelectedBackgroundId}
+            surface="share_montage"
             className="bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[0px] inner-stroke-white-10-sm shadow-sm rounded-full"
           />
         </div>

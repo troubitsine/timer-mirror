@@ -3,6 +3,7 @@ import { Button } from "./ui/button";
 import { isMobileDevice } from "@/lib/deviceDetection";
 import { motion } from "framer-motion";
 import { CheckIcon } from "@radix-ui/react-icons";
+import { ANALYTICS_EVENTS, trackEvent } from "@/lib/analytics";
 
 interface OnboardingCardProps {
   className?: string;
@@ -19,7 +20,11 @@ const OnboardingCard = ({
 
   // Toggle collapsed state
   const toggleCollapsed = () => {
-    setIsCollapsed(!isCollapsed);
+    const nextCollapsed = !isCollapsed;
+    trackEvent(ANALYTICS_EVENTS.ONBOARDING_CARD_TOGGLE, {
+      state: nextCollapsed ? "collapsed" : "expanded",
+    });
+    setIsCollapsed(nextCollapsed);
   };
 
   // We now render on mobile too

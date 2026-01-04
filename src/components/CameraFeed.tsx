@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { usePictureInPicture } from "@/lib/usePictureInPicture";
 import { captureScreenshot, captureWebcam } from "@/lib/mediaCapture";
 import { isMobileDevice } from "@/lib/deviceDetection";
+import { ANALYTICS_EVENTS, trackEvent } from "@/lib/analytics";
 
 interface CameraFeedProps {
   onPermissionGranted?: () => void;
@@ -22,6 +23,8 @@ interface CameraFeedProps {
   isMobile?: boolean;
   skipInitialCameraRequest?: boolean;
 }
+
+const DURATION_TRACK_THROTTLE_MS = 1000;
 
 const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
   (
@@ -54,6 +57,8 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
       null,
     );
     const timerRef = useRef<NodeJS.Timeout>();
+    const lastTaskNameRef = useRef<string>("");
+    const lastDurationTrackRef = useRef(0);
     const latestPendingStreamRef = useRef<MediaStream | null>(null);
     const handleTaskNameChange = useCallback(
       (value: string) => {
@@ -61,6 +66,63 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
         onTaskNameChange(value);
       },
       [onTaskNameChange],
+    );
+    const trackTaskName = useCallback(
+      (value: string, source: "blur" | "start") => {
+        const trimmedValue = value.trim();
+        if (source === "blur" && trimmedValue === lastTaskNameRef.current) {
+          return;
+        }
+
+        lastTaskNameRef.current = trimmedValue;
+        const eventName =
+          source === "start"
+            ? ANALYTICS_EVENTS.TASK_NAME_START
+            : ANALYTICS_EVENTS.TASK_NAME_BLUR;
+        trackEvent(eventName, {
+          taskName: trimmedValue,
+          taskNameLength: trimmedValue.length,
+          source,
+        });
+      },
+      [],
+    );
+    const trackDurationChange = useCallback(
+      (seconds: number) => {
+        const now = Date.now();
+        if (now - lastDurationTrackRef.current < DURATION_TRACK_THROTTLE_MS) {
+          return;
+        }
+        lastDurationTrackRef.current = now;
+        trackEvent(ANALYTICS_EVENTS.TIMER_DURATION_SLIDER, {
+          seconds,
+          isMobile,
+        });
+      },
+      [isMobile],
+    );
+    const reportCameraPermission = useCallback(
+      (
+        status: "request" | "granted" | "denied" | "error",
+        source: string,
+        errorName?: string,
+      ) => {
+        const payload = {
+          source,
+          errorName,
+        };
+
+        if (status === "request") {
+          trackEvent(ANALYTICS_EVENTS.CAMERA_PERMISSION_REQUEST, payload);
+        } else if (status === "granted") {
+          trackEvent(ANALYTICS_EVENTS.CAMERA_PERMISSION_GRANTED, payload);
+        } else if (status === "denied") {
+          trackEvent(ANALYTICS_EVENTS.CAMERA_PERMISSION_DENIED, payload);
+        } else {
+          trackEvent(ANALYTICS_EVENTS.CAMERA_PERMISSION_ERROR, payload);
+        }
+      },
+      [],
     );
 
     // Use the PiP hook
@@ -71,7 +133,14 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
       onSessionComplete,
     });
 
-    const startCamera = async () => {
+    const startCamera = async ({
+      source = "manual",
+      showAlertOnDeny = true,
+    }: {
+      source?: string;
+      showAlertOnDeny?: boolean;
+    } = {}) => {
+      reportCameraPermission("request", source);
       try {
         const constraints = {
           video: {
@@ -92,6 +161,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
         setShowPermissionDialog(false);
         setPendingStream(stream);
         onPermissionGranted();
+        reportCameraPermission("granted", source);
         console.log("Camera started successfully, permission dialog hidden");
       } catch (err) {
         console.error("Error accessing camera:", err);
@@ -99,11 +169,21 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
         setShowPermissionDialog(false);
         onPermissionDenied();
 
+        const errorName =
+          err && typeof err === "object" && "name" in err
+            ? String((err as { name?: string }).name)
+            : "camera_error";
+        const isPermissionDenied =
+          errorName === "NotAllowedError" ||
+          errorName === "PermissionDeniedError";
+        reportCameraPermission(
+          isPermissionDenied ? "denied" : "error",
+          source,
+          errorName,
+        );
+
         // If permission is denied, guide the user to reset permissions
-        if (
-          err.name === "NotAllowedError" ||
-          err.name === "PermissionDeniedError"
-        ) {
+        if (showAlertOnDeny && isPermissionDenied) {
           alert(
             "Camera access was denied. Please reset permissions in your browser settings and try again.",
           );
@@ -159,6 +239,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
 
         // Show the permission dialog first
         setShowPermissionDialog(true);
+        reportCameraPermission("request", "initial");
 
         // Request camera permissions
         navigator.mediaDevices
@@ -175,6 +256,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
             setShowPermissionDialog(false);
             setPendingStream(stream);
             onPermissionGranted();
+            reportCameraPermission("granted", "initial");
             console.log(
               "States updated: hasPermission=true, showPermissionDialog=false",
             );
@@ -184,6 +266,18 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
             setHasPermission(false);
             setShowPermissionDialog(false);
             onPermissionDenied();
+            const errorName =
+              err && typeof err === "object" && "name" in err
+                ? String((err as { name?: string }).name)
+                : "camera_error";
+            const isPermissionDenied =
+              errorName === "NotAllowedError" ||
+              errorName === "PermissionDeniedError";
+            reportCameraPermission(
+              isPermissionDenied ? "denied" : "error",
+              "initial",
+              errorName,
+            );
           });
       } else {
         console.log("Skipping initial camera request");
@@ -207,6 +301,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
       skipInitialCameraRequest,
       onPermissionGranted,
       onPermissionDenied,
+      reportCameraPermission,
       videoRef,
     ]);
 
@@ -234,11 +329,13 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
             alert(
               "Camera permission is blocked. Please reset permissions in your browser settings and refresh the page.",
             );
+            reportCameraPermission("denied", "manual_check", "denied");
             return false;
           }
 
           // If permission is already granted, update state directly
           if (permissionStatus.state === "granted") {
+            reportCameraPermission("request", "manual_check");
             try {
               const stream = await navigator.mediaDevices.getUserMedia({
                 video: {
@@ -250,19 +347,30 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
               setHasPermission(true);
               setPendingStream(stream);
               onPermissionGranted();
+              reportCameraPermission("granted", "manual_check");
               return true;
             } catch (err) {
               console.error("Error accessing camera despite permission:", err);
+              const errorName =
+                err && typeof err === "object" && "name" in err
+                  ? String((err as { name?: string }).name)
+                  : "camera_error";
+              reportCameraPermission("error", "manual_check", errorName);
             }
           }
         } catch (err) {
           console.error("Error checking permission status:", err);
+          reportCameraPermission(
+            "error",
+            "manual_check",
+            err instanceof Error ? err.name : "permissions_query_failed",
+          );
         }
       }
 
       // Try to start the camera
       try {
-        await startCamera();
+        await startCamera({ source: "manual", showAlertOnDeny: true });
         return true;
       } catch (err) {
         console.error("Error starting camera:", err);
@@ -307,6 +415,7 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                   autoFocus={hasPermission}
                   isRunning={false}
                   onChange={handleTaskNameChange}
+                  onBlur={(value) => trackTaskName(value, "blur")}
                 />
                 <div className="w-full max-w-lg mx-auto space-y-1 md:space-y-3 sm:px-0">
                   <div className="px-3 sm:px-6 py-3 sm:py-3 rounded-xl bg-gradient-to-b from-neutral-700/50 via-neutral-900/50 to-neutral-900/50 shadow-sm backdrop-blur-md border-none inner-stroke-white-10-sm">
@@ -320,6 +429,10 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                           onClick={() => {
                             setDuration(mins * 60);
                             setSelectedDuration(mins);
+                            trackEvent(ANALYTICS_EVENTS.TIMER_DURATION_PRESET, {
+                              minutes: mins,
+                              isMobile,
+                            });
                           }}
                           className={`
                           px-3 sm:px-4 py-1.5 rounded-lg text-sm font-medium text-white/90 
@@ -340,8 +453,10 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                       step={isMobile ? "60" : "300"} // 1 minute steps on mobile, 5 minute steps on desktop
                       value={duration}
                       onChange={(e) => {
-                        setDuration(Number(e.target.value));
+                        const nextDuration = Number(e.target.value);
+                        setDuration(nextDuration);
                         setSelectedDuration(null);
+                        trackDurationChange(nextDuration);
                       }}
                       className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer"
                     />
@@ -365,6 +480,14 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                    transition-all
                   `}
                     onClick={async () => {
+                      const normalizedTaskName = taskName.trim();
+                      trackEvent(ANALYTICS_EVENTS.TIMER_START_CLICK, {
+                        durationMinutes: duration / 60,
+                        hasPermission: hasPermission ?? null,
+                        taskName: normalizedTaskName,
+                        taskNameLength: normalizedTaskName.length,
+                      });
+
                       if (!hasPermission) {
                         // Request camera permission if not granted
                         const permissionGranted = await handleCameraRequest();
@@ -376,6 +499,12 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
                         setIsRunning(true);
                         setRemainingTime(duration);
                         onStart(duration / 60);
+                        trackTaskName(taskName, "start");
+                        trackEvent(ANALYTICS_EVENTS.TIMER_SESSION_START, {
+                          durationMinutes: duration / 60,
+                          taskName: normalizedTaskName,
+                          taskNameLength: normalizedTaskName.length,
+                        });
 
                         const startTime = Date.now();
                         timerRef.current = setInterval(() => {
@@ -422,6 +551,9 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
               {/* Secret end session button */}
               <button
                 onClick={async () => {
+                  trackEvent(ANALYTICS_EVENTS.SECRET_END_SESSION, {
+                    remainingSeconds: remainingTime,
+                  });
                   // Capture at least 3 photos before ending
                   const capturePromises = [];
                   // Use user-agent based detection to avoid treating small desktop windows as mobile
@@ -487,6 +619,9 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
               {/* Secret button to reduce time to 1 minute */}
               <button
                 onClick={() => {
+                  trackEvent(ANALYTICS_EVENTS.SECRET_ONE_MINUTE, {
+                    remainingSeconds: remainingTime,
+                  });
                   // Set remaining time to 60 seconds (1 minute)
                   setRemainingTime(60);
 
@@ -520,7 +655,13 @@ const CameraFeed = React.forwardRef<HTMLVideoElement, CameraFeedProps>(
               <Button
                 variant="secondary"
                 className="bg-white/60 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-2 rounded-full inner-stroke-white-20-sm"
-                onClick={() => enterPiP({ width: 400, height: 300 })}
+                onClick={() => {
+                  trackEvent(ANALYTICS_EVENTS.PIP_OPEN, {
+                    width: 400,
+                    height: 300,
+                  });
+                  enterPiP({ width: 400, height: 300 });
+                }}
               >
                 <Maximize2 className="h-4 w-4" />
                 Open floating window

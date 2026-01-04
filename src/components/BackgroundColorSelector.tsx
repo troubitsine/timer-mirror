@@ -7,6 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ANALYTICS_EVENTS, trackEvent } from "@/lib/analytics";
 
 import { BackgroundOption } from "@/lib/useDynamicBackground";
 
@@ -15,6 +16,7 @@ interface BackgroundColorSelectorProps {
   selectedId: string;
   onSelect: (id: string) => void;
   className?: string;
+  surface?: string;
 }
 
 const BackgroundColorSelector = ({
@@ -22,10 +24,22 @@ const BackgroundColorSelector = ({
   selectedId,
   onSelect,
   className,
+  surface,
 }: BackgroundColorSelectorProps) => {
   // Find the selected option
   const selectedOption =
     options.find((option) => option.id === selectedId) || options[0];
+
+  const handleSelect = (nextId: string) => {
+    if (nextId !== selectedId) {
+      trackEvent(ANALYTICS_EVENTS.BACKGROUND_SELECT, {
+        from: selectedId,
+        to: nextId,
+        surface,
+      });
+    }
+    onSelect(nextId);
+  };
 
   return (
     <div className={cn("flex items-center justify-center", className)}>
@@ -54,7 +68,7 @@ const BackgroundColorSelector = ({
             {options.map((option) => (
               <DropdownMenuItem
                 key={option.id}
-                onSelect={() => onSelect(option.id)}
+                onSelect={() => handleSelect(option.id)}
                 className="p-0 focus:bg-transparent focus:ring-0 outline-none"
               >
                 <div

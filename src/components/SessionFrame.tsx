@@ -32,6 +32,8 @@ interface SessionFrameProps {
   badgeScale?: number;
   /** Additional controls slot (e.g. replay button) */
   controlsSlot?: ReactNode;
+  /** Analytics surface for background selection */
+  backgroundSurface?: string;
   /** Main content */
   children: ReactNode;
   /** Additional className for root Card */
@@ -53,6 +55,7 @@ const SessionFrame = forwardRef<HTMLDivElement, SessionFrameProps>(
       badgePosition = "top",
       badgeScale = 1,
       controlsSlot,
+      backgroundSurface,
       children,
       className,
       dataShareSurface,
@@ -165,6 +168,7 @@ const SessionFrame = forwardRef<HTMLDivElement, SessionFrameProps>(
               options={backgroundOptions}
               selectedId={selectedBackgroundId}
               onSelect={setSelectedBackgroundId}
+              surface={backgroundSurface}
               className="bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[0px] inner-stroke-white-10-sm shadow-sm rounded-full"
             />
           </div>

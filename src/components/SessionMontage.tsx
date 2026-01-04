@@ -9,6 +9,7 @@ import { useDynamicBackground } from "@/lib/useDynamicBackground";
 import { useSessionMedia } from "@/lib/useSessionMedia";
 import ShareWatermark from "./ShareWatermark";
 import UnifiedPhotoAnimation from "./UnifiedPhotoAnimation";
+import { ANALYTICS_EVENTS, trackEvent } from "@/lib/analytics";
 
 interface SessionMontageProps {
   screenshots?: string[];
@@ -128,7 +129,7 @@ const SessionMontage = ({
       ref={exportRef ?? undefined}
       data-share-export-root
       className={cn(
-        "w-full h-full relative border-0 overflow-hidden rounded-[18px]",
+        "w-full h-full relative border-0 overflow-hidden rounded-[18px] shadow-none inner-stroke-white-10-sm",
         selectedBackground?.className,
       )}
       style={exportBackgroundStyle}
@@ -196,6 +197,7 @@ const SessionMontage = ({
               options={backgroundOptions}
               selectedId={selectedBackgroundId}
               onSelect={setSelectedBackgroundId}
+              surface="session_montage"
               className="bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[0px] inner-stroke-white-10-sm shadow-sm rounded-full"
             />
           </div>
@@ -216,7 +218,12 @@ const SessionMontage = ({
             <Button
               size="sm"
               variant="secondary"
-              onClick={startAnimation}
+              onClick={() => {
+                trackEvent(ANALYTICS_EVENTS.SESSION_REPLAY, {
+                  surface: "session_montage",
+                });
+                startAnimation();
+              }}
               className="bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/70 backdrop-blur-md flex items-center gap-1 rounded-full inner-stroke-white-20-sm sm:pl-[8px] sm:pr-[10px] py-[6px] pl-[10px] pr-[12px]"
             >
               <RotateCw className="h-4 w-4" />

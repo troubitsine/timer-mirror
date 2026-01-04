@@ -13,6 +13,7 @@ import {
 import { ArrowRight } from "lucide-react";
 import { Cross2Icon } from "@radix-ui/react-icons";
 import { motion } from "framer-motion";
+import { ANALYTICS_EVENTS, trackEvent } from "@/lib/analytics";
 
 interface OnboardingDialogProps {
   open: boolean;
@@ -73,6 +74,11 @@ const OnboardingDialog = ({ open, onOpenChange }: OnboardingDialogProps) => {
 
   const handleContinue = () => {
     if (step < totalSteps) {
+      trackEvent(ANALYTICS_EVENTS.ONBOARDING_NEXT, {
+        step,
+        nextStep: step + 1,
+        totalSteps,
+      });
       setStep(step + 1);
     }
   };
@@ -81,6 +87,7 @@ const OnboardingDialog = ({ open, onOpenChange }: OnboardingDialogProps) => {
     if (newOpen) {
       setStep(1);
     }
+    trackEvent(ANALYTICS_EVENTS.ONBOARDING_DIALOG_TOGGLE, { open: newOpen });
     onOpenChange(newOpen);
   };
 
@@ -143,7 +150,14 @@ const OnboardingDialog = ({ open, onOpenChange }: OnboardingDialogProps) => {
                 {[...Array(totalSteps)].map((_, index) => (
                   <button
                     key={index}
-                    onClick={() => setStep(index + 1)}
+                    onClick={() => {
+                      const nextStep = index + 1;
+                      trackEvent(ANALYTICS_EVENTS.ONBOARDING_STEP_SELECT, {
+                        step: nextStep,
+                        totalSteps,
+                      });
+                      setStep(nextStep);
+                    }}
                     aria-label={`Go to step ${index + 1}`}
                     className={cn(
                       "h-1.5 w-1.5 rounded-full transition-all duration-200 cursor-pointer hover:scale-110 focus:outline-none focus:ring-1 focus:ring-white/20 focus:ring-offset-1 focus:ring-offset-transparent",
@@ -161,6 +175,12 @@ const OnboardingDialog = ({ open, onOpenChange }: OnboardingDialogProps) => {
                   <Button
                     type="button"
                     variant="ghost"
+                    onClick={() =>
+                      trackEvent(ANALYTICS_EVENTS.ONBOARDING_SKIP, {
+                        step,
+                        totalSteps,
+                      })
+                    }
                     className="text-[13px] text-white/70 background-blur-md rounded-full hover:bg-white/20 hover:text-white/80 hover:inner-stroke-white-10-sm px-4 py-2"
                   >
                     Skip
@@ -184,6 +204,12 @@ const OnboardingDialog = ({ open, onOpenChange }: OnboardingDialogProps) => {
                   <DialogClose asChild>
                     <Button
                       type="button"
+                      onClick={() =>
+                        trackEvent(ANALYTICS_EVENTS.ONBOARDING_GET_STARTED, {
+                          step,
+                          totalSteps,
+                        })
+                      }
                       className="bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center rounded-full inner-stroke-white-20-sm px-[12px] py-[2px] text-[13px]"
                     >
                       Get Started

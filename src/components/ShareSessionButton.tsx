@@ -19,6 +19,7 @@ import { AnimatedShinyText } from "./ui/AnimatedShinyText";
 import { cn } from "@/lib/utils";
 import { ShimmerBorder } from "./ui/shimmer-border";
 import { motion } from "framer-motion";
+import { ANALYTICS_EVENTS, trackEvent } from "@/lib/analytics";
 import {
   exportSessionImage,
   fileFromBlob,
@@ -131,16 +132,36 @@ const ShareSessionButton = ({
 
   const isMobile =
     typeof window !== "undefined" ? isMobileDevice() : false;
+  const normalizedTaskName = taskName?.trim() ?? "";
+  const taskNameLength = normalizedTaskName.length;
   const isShareGenerating = isMobile && isGeneratingImage;
   const foregroundScale = isMobile ? 1 : 0.67;
 
   const handleShare = async () => {
+    trackEvent(ANALYTICS_EVENTS.SHARE_BUTTON_CLICK, {
+      mode: isMobile ? "mobile" : "dialog",
+      taskName: normalizedTaskName,
+      taskNameLength,
+      duration,
+      surface: "share_button",
+    });
+
     if (isMobile) {
       const targetNode = exportRef?.current;
       if (!targetNode) {
         console.warn("ShareSessionButton: export target unavailable");
         return;
       }
+
+      trackEvent(ANALYTICS_EVENTS.SHARE_ATTEMPT, {
+        mode: "mobile",
+        aspectRatio,
+        viewMode,
+        backgroundId: currentBackgroundId,
+        taskName: normalizedTaskName,
+        taskNameLength,
+        duration,
+      });
 
       setIsGeneratingImage(true);
 
@@ -154,6 +175,9 @@ const ShareSessionButton = ({
       } · ${EXPORT_SHARE_TEXT}`;
 
       const openFallback = (blob: Blob) => {
+        trackEvent(ANALYTICS_EVENTS.SHARE_FALLBACK_OPEN, {
+          mode: "mobile",
+        });
         const objectUrl = URL.createObjectURL(blob);
         window.open(objectUrl, "_blank", "noopener,noreferrer");
         window.setTimeout(() => URL.revokeObjectURL(objectUrl), 4000);
@@ -269,18 +293,36 @@ const ShareSessionButton = ({
           if (!navigator.canShare || navigator.canShare({ files: shareFiles })) {
             try {
               await navigator.share(data);
+              trackEvent(ANALYTICS_EVENTS.SHARE_SUCCESS, {
+                mode: "native",
+                format: shareFile.type.includes("jpeg") ? "jpeg" : "png",
+              });
               return;
             } catch (err) {
               if (err instanceof DOMException && err.name === "AbortError") {
+                trackEvent(ANALYTICS_EVENTS.SHARE_CANCEL, { mode: "native" });
                 return; // user cancelled, no fallback
               }
+              trackEvent(ANALYTICS_EVENTS.SHARE_FAILURE, {
+                mode: "native",
+                errorName: err instanceof Error ? err.name : "share_error",
+              });
               console.warn("ShareSessionButton: navigator.share failed", err);
             }
+          } else {
+            trackEvent(ANALYTICS_EVENTS.SHARE_FAILURE, {
+              mode: "native",
+              errorName: "cant_share",
+            });
           }
         }
 
         openFallback(shareBlob);
       } catch (error) {
+        trackEvent(ANALYTICS_EVENTS.SHARE_FAILURE, {
+          mode: "mobile",
+          errorName: error instanceof Error ? error.name : "share_error",
+        });
         console.error("ShareSessionButton: mobile share failed", error);
       } finally {
         if (exportContainer?.parentNode) {
@@ -340,6 +382,12 @@ const ShareSessionButton = ({
   const handleDownload = async () => {
     const previewRoot = previewRef.current;
     if (!previewRoot) return;
+    trackEvent(ANALYTICS_EVENTS.SHARE_DOWNLOAD, {
+      aspectRatio,
+      viewMode,
+      backgroundId: currentBackgroundId,
+      format: "png",
+    });
     setIsGeneratingImage(true);
     let exportContainer: HTMLDivElement | null = null;
 
@@ -745,6 +793,7 @@ const ShareSessionButton = ({
                       options={backgroundOptions}
                       selectedId={currentBackgroundId}
                       onSelect={setCurrentBackgroundId}
+                      surface="share_dialog"
                       className="bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[0px] inner-stroke-white-10-sm shadow-sm rounded-full"
                     />
                   </div>
@@ -755,9 +804,16 @@ const ShareSessionButton = ({
                   <div className="flex items-center justify-center rounded-full bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[3px] inner-stroke-white-20-sm shadow-sm w-fit min-h-[32px]">
                       <AnimatedTabs
                         defaultValue={aspectRatio}
-                        onValueChange={(value) =>
-                          setAspectRatio(value as AspectRatio)
-                        }
+                        onValueChange={(value) => {
+                          const nextValue = value as AspectRatio;
+                          if (nextValue !== aspectRatio) {
+                            trackEvent(ANALYTICS_EVENTS.SHARE_ASPECT_RATIO, {
+                              from: aspectRatio,
+                              to: nextValue,
+                            });
+                          }
+                          setAspectRatio(nextValue);
+                        }}
                         className="rounded-full bg-gradient-to-b from-white/20 via-neutral-400/30 to-neutral-500/30 backdrop-blur-sm shadow-sm shadow-[inset_0_0_0_1px_rgba(255,255,255,0.32)]"
                         transition={{
                           type: "spring",
@@ -795,7 +851,16 @@ const ShareSessionButton = ({
                   <div className="flex items-center justify-center rounded-full bg-gradient-to-b from-white/50 to-neutral-100/50 backdrop-blur-sm p-[3px] inner-stroke-white-20-sm shadow-sm w-fit min-h-[32px]">
                       <AnimatedTabs
                         defaultValue={viewMode}
-                        onValueChange={(value) => setViewMode(value as ViewMode)}
+                        onValueChange={(value) => {
+                          const nextValue = value as ViewMode;
+                          if (nextValue !== viewMode) {
+                            trackEvent(ANALYTICS_EVENTS.SHARE_VIEW_MODE, {
+                              from: viewMode,
+                              to: nextValue,
+                            });
+                          }
+                          setViewMode(nextValue);
+                        }}
                         className="rounded-full bg-gradient-to-b from-white/20 via-neutral-400/30 to-neutral-500/30 backdrop-blur-sm shadow-sm shadow-[inset_0_0_0_1px_rgba(255,255,255,0.32)]"
                         transition={{
                           type: "spring",

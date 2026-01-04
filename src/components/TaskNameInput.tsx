@@ -4,6 +4,7 @@ import { getTextWidth, getFontString } from "@/lib/textWidth";
 interface TaskNameInputProps {
   value: string;
   onChange: (value: string) => void;
+  onBlur?: (value: string) => void;
   placeholder?: string;
   readOnly?: boolean;
   autoFocus?: boolean;
@@ -14,6 +15,7 @@ interface TaskNameInputProps {
 const TaskNameInput = ({
   value,
   onChange,
+  onBlur,
   placeholder = "Write down what you want to work on",
   readOnly = false,
   autoFocus = false,
@@ -158,6 +160,7 @@ const TaskNameInput = ({
             readOnly={readOnly}
             autoFocus={autoFocus}
             onChange={(e) => onChange(e.target.value)}
+            onBlur={() => onBlur?.(value)}
             className={`
               w-full 
               text-white/90 
