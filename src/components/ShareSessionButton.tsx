@@ -659,9 +659,9 @@ const ShareSessionButton = ({
                   variant="secondary"
                   onClick={handleDownload}
                   disabled={isGeneratingImage}
-                  className="relative z-10 bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-1 rounded-full inner-stroke-white-20-sm px-3 py-1.5"
+                  className="relative z-10 bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/75 backdrop-blur-md flex items-center gap-1 rounded-full inner-stroke-white-20-sm px-3 py-1.5 disabled:opacity-[0.97]"
                 >
-                  {isGeneratingImage ? "Generating..." : "Download"}
+                  {isGeneratingImage ? "Downloading" : "Download"}
                 </Button>
               </ShimmerBorder>
             </DialogHeader>

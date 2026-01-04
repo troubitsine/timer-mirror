@@ -90,6 +90,14 @@ export function usePictureInPicture({
         container.style.display = "none";
       });
 
+      const taskNameContainer =
+        pipWindow.document.querySelector<HTMLElement>(
+          ".pip-task-name-container",
+        );
+      if (taskNameContainer) {
+        taskNameContainer.style.display = "none";
+      }
+
       // Show the end message in the center container
       const centerContainer =
         pipWindow.document.querySelector<HTMLElement>(".pip-center-container");
@@ -254,7 +262,7 @@ export function usePictureInPicture({
           pointer-events: none;
         }
         .pip-header-time {
-          width: 40px;
+          width: 44px;
           height: 30px;
           display: flex;
           align-items: center;
@@ -320,7 +328,7 @@ export function usePictureInPicture({
           position: absolute;
           bottom: 8px;
           left: 8px;
-          width: 40px;
+          width: 44px;
           height: 22px;
           display: none;
           justify-content: center;
@@ -368,7 +376,7 @@ export function usePictureInPicture({
           position: absolute;
           bottom: 8px;
           left: 8px;
-          width: 40px;
+          width: 44px;
           height: 16px;
           display: none;
           justify-content: center;
