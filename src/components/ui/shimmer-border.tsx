@@ -20,15 +20,15 @@ export function ShimmerBorder({
 }: ShimmerBorderProps) {
   const borderShimmer =
     variant === "dark"
-      ? `color-mix(in srgb, rgba(0, 0, 0, 0.28) 60%, ${shimmerColor})`
+      ? `color-mix(in srgb, rgba(0, 0, 0, 0.35) 60%, ${shimmerColor})`
       : `color-mix(in srgb, ${shimmerColor} 89%, rgba(255, 255, 255, 0.7))`;
 
   const trackColor =
-    variant === "dark" ? "rgba(0, 0, 0, 0.055)" : "rgba(255, 255, 255, 0.3)";
+    variant === "dark" ? "rgba(0, 0, 0, 0.08)" : "rgba(255, 255, 255, 0.3)";
 
   return (
     <div
-      className={cn("relative z-0 inline-flex rounded-full p-[1.5px]", className)}
+      className={cn("relative z-0 inline-flex rounded-full p-[2px]", className)}
       style={
         {
           "--shimmer-color": shimmerColor,
