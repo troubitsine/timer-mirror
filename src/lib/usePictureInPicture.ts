@@ -147,6 +147,17 @@ export function usePictureInPicture({
           height: 100vh;
           font-family: system-ui;
         }
+        @keyframes pip-marquee {
+          0% {
+            transform: translateX(0);
+          }
+          85% {
+            transform: translateX(calc(-1 * var(--pip-marquee-distance, 0px)));
+          }
+          100% {
+            transform: translateX(calc(-1 * var(--pip-marquee-distance, 0px)));
+          }
+        }
         .pip-container {
           width: 100%;
           height: 100%;
@@ -203,8 +214,36 @@ export function usePictureInPicture({
           min-width: 0;
           white-space: nowrap;
           overflow: hidden;
-          text-overflow: ellipsis;
           text-align: left;
+        }
+        .pip-task-name-track {
+          width: 100%;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          display: block;
+        }
+        .pip-task-name-text {
+          white-space: nowrap;
+        }
+        .pip-task-name-text + .pip-task-name-text {
+          display: none;
+        }
+        .pip-task-name.is-scrolling {
+          text-overflow: clip;
+        }
+        .pip-task-name.is-scrolling .pip-task-name-track {
+          width: auto;
+          display: inline-flex;
+          align-items: center;
+          gap: var(--pip-marquee-gap, 32px);
+          overflow: visible;
+          text-overflow: clip;
+          animation: pip-marquee var(--pip-marquee-duration, 12s) linear infinite;
+          will-change: transform;
+        }
+        .pip-task-name.is-scrolling .pip-task-name-text + .pip-task-name-text {
+          display: inline;
         }
         .pip-task-name::after {
           content: '';
@@ -439,7 +478,21 @@ export function usePictureInPicture({
 
       const taskNameDiv = document.createElement("div");
       taskNameDiv.className = "pip-task-name";
-      taskNameDiv.textContent = taskName;
+      const taskNameTrack = document.createElement("div");
+      taskNameTrack.className = "pip-task-name-track";
+
+      const taskNameSpan = document.createElement("span");
+      taskNameSpan.className = "pip-task-name-text";
+      taskNameSpan.textContent = taskName;
+
+      const taskNameSpanDuplicate = document.createElement("span");
+      taskNameSpanDuplicate.className = "pip-task-name-text";
+      taskNameSpanDuplicate.textContent = taskName;
+      taskNameSpanDuplicate.setAttribute("aria-hidden", "true");
+
+      taskNameTrack.appendChild(taskNameSpan);
+      taskNameTrack.appendChild(taskNameSpanDuplicate);
+      taskNameDiv.appendChild(taskNameTrack);
 
       const toggleButton = document.createElement("button");
       toggleButton.className = "pip-variant-toggle";
@@ -462,6 +515,55 @@ export function usePictureInPicture({
       countdownContainer.setAttribute("data-pip-timer-container", "true");
       timerDiv.appendChild(countdownContainer);
 
+      const updateTaskNameMarquee = () => {
+        const taskNameStyles = newPipWindow.getComputedStyle(taskNameDiv);
+        const paddingLeft = Number.parseFloat(taskNameStyles.paddingLeft);
+        const paddingRight = Number.parseFloat(taskNameStyles.paddingRight);
+        const paddingWidth = Number.isFinite(paddingLeft + paddingRight)
+          ? paddingLeft + paddingRight
+          : 0;
+        const availableWidth = taskNameDiv.clientWidth - paddingWidth;
+        if (availableWidth <= 0) {
+          return;
+        }
+
+        const textWidth = taskNameSpan.getBoundingClientRect().width;
+        if (!textWidth) {
+          taskNameDiv.classList.remove("is-scrolling");
+          return;
+        }
+
+        const gap = 32;
+        const needsScroll = textWidth > availableWidth + 1;
+
+        if (needsScroll) {
+          const distance = textWidth + gap;
+          const duration = distance * 0.08;
+          taskNameDiv.classList.add("is-scrolling");
+          taskNameTrack.style.setProperty("--pip-marquee-gap", `${gap}px`);
+          taskNameTrack.style.setProperty(
+            "--pip-marquee-distance",
+            `${distance}px`,
+          );
+          taskNameTrack.style.setProperty(
+            "--pip-marquee-duration",
+            `${duration}s`,
+          );
+        } else {
+          taskNameDiv.classList.remove("is-scrolling");
+          taskNameTrack.style.removeProperty("--pip-marquee-distance");
+          taskNameTrack.style.removeProperty("--pip-marquee-duration");
+        }
+      };
+
+      const scheduleTaskNameMarquee = () => {
+        if (typeof newPipWindow.requestAnimationFrame === "function") {
+          newPipWindow.requestAnimationFrame(updateTaskNameMarquee);
+        } else {
+          updateTaskNameMarquee();
+        }
+      };
+
       let currentVariant = initialVariant;
 
       const updateToggleLabel = (variant: PictureInPictureVariant) => {
@@ -482,6 +584,10 @@ export function usePictureInPicture({
         }
 
         updateToggleLabel(variant);
+
+        if (container.isConnected) {
+          scheduleTaskNameMarquee();
+        }
       };
 
       applyVariant(initialVariant);
@@ -505,6 +611,7 @@ export function usePictureInPicture({
       container.appendChild(timerDiv);
 
       newPipWindow.document.body.appendChild(container);
+      scheduleTaskNameMarquee();
 
       // Handle window closing
       const handleUnload = () => {
@@ -513,6 +620,7 @@ export function usePictureInPicture({
 
       newPipWindow.addEventListener("unload", handleUnload);
       newPipWindow.addEventListener("beforeunload", handleUnload);
+      newPipWindow.addEventListener("resize", scheduleTaskNameMarquee);
 
       // Handle page visibility changes
       const handleVisibilityChange = () => {
@@ -532,6 +640,7 @@ export function usePictureInPicture({
         if (newPipWindow) {
           newPipWindow.removeEventListener("unload", handleUnload);
           newPipWindow.removeEventListener("beforeunload", handleUnload);
+          newPipWindow.removeEventListener("resize", scheduleTaskNameMarquee);
           // We intentionally don't close the PiP window here
           // so it remains visible with the completion animation
         }

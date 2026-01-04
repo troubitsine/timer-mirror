@@ -1,6 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { memo, useEffect, useRef, useState } from "react";
 import { getTextWidth, getFontString } from "@/lib/textWidth";
-import { motion } from "framer-motion";
 
 interface TaskNameInputProps {
   value: string;
@@ -23,40 +22,91 @@ const TaskNameInput = ({
 }: TaskNameInputProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const marqueeTrackRef = useRef<HTMLDivElement>(null);
+  const marqueeTextRef = useRef<HTMLSpanElement>(null);
   const [width, setWidth] = useState<number>(0);
   const [shouldScroll, setShouldScroll] = useState(false);
-  const [textWidth, setTextWidth] = useState(0);
 
   useEffect(() => {
-    if (inputRef.current && containerRef.current) {
-      // Get the parent container width
-      const parentWidth = containerRef.current.parentElement?.clientWidth || 0;
+    if (!inputRef.current || !containerRef.current || !contentRef.current) {
+      return;
+    }
 
-      if (isRunning) {
-        const font = getFontString(inputRef.current);
-        const currentTextWidth = getTextWidth(value || placeholder, font);
-        const paddingWidth = 48;
-        const minWidth = 200;
-        // Use parent width as the constraint instead of a fixed 512px
-        const containerWidth = Math.min(
-          Math.max(currentTextWidth + paddingWidth, minWidth),
-          parentWidth > 0 ? parentWidth : 512,
-        );
-        setWidth(containerWidth);
+    // Get the parent container width
+    const parentWidth = containerRef.current.parentElement?.clientWidth || 0;
 
-        if (currentTextWidth > containerWidth - paddingWidth) {
-          setShouldScroll(true);
-          setTextWidth(currentTextWidth);
-        } else {
-          setShouldScroll(false);
-        }
-      } else {
-        // Use 100% of parent width instead of a fixed max width
-        setWidth(0); // Setting to 0 will make it use 100% width from CSS
-        setShouldScroll(false);
-      }
+    if (isRunning) {
+      const containerStyles = window.getComputedStyle(containerRef.current);
+      const contentStyles = window.getComputedStyle(contentRef.current);
+      const maxWidthValue = Number.parseFloat(containerStyles.maxWidth);
+      const resolvedMaxWidth =
+        Number.isFinite(maxWidthValue) && maxWidthValue > 0
+          ? maxWidthValue
+          : parentWidth || 512;
+      const maxAllowedWidth =
+        parentWidth > 0 ? Math.min(parentWidth, resolvedMaxWidth) : resolvedMaxWidth;
+
+      const paddingLeft = Number.parseFloat(contentStyles.paddingLeft);
+      const paddingRight = Number.parseFloat(contentStyles.paddingRight);
+      const paddingWidth =
+        Number.isFinite(paddingLeft + paddingRight) && paddingLeft + paddingRight > 0
+          ? paddingLeft + paddingRight
+          : 48;
+
+      const font = getFontString(inputRef.current);
+      const currentTextWidth = getTextWidth(value || placeholder, font);
+      const minWidth = 200;
+      // Use max width as the constraint so overflow detection matches the visual container.
+      const containerWidth = Math.min(
+        Math.max(currentTextWidth + paddingWidth, minWidth),
+        maxAllowedWidth || currentTextWidth + paddingWidth,
+      );
+      setWidth(containerWidth);
+
+      const availableWidth = Math.max(containerWidth - paddingWidth, 0);
+      const needsScroll = currentTextWidth > availableWidth + 1;
+      setShouldScroll(needsScroll);
+    } else {
+      // Use 100% of parent width instead of a fixed max width
+      setWidth(0); // Setting to 0 will make it use 100% width from CSS
+      setShouldScroll(false);
     }
   }, [value, placeholder, isRunning]);
+
+  useEffect(() => {
+    if (!shouldScroll || !marqueeTrackRef.current || !marqueeTextRef.current) {
+      return;
+    }
+
+    const updateMarquee = () => {
+      const textWidth = marqueeTextRef.current?.getBoundingClientRect().width;
+      if (!textWidth) {
+        return;
+      }
+
+      const gap = 32;
+      const distance = textWidth + gap;
+      const duration = distance * 0.05;
+
+      marqueeTrackRef.current?.style.setProperty(
+        "--task-marquee-distance",
+        `${distance}px`,
+      );
+      marqueeTrackRef.current?.style.setProperty(
+        "--task-marquee-duration",
+        `${duration}s`,
+      );
+    };
+
+    const rafId = window.requestAnimationFrame(updateMarquee);
+    window.addEventListener("resize", updateMarquee);
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      window.removeEventListener("resize", updateMarquee);
+    };
+  }, [shouldScroll, value]);
 
   return (
     <div
@@ -85,27 +135,18 @@ const TaskNameInput = ({
       />
 
       {/* Content container */}
-      <div className="relative h-full flex items-center px-3 py-2 sm:px-6 sm:py-3">
+      <div
+        ref={contentRef}
+        className="relative h-full flex items-center px-3 py-2 sm:px-6 sm:py-3"
+      >
         {shouldScroll ? (
-          <div className="overflow-hidden">
-            <div className="flex">
-              <motion.div
-                initial={{ x: 0 }}
-                animate={{
-                  x: -(textWidth + 32),
-                }}
-                transition={{
-                  duration: textWidth * 0.05,
-                  ease: "linear",
-                  repeat: Infinity,
-                  repeatType: "loop",
-                  repeatDelay: 2,
-                }}
-                className="flex whitespace-nowrap text-white/90 text-lg text-center"
-              >
-                <span>{value}</span>
-                <span className="ml-8">{value}</span>
-              </motion.div>
+          <div className="overflow-hidden w-full">
+            <div
+              ref={marqueeTrackRef}
+              className="inline-flex whitespace-nowrap text-white/90 text-base sm:text-lg text-center gap-8 [animation:task-name-marquee_var(--task-marquee-duration,12s)_linear_infinite] [will-change:transform] [backface-visibility:hidden]"
+            >
+              <span ref={marqueeTextRef}>{value}</span>
+              <span aria-hidden="true">{value}</span>
             </div>
           </div>
         ) : (
@@ -135,4 +176,4 @@ const TaskNameInput = ({
   );
 };
 
-export default TaskNameInput;
+export default memo(TaskNameInput);

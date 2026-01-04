@@ -111,6 +111,19 @@ html.complete-route {
     }
   }
 
+  @keyframes task-name-marquee {
+    0% {
+      transform: translate3d(0, 0, 0);
+    }
+    100% {
+      transform: translate3d(
+        calc(-1 * var(--task-marquee-distance, 0px)),
+        0,
+        0
+      );
+    }
+  }
+
   @keyframes shimmer-slide {
     0% {
       transform: translate3d(-150%, 0, 0);
