@@ -356,16 +356,28 @@ const ShareSessionGridView = ({
   // - mount, resize of the wrapper, taskName changes (affects badge height),
   // - photo set changes (rarely changes height but keep it safe)
   useLayoutEffect(() => {
-    recomputeCardWidth();
-    const ro = new ResizeObserver(recomputeCardWidth);
+    let rafId = 0;
+    const scheduleRecompute = () => {
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+      }
+      rafId = requestAnimationFrame(recomputeCardWidth);
+    };
+
+    scheduleRecompute();
+
+    const ro = new ResizeObserver(scheduleRecompute);
     if (wrapperRef.current) ro.observe(wrapperRef.current);
     const badgeEl = (taskBadgeRef?.current as HTMLElement | null) ?? undefined;
     let bro: ResizeObserver | undefined;
     if (badgeEl) {
-      bro = new ResizeObserver(recomputeCardWidth);
+      bro = new ResizeObserver(scheduleRecompute);
       bro.observe(badgeEl);
     }
     return () => {
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+      }
       ro.disconnect();
       bro?.disconnect();
     };

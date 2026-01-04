@@ -176,6 +176,7 @@ const SessionGridView = ({
       initialSelectedBackgroundId={initialSelectedBackgroundId}
       onBackgroundSelect={onBackgroundSelect}
       badgePosition="none"
+      backgroundSurface="session_grid"
       className={className}
     >
       <GridContent photos={allPhotos} taskName={taskName} duration={duration} />

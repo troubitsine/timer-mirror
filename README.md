@@ -40,6 +40,12 @@ npm run dev
 npm run build
 ```
 
+## Analytics Events
+
+Custom analytics events are centralized in `src/lib/analytics.ts` via
+`ANALYTICS_EVENTS` and the `trackEvent` helper. Keep new payloads primitive and
+short, and add new events there before instrumenting components.
+
 ## Browser Requirements
 
 - **Desktop**: Chrome, Firefox, Safari (screen capture requires user permission)

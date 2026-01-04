@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { ANALYTICS_EVENTS, trackEvent } from "@/lib/analytics";
 
 interface PictureInPictureOptions {
   width?: number;
@@ -669,6 +670,10 @@ export function usePictureInPicture({
       toggleButton.addEventListener("click", () => {
         const nextVariant =
           currentVariant === "compactBlur" ? "default" : "compactBlur";
+        trackEvent(ANALYTICS_EVENTS.PIP_VARIANT_TOGGLE, {
+          from: currentVariant,
+          to: nextVariant,
+        });
         applyVariant(nextVariant);
         persistVariant(nextVariant);
         const nextSize = getVariantSize(nextVariant);
