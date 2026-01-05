@@ -1,3 +1,5 @@
+// SessionGridView.tsx
+// Session grid recap view; renders photo grid within the shared session frame.
 import React, { useRef, useLayoutEffect, useState } from "react";
 import Tilt from "./Tilt";
 import { motion } from "framer-motion";
@@ -13,6 +15,7 @@ interface SessionGridViewProps {
   className?: string;
   initialSelectedBackgroundId?: string;
   onBackgroundSelect?: (id: string) => void;
+  onAccentColorChange?: (color?: string) => void;
   exportRef?: React.RefObject<HTMLDivElement>;
 }
 
@@ -159,6 +162,7 @@ const SessionGridView = ({
   className,
   initialSelectedBackgroundId,
   onBackgroundSelect,
+  onAccentColorChange,
   exportRef,
 }: SessionGridViewProps) => {
   // Use shared media hook
@@ -175,6 +179,7 @@ const SessionGridView = ({
       duration={duration}
       initialSelectedBackgroundId={initialSelectedBackgroundId}
       onBackgroundSelect={onBackgroundSelect}
+      onAccentColorChange={onAccentColorChange}
       badgePosition="none"
       backgroundSurface="session_grid"
       className={className}

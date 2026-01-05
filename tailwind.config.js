@@ -1,4 +1,5 @@
 /** @type {import('tailwindcss').Config} */
+// Tailwind config for Timer-Mirror; extends tokens and animations for UI motion.
 module.exports = {
   darkMode: ["class"],
   content: [
@@ -74,10 +75,37 @@ module.exports = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "session-blob-float-1": {
+          "0%, 100%": {
+            transform: "translate3d(-4%, 0%, 0) scale(1)",
+          },
+          "50%": {
+            transform: "translate3d(6%, -8%, 0) scale(1.08)",
+          },
+        },
+        "session-blob-float-2": {
+          "0%, 100%": {
+            transform: "translate3d(5%, -4%, 0) scale(0.96)",
+          },
+          "50%": {
+            transform: "translate3d(-6%, 6%, 0) scale(1.06)",
+          },
+        },
+        "session-blob-float-3": {
+          "0%, 100%": {
+            transform: "translate3d(0, 4%, 0) scale(1)",
+          },
+          "50%": {
+            transform: "translate3d(-4%, -6%, 0) scale(1.05)",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "session-blob-float-1": "session-blob-float-1 22s ease-in-out infinite",
+        "session-blob-float-2": "session-blob-float-2 28s ease-in-out infinite",
+        "session-blob-float-3": "session-blob-float-3 26s ease-in-out infinite",
       },
       utilities: {
         ".center-xy": {

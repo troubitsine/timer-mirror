@@ -1,11 +1,14 @@
+// SessionCompletePage.tsx
+// Session completion route; shows montage/grid recap and adds ambient glow tied to the selected background.
 import { useLocation, useNavigate } from "react-router-dom";
 import SessionMontage from "./SessionMontage";
 import SessionGridView from "./SessionGridView";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { track } from "@vercel/analytics";
 import { Button } from "./ui/button";
 import AnimatedTabs from "./ui/animated-tabs";
 import ShareSessionButton from "./ShareSessionButton";
+import SessionCompleteGlow from "./SessionCompleteGlow";
 
 const SessionCompletePage = () => {
   const location = useLocation();
@@ -18,6 +21,29 @@ const SessionCompletePage = () => {
     const savedId = sessionStorage.getItem("selectedBackgroundId");
     return savedId || "white";
   });
+  const [selectedBackgroundAccentColor, setSelectedBackgroundAccentColor] =
+    useState(() => {
+      const savedAccent = sessionStorage.getItem(
+        "selectedBackgroundAccentColor",
+      );
+      return savedAccent || "#ffffff";
+    });
+
+  const handleBackgroundSelect = useCallback((id: string) => {
+    setSelectedBackgroundId(id);
+    const savedAccent = sessionStorage.getItem(
+      "selectedBackgroundAccentColor",
+    );
+    if (savedAccent) {
+      setSelectedBackgroundAccentColor(savedAccent);
+    }
+  }, []);
+
+  const handleAccentColorChange = useCallback((color?: string) => {
+    if (color) {
+      setSelectedBackgroundAccentColor(color);
+    }
+  }, []);
 
   useEffect(() => {
     if (!sessionData) {
@@ -45,7 +71,8 @@ const SessionCompletePage = () => {
 
   return (
     <div className="min-h-screen w-full relative overflow-hidden">
-      <div className="absolute inset-0 bg-neutral-900" />
+      <div className="absolute inset-0 bg-neutral-900 z-0" />
+      <SessionCompleteGlow accentColor={selectedBackgroundAccentColor} />
       <div className="relative z-10 w-full min-h-screen p-2 sm:p-8 flex sm:items-start pt-4 pb-12 sm:pb-32">
         <div className="w-[calc(100%-20px)] lg:w-[65vw] min-w-[300px] max-w-[1800px] max-h-[1200px] mx-auto flex flex-col gap-4 sm:gap-6">
           <div className="w-full h-[70vh] sm:aspect-video relative">
@@ -58,7 +85,7 @@ const SessionCompletePage = () => {
                 webcamPhotos={sessionData.webcamPhotos}
                 exportRef={exportRef}
                 selectedBackgroundId={selectedBackgroundId}
-                onBackgroundChange={setSelectedBackgroundId}
+                onBackgroundChange={handleBackgroundSelect}
               />
             </div>
 
@@ -101,7 +128,8 @@ const SessionCompletePage = () => {
                 taskName={sessionData.taskName}
                 duration={sessionData.duration}
                 initialSelectedBackgroundId={selectedBackgroundId}
-                onBackgroundSelect={setSelectedBackgroundId}
+                onBackgroundSelect={handleBackgroundSelect}
+                onAccentColorChange={handleAccentColorChange}
                 exportRef={exportRef}
               />
             ) : (
@@ -111,7 +139,8 @@ const SessionCompletePage = () => {
                 taskName={sessionData.taskName}
                 duration={sessionData.duration}
                 initialSelectedBackgroundId={selectedBackgroundId}
-                onBackgroundSelect={setSelectedBackgroundId}
+                onBackgroundSelect={handleBackgroundSelect}
+                onAccentColorChange={handleAccentColorChange}
                 exportRef={exportRef}
               />
             )}

@@ -1,3 +1,5 @@
+// SessionMontage.tsx
+// Session montage card; orchestrates animation and background selection for session recap.
 import React, { useCallback, useEffect, useMemo, useRef, useState, useId } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
@@ -18,6 +20,7 @@ interface SessionMontageProps {
   duration?: number;
   initialSelectedBackgroundId?: string;
   onBackgroundSelect?: (id: string) => void;
+  onAccentColorChange?: (color?: string) => void;
   hideControls?: boolean;
   exportRef?: React.RefObject<HTMLDivElement>;
 }
@@ -38,6 +41,7 @@ const SessionMontage = ({
   duration = 25,
   initialSelectedBackgroundId,
   onBackgroundSelect,
+  onAccentColorChange,
   hideControls = false,
   exportRef,
 }: SessionMontageProps) => {
@@ -122,6 +126,10 @@ const SessionMontage = ({
 
     return () => cancelAnimationFrame(frame);
   }, [numberOfCards, startAnimation]);
+
+  useEffect(() => {
+    onAccentColorChange?.(selectedBackground?.accentColor);
+  }, [onAccentColorChange, selectedBackground?.accentColor]);
 
 
   return (

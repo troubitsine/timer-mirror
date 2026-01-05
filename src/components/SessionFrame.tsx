@@ -2,7 +2,7 @@
  * SessionFrame - Shared wrapper for session montage/grid views
  * Owns dynamic background, backdrop overlay, badge, controls, and watermark
  */
-import React, { ReactNode, forwardRef } from "react";
+import React, { ReactNode, forwardRef, useEffect } from "react";
 import { Card } from "./ui/card";
 import { motion } from "framer-motion";
 import BackgroundColorSelector from "./BackgroundColorSelector";
@@ -22,6 +22,8 @@ interface SessionFrameProps {
   initialSelectedBackgroundId?: string;
   /** Callback when background selection changes */
   onBackgroundSelect?: (id: string) => void;
+  /** Callback when background accent color changes */
+  onAccentColorChange?: (color?: string) => void;
   /** Hide controls (background selector, replay button) */
   hideControls?: boolean;
   /** Custom badge slot - if provided, replaces default badge */
@@ -50,6 +52,7 @@ const SessionFrame = forwardRef<HTMLDivElement, SessionFrameProps>(
       duration = 25,
       initialSelectedBackgroundId,
       onBackgroundSelect,
+      onAccentColorChange,
       hideControls = false,
       badgeSlot,
       badgePosition = "top",
@@ -76,6 +79,10 @@ const SessionFrame = forwardRef<HTMLDivElement, SessionFrameProps>(
     );
 
     const exportBackgroundStyle = { ...(selectedBackground?.style ?? {}) };
+
+    useEffect(() => {
+      onAccentColorChange?.(selectedBackground?.accentColor);
+    }, [onAccentColorChange, selectedBackground?.accentColor]);
 
     const renderBadge = () => {
       if (badgePosition === "none") return null;
