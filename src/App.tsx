@@ -25,12 +25,12 @@ function App() {
       htmlElement.classList.add('home-route');
       htmlElement.style.backgroundColor = "#171717";
     } else if (location.pathname === "/complete") {
-      // Set light theme for session complete page
+      // Set dark theme for session complete page to match background
       if (themeColorMeta) {
-        themeColorMeta.setAttribute("content", "#fafaf9"); // stone-50
+        themeColorMeta.setAttribute("content", "#171717"); // neutral-900
       }
       htmlElement.classList.add('complete-route');
-      htmlElement.style.backgroundColor = "#fafaf9";
+      htmlElement.style.backgroundColor = "#171717";
     }
   }, [location.pathname]);
 
