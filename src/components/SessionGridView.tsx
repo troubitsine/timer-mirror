@@ -5,7 +5,8 @@ import Tilt from "./Tilt";
 import { motion } from "framer-motion";
 import { useSessionMedia } from "@/lib/useSessionMedia";
 import SessionFrame from "./SessionFrame";
-import { useTaskBadgeRef } from "./TaskBadgeRefContext";
+import { useTaskBadgeAccentColor, useTaskBadgeRef } from "./TaskBadgeRefContext";
+import TaskBadgeBlobs from "./TaskBadgeBlobs";
 
 interface SessionGridViewProps {
   screenshots?: string[];
@@ -200,6 +201,7 @@ function GridContent({
   duration: number;
 }) {
   const taskBadgeRef = useTaskBadgeRef();
+  const badgeAccentColor = useTaskBadgeAccentColor();
 
   return (
     <div className="w-full h-full overflow-auto flex justify-center items-center">
@@ -235,7 +237,10 @@ function GridContent({
                 textWrap: "balance",
               }}
             >
-              {taskName} • {duration} min
+              <TaskBadgeBlobs accentColor={badgeAccentColor} />
+              <span className="relative z-10">
+                {taskName} • {duration} min
+              </span>
             </div>
           </div>
         </motion.div>

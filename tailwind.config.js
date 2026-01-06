@@ -103,9 +103,9 @@ module.exports = {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "session-blob-float-1": "session-blob-float-1 22s ease-in-out infinite",
-        "session-blob-float-2": "session-blob-float-2 28s ease-in-out infinite",
-        "session-blob-float-3": "session-blob-float-3 26s ease-in-out infinite",
+        "session-blob-float-1": "session-blob-float-1 5s ease-in-out infinite",
+        "session-blob-float-2": "session-blob-float-2 6s ease-in-out infinite",
+        "session-blob-float-3": "session-blob-float-3 4s ease-in-out infinite",
       },
       utilities: {
         ".center-xy": {

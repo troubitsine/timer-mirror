@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { useDynamicBackground } from "@/lib/useDynamicBackground";
 import ShareWatermark from "./ShareWatermark";
 import { TaskBadgeRefContext } from "./TaskBadgeRefContext";
+import TaskBadgeBlobs from "./TaskBadgeBlobs";
 
 interface SessionFrameProps {
   /** Image source for dynamic color extraction */
@@ -79,6 +80,7 @@ const SessionFrame = forwardRef<HTMLDivElement, SessionFrameProps>(
     );
 
     const exportBackgroundStyle = { ...(selectedBackground?.style ?? {}) };
+    const badgeAccentColor = selectedBackground?.accentColor ?? "#ffffff";
 
     useEffect(() => {
       onAccentColorChange?.(selectedBackground?.accentColor);
@@ -125,7 +127,10 @@ const SessionFrame = forwardRef<HTMLDivElement, SessionFrameProps>(
                 textWrap: "balance",
               }}
             >
-              {taskName} • {duration} min
+              <TaskBadgeBlobs accentColor={badgeAccentColor} />
+              <span className="relative z-10">
+                {taskName} • {duration} min
+              </span>
             </div>
           </div>
         </motion.div>
@@ -161,7 +166,9 @@ const SessionFrame = forwardRef<HTMLDivElement, SessionFrameProps>(
         {renderBadge()}
 
         {/* Main content - wrapped in context for custom badge access */}
-        <TaskBadgeRefContext.Provider value={taskBadgeRef}>
+        <TaskBadgeRefContext.Provider
+          value={{ ref: taskBadgeRef, accentColor: badgeAccentColor }}
+        >
           {children}
         </TaskBadgeRefContext.Provider>
 

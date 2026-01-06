@@ -15,6 +15,7 @@ import { isMobileDevice } from "@/lib/deviceDetection";
 import Tilt from "./Tilt";
 import { motion } from "framer-motion";
 import { useDynamicBackground } from "@/lib/useDynamicBackground";
+import TaskBadgeBlobs from "./TaskBadgeBlobs";
 
 interface ShareSessionGridViewProps {
   screenshots?: string[];
@@ -384,6 +385,7 @@ const ShareSessionGridView = ({
   }, [recomputeCardWidth, taskName, allPhotos.length, taskBadgeRef]);
 
   const exportBackgroundStyle = { ...(selectedBackground?.style ?? {}) };
+  const badgeAccentColor = selectedBackground?.accentColor ?? "#ffffff";
 
   return (
     <Card
@@ -475,7 +477,10 @@ const ShareSessionGridView = ({
                     padding: "6px 12px",
                   }}
                 >
-                  {taskName} • {duration} {duration === 1 ? "min" : "min"}
+                  <TaskBadgeBlobs accentColor={badgeAccentColor} />
+                  <span className="relative z-10">
+                    {taskName} • {duration} {duration === 1 ? "min" : "min"}
+                  </span>
                 </div>
               </div>
             </motion.div>

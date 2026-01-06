@@ -111,47 +111,6 @@ export function useDynamicBackground(
             });
           }
 
-          if (taskBadgeRef.current) {
-            const vibrantColor = palette.Vibrant.hex;
-            const lightVibrantColor = palette.LightVibrant.hex;
-
-            const toRgba = (hex: string, opacity: number) => {
-              const r = parseInt(hex.slice(1, 3), 16);
-              const g = parseInt(hex.slice(3, 5), 16);
-              const b = parseInt(hex.slice(5, 7), 16);
-              return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-            };
-
-            taskBadgeRef.current.style.setProperty(
-              "--color-1",
-              "rgba(24, 24, 44, 0.96)",
-            );
-            taskBadgeRef.current.style.setProperty(
-              "--color-2",
-              "rgba(24, 24, 44, 0.96)",
-            );
-            taskBadgeRef.current.style.setProperty(
-              "--color-3",
-              toRgba(vibrantColor, 0.3),
-            );
-            taskBadgeRef.current.style.setProperty(
-              "--color-4",
-              "rgba(24, 24, 44, 0.96)",
-            );
-            taskBadgeRef.current.style.setProperty(
-              "--color-5",
-              "rgba(24, 24, 44, 0.96)",
-            );
-
-            taskBadgeRef.current.style.setProperty(
-              "--border-color-1",
-              toRgba(lightVibrantColor, 0.1),
-            );
-            taskBadgeRef.current.style.setProperty(
-              "--border-color-2",
-              toRgba(vibrantColor, 0.1),
-            );
-          }
         }
 
         if (palette.LightVibrant) {

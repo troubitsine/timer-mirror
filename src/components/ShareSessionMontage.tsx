@@ -9,6 +9,7 @@ import { useDynamicBackground } from "@/lib/useDynamicBackground";
 import { useSessionMedia } from "@/lib/useSessionMedia";
 import CardStack, { CardStackRef } from "./CardStack";
 import { ANALYTICS_EVENTS, trackEvent } from "@/lib/analytics";
+import TaskBadgeBlobs from "./TaskBadgeBlobs";
 
 interface ShareSessionMontageProps {
   screenshots?: string[];
@@ -60,6 +61,7 @@ const ShareSessionMontage = ({
   );
 
   const exportBackgroundStyle = { ...(selectedBackground?.style ?? {}) };
+  const badgeAccentColor = selectedBackground?.accentColor ?? "#ffffff";
 
   // Use external selectedBackgroundId and setSelectedBackgroundId if provided
   useEffect(() => {
@@ -135,7 +137,10 @@ const ShareSessionMontage = ({
                 textWrap: "balance",
               }}
             >
-              {taskName} • {duration} {duration === 1 ? "min" : "min"}
+              <TaskBadgeBlobs accentColor={badgeAccentColor} />
+              <span className="relative z-10">
+                {taskName} • {duration} {duration === 1 ? "min" : "min"}
+              </span>
             </div>
           </div>
         </motion.div>
