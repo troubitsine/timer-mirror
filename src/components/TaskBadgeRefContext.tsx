@@ -1,16 +1,31 @@
 /**
- * TaskBadgeRefContext - Context for sharing taskBadgeRef from SessionFrame
- * Used by components that need custom badge placement inside SessionFrame
+ * TaskBadgeRefContext - Shares task badge ref and accent color from SessionFrame.
+ * Used by components that render custom badge placement inside SessionFrame.
  */
 import { createContext, useContext } from "react";
 
-export const TaskBadgeRefContext = createContext<React.RefObject<HTMLDivElement> | null>(null);
+type TaskBadgeContextValue = {
+  ref: React.RefObject<HTMLDivElement>;
+  accentColor?: string;
+};
+
+export const TaskBadgeRefContext =
+  createContext<TaskBadgeContextValue | null>(null);
 
 /** Hook to access taskBadgeRef from SessionFrame for custom badge rendering */
 export function useTaskBadgeRef() {
-  const ref = useContext(TaskBadgeRefContext);
-  if (!ref) {
+  const context = useContext(TaskBadgeRefContext);
+  if (!context) {
     throw new Error("useTaskBadgeRef must be used within SessionFrame");
   }
-  return ref;
+  return context.ref;
+}
+
+/** Hook to access accent color for task badge blobs */
+export function useTaskBadgeAccentColor(fallback = "#ffffff") {
+  const context = useContext(TaskBadgeRefContext);
+  if (!context) {
+    throw new Error("useTaskBadgeAccentColor must be used within SessionFrame");
+  }
+  return context.accentColor ?? fallback;
 }

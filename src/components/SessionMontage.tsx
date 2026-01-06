@@ -1,3 +1,5 @@
+// SessionMontage.tsx
+// Session montage card; orchestrates animation and background selection for session recap.
 import React, { useCallback, useEffect, useMemo, useRef, useState, useId } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
@@ -10,6 +12,7 @@ import { useSessionMedia } from "@/lib/useSessionMedia";
 import ShareWatermark from "./ShareWatermark";
 import UnifiedPhotoAnimation from "./UnifiedPhotoAnimation";
 import { ANALYTICS_EVENTS, trackEvent } from "@/lib/analytics";
+import TaskBadgeBlobs from "./TaskBadgeBlobs";
 
 interface SessionMontageProps {
   screenshots?: string[];
@@ -18,6 +21,7 @@ interface SessionMontageProps {
   duration?: number;
   initialSelectedBackgroundId?: string;
   onBackgroundSelect?: (id: string) => void;
+  onAccentColorChange?: (color?: string) => void;
   hideControls?: boolean;
   exportRef?: React.RefObject<HTMLDivElement>;
 }
@@ -38,6 +42,7 @@ const SessionMontage = ({
   duration = 25,
   initialSelectedBackgroundId,
   onBackgroundSelect,
+  onAccentColorChange,
   hideControls = false,
   exportRef,
 }: SessionMontageProps) => {
@@ -73,6 +78,7 @@ const SessionMontage = ({
   );
 
   const exportBackgroundStyle = { ...(selectedBackground?.style ?? {}) };
+  const badgeAccentColor = selectedBackground?.accentColor ?? "#ffffff";
 
   // Animation states
   const [animationPhase, setAnimationPhase] = useState<
@@ -123,6 +129,10 @@ const SessionMontage = ({
     return () => cancelAnimationFrame(frame);
   }, [numberOfCards, startAnimation]);
 
+  useEffect(() => {
+    onAccentColorChange?.(selectedBackground?.accentColor);
+  }, [onAccentColorChange, selectedBackground?.accentColor]);
+
 
   return (
     <Card
@@ -168,7 +178,10 @@ const SessionMontage = ({
               textWrap: "balance",
             }}
           >
-            {taskName} • {duration} {duration === 1 ? "min" : "min"}
+            <TaskBadgeBlobs accentColor={badgeAccentColor} />
+            <span className="relative z-10">
+              {taskName} • {duration} {duration === 1 ? "min" : "min"}
+            </span>
           </div>
         </div>
       </motion.div>
@@ -224,10 +237,9 @@ const SessionMontage = ({
                 });
                 startAnimation();
               }}
-              className="bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/70 backdrop-blur-md flex items-center gap-1 rounded-full inner-stroke-white-20-sm sm:pl-[8px] sm:pr-[10px] py-[6px] pl-[10px] pr-[12px]"
+              className="bg-white/75 hover:bg-white/65 before:absolute before:inset-0 before:bg-gradient-to-b before:from-transparent before:to-black/20 before:rounded-full text-black/70 backdrop-blur-md flex items-center justify-center rounded-full inner-stroke-white-20-sm h-[26px] px-[10px]"
             >
-              <RotateCw className="h-4 w-4" />
-              <span className="hidden sm:inline">Replay</span>
+              <RotateCw className="h-3.5 w-3.5 mr-[1px]" />
             </Button>
           </motion.div>
         )}

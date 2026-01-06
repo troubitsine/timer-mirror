@@ -2,7 +2,7 @@
  * SessionFrame - Shared wrapper for session montage/grid views
  * Owns dynamic background, backdrop overlay, badge, controls, and watermark
  */
-import React, { ReactNode, forwardRef } from "react";
+import React, { ReactNode, forwardRef, useEffect } from "react";
 import { Card } from "./ui/card";
 import { motion } from "framer-motion";
 import BackgroundColorSelector from "./BackgroundColorSelector";
@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { useDynamicBackground } from "@/lib/useDynamicBackground";
 import ShareWatermark from "./ShareWatermark";
 import { TaskBadgeRefContext } from "./TaskBadgeRefContext";
+import TaskBadgeBlobs from "./TaskBadgeBlobs";
 
 interface SessionFrameProps {
   /** Image source for dynamic color extraction */
@@ -22,6 +23,8 @@ interface SessionFrameProps {
   initialSelectedBackgroundId?: string;
   /** Callback when background selection changes */
   onBackgroundSelect?: (id: string) => void;
+  /** Callback when background accent color changes */
+  onAccentColorChange?: (color?: string) => void;
   /** Hide controls (background selector, replay button) */
   hideControls?: boolean;
   /** Custom badge slot - if provided, replaces default badge */
@@ -50,6 +53,7 @@ const SessionFrame = forwardRef<HTMLDivElement, SessionFrameProps>(
       duration = 25,
       initialSelectedBackgroundId,
       onBackgroundSelect,
+      onAccentColorChange,
       hideControls = false,
       badgeSlot,
       badgePosition = "top",
@@ -76,6 +80,11 @@ const SessionFrame = forwardRef<HTMLDivElement, SessionFrameProps>(
     );
 
     const exportBackgroundStyle = { ...(selectedBackground?.style ?? {}) };
+    const badgeAccentColor = selectedBackground?.accentColor ?? "#ffffff";
+
+    useEffect(() => {
+      onAccentColorChange?.(selectedBackground?.accentColor);
+    }, [onAccentColorChange, selectedBackground?.accentColor]);
 
     const renderBadge = () => {
       if (badgePosition === "none") return null;
@@ -118,7 +127,10 @@ const SessionFrame = forwardRef<HTMLDivElement, SessionFrameProps>(
                 textWrap: "balance",
               }}
             >
-              {taskName} • {duration} min
+              <TaskBadgeBlobs accentColor={badgeAccentColor} />
+              <span className="relative z-10">
+                {taskName} • {duration} min
+              </span>
             </div>
           </div>
         </motion.div>
@@ -154,7 +166,9 @@ const SessionFrame = forwardRef<HTMLDivElement, SessionFrameProps>(
         {renderBadge()}
 
         {/* Main content - wrapped in context for custom badge access */}
-        <TaskBadgeRefContext.Provider value={taskBadgeRef}>
+        <TaskBadgeRefContext.Provider
+          value={{ ref: taskBadgeRef, accentColor: badgeAccentColor }}
+        >
           {children}
         </TaskBadgeRefContext.Provider>
 

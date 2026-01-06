@@ -156,136 +156,9 @@ html.complete-route {
     }
   }
 
-  @property --pos-x {
-    syntax: "<percentage>";
-    initial-value: 11.14%;
-    inherits: false;
-  }
-
-  @property --pos-y {
-    syntax: "<percentage>";
-    initial-value: 140%;
-    inherits: false;
-  }
-
-  @property --spread-x {
-    syntax: "<percentage>";
-    initial-value: 150%;
-    inherits: false;
-  }
-
-  @property --spread-y {
-    syntax: "<percentage>";
-    initial-value: 180.06%;
-    inherits: false;
-  }
-
-  @property --color-1 {
-    syntax: "<color>";
-    initial-value: rgba(255, 255, 255, 0.8);
-    inherits: false;
-  }
-
-  @property --color-2 {
-    syntax: "<color>";
-    initial-value: rgba(240, 240, 240, 0.8);
-    inherits: false;
-  }
-
-  @property --color-3 {
-    syntax: "<color>";
-    initial-value: rgba(230, 230, 230, 0.8);
-    inherits: false;
-  }
-
-  @property --color-4 {
-    syntax: "<color>";
-    initial-value: rgba(220, 220, 220, 0.8);
-    inherits: false;
-  }
-
-  @property --color-5 {
-    syntax: "<color>";
-    initial-value: rgba(210, 210, 210, 0.8);
-    inherits: false;
-  }
-
-  @property --border-angle {
-    syntax: "<angle>";
-    initial-value: 60deg;
-    inherits: true;
-  }
-
-  @property --border-color-1 {
-    syntax: "<color>";
-    initial-value: rgba(255, 255, 255, 0.2);
-    inherits: true;
-  }
-
-  @property --border-color-2 {
-    syntax: "<color>";
-    initial-value: rgba(255, 255, 255, 0.1);
-    inherits: true;
-  }
-
-  @property --stop-1 {
-    syntax: "<percentage>";
-    initial-value: 37.35%;
-    inherits: false;
-  }
-
-  @property --stop-2 {
-    syntax: "<percentage>";
-    initial-value: 61.36%;
-    inherits: false;
-  }
-
-  @property --stop-3 {
-    syntax: "<percentage>";
-    initial-value: 78.42%;
-    inherits: false;
-  }
-
-  @property --stop-4 {
-    syntax: "<percentage>";
-    initial-value: 89.52%;
-    inherits: false;
-  }
-
-  @property --stop-5 {
-    syntax: "<percentage>";
-    initial-value: 100%;
-    inherits: false;
-  }
-
   .task-badge {
-    @apply relative appearance-none cursor-default text-neutral-800/80 px-4 py-2 rounded-[9px] text-xs font-medium leading-tight shadow-sm backdrop-blur-md;
-    background: radial-gradient(
-      var(--spread-x) var(--spread-y) at var(--pos-x) var(--pos-y),
-      var(--color-1) var(--stop-1),
-      var(--color-2) var(--stop-2),
-      var(--color-3) var(--stop-3),
-      var(--color-4) var(--stop-4),
-      var(--color-5) var(--stop-5)
-    );
-    transition:
-      --pos-x 0.5s,
-      --pos-y 0.5s,
-      --spread-x 0.5s,
-      --spread-y 0.5s,
-      --color-1 0.5s,
-      --color-2 0.5s,
-      --color-3 0.5s,
-      --color-4 0.5s,
-      --color-5 0.5s,
-      --border-angle 0.5s,
-      --border-color-1 0.5s,
-      --border-color-2 0.5s,
-      --stop-1 0.5s,
-      --stop-2 0.5s,
-      --stop-3 0.5s,
-      --stop-4 0.5s,
-      --stop-5 0.5s;
+    @apply relative appearance-none cursor-default text-neutral-800/80 px-4 py-2 rounded-[9px] text-xs font-medium leading-tight shadow-sm backdrop-blur-md overflow-hidden;
+    background-color: rgba(24, 24, 44, 0.96);
   }
 
   .task-badge::before {
@@ -295,9 +168,9 @@ html.complete-route {
     border-radius: inherit;
     padding: 1px;
     background: linear-gradient(
-      var(--border-angle),
-      var(--border-color-1),
-      var(--border-color-2)
+      140deg,
+      rgba(255, 255, 255, 0.18),
+      rgba(255, 255, 255, 0.08)
     );
     mask:
       linear-gradient(#fff 0 0) content-box,
@@ -306,18 +179,6 @@ html.complete-route {
     pointer-events: none;
   }
 
-  .task-badge:hover {
-    --pos-x: 0%;
-    --pos-y: 91.51%;
-    --spread-x: 120.24%;
-    --spread-y: 103.18%;
-    --stop-1: 0%;
-    --stop-2: 8.8%;
-    --stop-3: 21.44%;
-    --stop-4: 71.34%;
-    --stop-5: 85.76%;
-    --border-angle: 190deg;
-  }
   input[type="range"]::-webkit-slider-thumb {
     @apply appearance-none w-4 h-4 rounded-full cursor-pointer transition-all;
     background: linear-gradient(
@@ -382,6 +243,24 @@ html.complete-route {
 
   [data-share-export-root][data-exporting="true"] [data-share-watermark] {
     @apply flex;
+  }
+
+  [data-share-export-root][data-exporting="true"],
+  [data-share-export-root][data-exporting="true"]::before,
+  [data-share-export-root][data-exporting="true"]::after {
+    border-radius: 0 !important;
+  }
+
+  [data-share-export-root][data-exporting="true"] [data-share-surface="backdrop"],
+  [data-share-export-root][data-exporting="true"] [data-share-surface="backdrop"]::before,
+  [data-share-export-root][data-exporting="true"] [data-share-surface="backdrop"]::after {
+    border-radius: 0 !important;
+  }
+
+  [data-share-export-root][data-exporting="true"] [data-share-surface="backdrop"]::after {
+    border: 0 !important;
+    content: none !important;
+    opacity: 0 !important;
   }
 
   [data-share-export-root][data-exporting="true"][data-export-surface="gradient"],

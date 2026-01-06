@@ -1,3 +1,5 @@
+// useDynamicBackground.ts
+// Dynamic background hook for session surfaces; extracts palette and persists selection state.
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Vibrant } from "node-vibrant/browser";
 import { isMobileDevice } from "./deviceDetection";
@@ -30,6 +32,7 @@ export function useDynamicBackground(
   const [backgroundOptions, setBackgroundOptions] = useState<BackgroundOption[]>(
     [plainWhiteBackground],
   );
+  const backgroundOptionsRef = useRef(backgroundOptions);
   const [hasDynamicColors, setHasDynamicColors] = useState(false);
   const [selectedBackgroundId, setSelectedBackgroundId] = useState(
     initialSelectedId || "white",
@@ -42,15 +45,35 @@ export function useDynamicBackground(
   const taskBadgeRef = useRef<HTMLDivElement>(null);
   const isProcessingRef = useRef(false);
 
-  const handleBackgroundSelect = useCallback(
-    (id: string) => {
-      setSelectedBackgroundId(id);
+  useEffect(() => {
+    backgroundOptionsRef.current = backgroundOptions;
+  }, [backgroundOptions]);
+
+  const persistSelection = useCallback(
+    (id: string, optionsOverride?: BackgroundOption[]) => {
+      if (typeof window === "undefined") return;
       sessionStorage.setItem("selectedBackgroundId", id);
+      const options = optionsOverride ?? backgroundOptionsRef.current;
+      const selectedOption = options.find((option) => option.id === id);
+      if (selectedOption?.accentColor) {
+        sessionStorage.setItem(
+          "selectedBackgroundAccentColor",
+          selectedOption.accentColor,
+        );
+      }
+    },
+    [],
+  );
+
+  const handleBackgroundSelect = useCallback(
+    (id: string, optionsOverride?: BackgroundOption[]) => {
+      setSelectedBackgroundId(id);
+      persistSelection(id, optionsOverride);
       if (onSelect) {
         onSelect(id);
       }
     },
-    [onSelect],
+    [onSelect, persistSelection],
   );
 
   const extractColorsFromImage = useCallback(
@@ -88,47 +111,6 @@ export function useDynamicBackground(
             });
           }
 
-          if (taskBadgeRef.current) {
-            const vibrantColor = palette.Vibrant.hex;
-            const lightVibrantColor = palette.LightVibrant.hex;
-
-            const toRgba = (hex: string, opacity: number) => {
-              const r = parseInt(hex.slice(1, 3), 16);
-              const g = parseInt(hex.slice(3, 5), 16);
-              const b = parseInt(hex.slice(5, 7), 16);
-              return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-            };
-
-            taskBadgeRef.current.style.setProperty(
-              "--color-1",
-              "rgba(24, 24, 44, 0.96)",
-            );
-            taskBadgeRef.current.style.setProperty(
-              "--color-2",
-              "rgba(24, 24, 44, 0.96)",
-            );
-            taskBadgeRef.current.style.setProperty(
-              "--color-3",
-              toRgba(vibrantColor, 0.3),
-            );
-            taskBadgeRef.current.style.setProperty(
-              "--color-4",
-              "rgba(24, 24, 44, 0.96)",
-            );
-            taskBadgeRef.current.style.setProperty(
-              "--color-5",
-              "rgba(24, 24, 44, 0.96)",
-            );
-
-            taskBadgeRef.current.style.setProperty(
-              "--border-color-1",
-              toRgba(lightVibrantColor, 0.1),
-            );
-            taskBadgeRef.current.style.setProperty(
-              "--border-color-2",
-              toRgba(vibrantColor, 0.1),
-            );
-          }
         }
 
         if (palette.LightVibrant) {
@@ -167,13 +149,13 @@ export function useDynamicBackground(
             (option) => option.id === selectedBackgroundId,
           );
           if (!currentIdExists) {
-            handleBackgroundSelect(dynamicOptions[0].id);
+            handleBackgroundSelect(dynamicOptions[0].id, dynamicOptions);
           }
           setHasDynamicColors(true);
         } else {
           setBackgroundOptions([plainWhiteBackground]);
           if (selectedBackgroundId !== "white") {
-            handleBackgroundSelect("white");
+            handleBackgroundSelect("white", [plainWhiteBackground]);
           }
           setHasDynamicColors(false);
         }
@@ -199,6 +181,15 @@ export function useDynamicBackground(
       isProcessingRef.current = false;
     };
   }, [imageSrc, extractColorsFromImage]);
+
+  useEffect(() => {
+    if (!selectedBackground?.accentColor) return;
+    if (typeof window === "undefined") return;
+    sessionStorage.setItem(
+      "selectedBackgroundAccentColor",
+      selectedBackground.accentColor,
+    );
+  }, [selectedBackground]);
 
   return {
     backgroundOptions,
